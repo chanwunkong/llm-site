@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Site Demo</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f6f7f9; --fg:#1b1f24; --card:#fff; --muted:#6a737d; --accent:#2f6feb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0d1117; --fg:#e6edf3; --card:#161b22; --muted:#8b949e; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "PingFang TC", sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px; display:flex; flex-direction:column; min-height:100dvh; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: .9rem; }
+  #log { flex:1; display:flex; flex-direction:column; gap:10px; overflow-y:auto; padding-bottom: 12px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; background: var(--card); line-height:1.5; white-space: pre-wrap; }
+  .me { align-self: flex-end; background: var(--accent); color:#fff; }
+  form { display:flex; gap:8px; position: sticky; bottom: 0; padding: 8px 0 env(safe-area-inset-bottom, 0px); background: var(--bg); }
+  input { flex:1; padding: 12px; border-radius: 10px; border:1px solid var(--muted); background: var(--card); color: var(--fg); font-size: 16px; }
+  button { padding: 0 18px; border:0; border-radius: 10px; background: var(--accent); color:#fff; font-size: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LLM Site Demo</h1>
+  <p class="sub">GitHub Pages 部署測試 · <span id="ver"></span></p>
+  <div id="log"><div class="msg">你好！這是 demo 頁面，目前回覆是模擬的，之後會接上語言模型。</div></div>
+  <form id="f"><input id="q" placeholder="輸入訊息…" autocomplete="off"><button>送出</button></form>
+</main>
+<script>
+  document.getElementById('ver').textContent = 'build ' + document.lastModified;
+  const log = document.getElementById('log'), q = document.getElementById('q');
+  function add(text, me) { const d = document.createElement('div'); d.className = 'msg' + (me ? ' me' : ''); d.textContent = text; log.appendChild(d); d.scrollIntoView(); }
+  document.getElementById('f').addEventListener('submit', e => {
+    e.preventDefault(); const t = q.value.trim(); if (!t) return;
+    add(t, true); q.value = '';
+    setTimeout(() => add('（模擬回覆）你說的是：「' + t + '」'), 400);
+  });
+</script>
+</body>
+</html>
