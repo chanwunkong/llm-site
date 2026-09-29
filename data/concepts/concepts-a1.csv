@@ -1,0 +1,352 @@
+id,emoji,upos,clarity,category,gloss,cefrj_headwords
+cat,🐱,NOUN,A,動物,cat,cat
+dog,🐶,NOUN,A,動物,dog,dog
+bird,🐦,NOUN,A,動物,bird,bird
+fish,🐟,NOUN,A,動物,fish (the animal),fish
+horse,🐴,NOUN,A,動物,horse,horse
+cow,🐄,NOUN,A,動物,cow,cow
+pig,🐷,NOUN,A,動物,pig,pig
+sheep,🐑,NOUN,A,動物,sheep,sheep
+rabbit,🐰,NOUN,A,動物,rabbit,rabbit
+mouse_animal,🐭,NOUN,A,動物,mouse (the animal),mouse
+rat,🐀,NOUN,A,動物,rat,rat
+monkey,🐒,NOUN,A,動物,monkey,monkey
+lion,🦁,NOUN,A,動物,lion,lion
+tiger,🐯,NOUN,A,動物,tiger,tiger
+bear,🐻,NOUN,A,動物,bear (the animal),bear
+bat_animal,🦇,NOUN,A,動物,bat (the flying animal),bat
+chicken_animal,🐔,NOUN,A,動物,chicken (the live bird),chicken
+turkey_animal,🦃,NOUN,A,動物,turkey (the bird),turkey
+frog,🐸,NOUN,A,動物,frog,frog
+snake,🐍,NOUN,A,動物,snake,snake
+bee,🐝,NOUN,A,動物,bee,bee
+butterfly,🦋,NOUN,A,動物,butterfly,butterfly
+fly_insect,🪰,NOUN,A,動物,fly (the insect),fly
+animal,🐾,NOUN,B,動物,animal (general),animal
+apple,🍎,NOUN,A,食物,apple,apple
+banana,🍌,NOUN,A,食物,banana,banana
+orange_fruit,🍊,NOUN,A,食物,orange (the fruit),orange
+grape,🍇,NOUN,A,食物,grape,grape
+tomato,🍅,NOUN,A,食物,tomato,tomato
+potato,🥔,NOUN,A,食物,potato,potato
+corn,🌽,NOUN,A,食物,corn / maize,corn
+bean,🫘,NOUN,A,食物,bean,bean
+vegetable,🥦,NOUN,B,食物,vegetable (general),vegetable
+bread,🍞,NOUN,A,食物,bread,bread
+rice_cooked,🍚,NOUN,A,食物,"rice (cooked, as food)",rice
+egg,🥚,NOUN,A,食物,egg,egg
+cheese,🧀,NOUN,A,食物,cheese,cheese
+butter,🧈,NOUN,A,食物,butter,butter
+meat,🍖,NOUN,A,食物,meat,meat
+beef,🥩,NOUN,B,食物,beef (meat of cattle),beef
+chicken_meat,🍗,NOUN,B,食物,chicken (as food),chicken
+burger,🍔,NOUN,A,食物,hamburger,burger;hamburger
+pizza,🍕,NOUN,A,食物,pizza,pizza
+sandwich,🥪,NOUN,A,食物,sandwich,sandwich
+salad,🥗,NOUN,A,食物,salad,salad
+soup,🍲,NOUN,A,食物,soup,soup
+cake,🍰,NOUN,A,食物,cake,cake
+birthday_cake,🎂,NOUN,A,食物,birthday (shown as birthday cake),birthday
+cookie,🍪,NOUN,A,食物,cookie / biscuit,cookie;biscuit
+candy,🍬,NOUN,A,食物,candy / sweets,candy
+chocolate,🍫,NOUN,A,食物,chocolate,chocolate
+ice_cream,🍦,NOUN,A,食物,ice cream,ice cream
+water,💧,NOUN,A,食物,water,water
+milk,🥛,NOUN,A,食物,milk,milk
+coffee,☕,NOUN,A,食物,coffee,coffee
+tea,🍵,NOUN,A,食物,tea,tea
+juice,🧃,NOUN,A,食物,juice,juice
+soda,🥤,NOUN,B,食物,soft drink / cola,coke
+meal,🍽️,NOUN,B,食物,meal,meal;dinner
+lunch_box,🍱,NOUN,B,食物,lunch (shown as a lunch box),lunch
+breakfast,🥞,NOUN,B,食物,breakfast,breakfast
+baby,👶,NOUN,A,人,baby,baby
+child,🧒,NOUN,A,人,child,child;kid
+boy,👦,NOUN,A,人,boy,boy
+girl,👧,NOUN,A,人,girl,girl
+man,👨,NOUN,A,人,man,man
+woman,👩,NOUN,A,人,woman,woman;lady
+person,🧑,NOUN,A,人,person,person
+people,👥,NOUN,B,人,people / group,people;group
+family,👪,NOUN,A,人,family,family
+grandfather,👴,NOUN,A,人,grandfather (also: old man),grandfather;grandpa
+grandmother,👵,NOUN,A,人,grandmother (also: old woman),grandmother;grandma
+friend,🧑‍🤝‍🧑,NOUN,B,人,friend,friend
+doctor,🧑‍⚕️,NOUN,A,人,doctor,doctor/Dr./Dr
+teacher,🧑‍🏫,NOUN,A,人,teacher,teacher
+student,🧑‍🎓,NOUN,A,人,student,student
+police,👮,NOUN,A,人,police officer,cop;officer
+cook_person,🧑‍🍳,NOUN,A,人,cook / chef,cook
+farmer,🧑‍🌾,NOUN,A,人,farmer,farmer
+worker,👷,NOUN,A,人,construction worker,worker
+scientist,🧑‍🔬,NOUN,A,人,scientist,scientist
+engineer,🧑‍🔧,NOUN,B,人,engineer / mechanic,engineer
+singer,🧑‍🎤,NOUN,A,人,singer,singer;musician
+king,👑,NOUN,B,人,king (shown as a crown),king
+prince,🤴,NOUN,A,人,prince,prince
+princess,👸,NOUN,A,人,princess,princess
+fairy,🧚,NOUN,A,人,fairy,fairy
+ghost,👻,NOUN,A,人,ghost,ghost
+spy,🕵️,NOUN,B,人,detective / spy,spy
+eye,👁️,NOUN,A,身體,eye,eye
+ear,👂,NOUN,A,身體,ear,ear
+nose,👃,NOUN,A,身體,nose,nose
+mouth,👄,NOUN,A,身體,mouth,mouth
+tooth,🦷,NOUN,A,身體,tooth,tooth
+hand,✋,NOUN,A,身體,hand,hand
+leg,🦵,NOUN,A,身體,leg,leg
+bone,🦴,NOUN,A,身體,bone,bone
+brain,🧠,NOUN,A,身體,brain,brain
+heart,❤️,NOUN,B,身體,heart / love,heart;love
+face,🙂,NOUN,B,身體,face,face
+haircut,💇,NOUN,B,身體,haircut,haircut;hair
+shirt,👔,NOUN,A,衣物,shirt (with collar),shirt
+tshirt,👕,NOUN,A,衣物,T-shirt,T-shirt/tee-shirt;clothes
+trousers,👖,NOUN,A,衣物,trousers / jeans,pants;trousers;jeans
+dress,👗,NOUN,A,衣物,dress,dress
+coat,🧥,NOUN,A,衣物,coat / jacket,coat;jacket
+shoe,👟,NOUN,A,衣物,shoe,shoe
+hat,👒,NOUN,A,衣物,hat,hat
+cap,🧢,NOUN,A,衣物,cap,cap
+glasses,👓,NOUN,A,衣物,glasses / spectacles,glasses
+watch_clock,⌚,NOUN,A,衣物,wristwatch,watch
+ring_jewel,💍,NOUN,B,衣物,ring / jewelry,jewelry/jewellery
+bag,👜,NOUN,A,衣物,bag,bag
+ribbon,🎀,NOUN,A,衣物,ribbon,ribbon
+car,🚗,NOUN,A,交通,car,car
+bus,🚌,NOUN,A,交通,bus,bus
+taxi,🚕,NOUN,A,交通,taxi,taxi
+truck,🚚,NOUN,A,交通,truck,truck
+train,🚆,NOUN,A,交通,train,train
+subway,🚇,NOUN,A,交通,subway / metro,subway
+bicycle,🚲,NOUN,A,交通,bicycle,bicycle;bike
+airplane,✈️,NOUN,A,交通,airplane,airplane/aeroplane;plane
+ship,🚢,NOUN,A,交通,ship,ship
+boat,⛵,NOUN,A,交通,boat,boat
+wheel,🛞,NOUN,A,交通,wheel,wheel
+ticket,🎫,NOUN,A,交通,ticket,ticket
+stop_sign,🛑,NOUN,A,交通,stop (sign),stop
+house,🏠,NOUN,A,地點,house / home,house;home
+building,🏢,NOUN,A,地點,building,building
+school,🏫,NOUN,A,地點,school,school
+hospital,🏥,NOUN,A,地點,hospital,hospital
+hotel,🏨,NOUN,A,地點,hotel,hotel
+bank,🏦,NOUN,A,地點,bank (for money),bank
+shop,🏪,NOUN,A,地點,shop / store,shop;store
+supermarket,🛒,NOUN,A,地點,supermarket,supermarket
+church,⛪,NOUN,A,地點,church,church
+temple,🛕,NOUN,A,地點,temple,temple
+factory,🏭,NOUN,A,地點,factory,factory
+station,🚉,NOUN,A,地點,train station,station
+airport,🛫,NOUN,B,地點,airport,airport
+city,🏙️,NOUN,A,地點,city,city
+town,🏘️,NOUN,B,地點,town,town
+park,🏞️,NOUN,A,地點,park,park
+beach,🏖️,NOUN,A,地點,beach,beach
+island,🏝️,NOUN,A,地點,island,island
+bridge,🌉,NOUN,B,地點,bridge,bridge
+tower,🗼,NOUN,B,地點,tower,tower
+palace,🏰,NOUN,B,地點,palace / castle,palace
+cinema,🎦,NOUN,B,地點,cinema,cinema
+street,🛣️,NOUN,B,地點,road / street,street
+farm,🚜,NOUN,B,地點,farm (shown as tractor),farm
+camp,⛺,NOUN,A,地點,camp / tent,camp
+zoo_world,🌍,NOUN,A,地點,world / Earth,world
+sun,☀️,NOUN,A,自然,sun (also: sunny),sun;sunny;sunshine
+moon,🌙,NOUN,A,自然,moon,moon
+star,⭐,NOUN,A,自然,star,star
+cloud,☁️,NOUN,A,自然,cloud (also: cloudy),cloud;cloudy
+rain,🌧️,NOUN,A,自然,"rain (also: rainy, it rains)",rain;rainy
+snow,❄️,NOUN,A,自然,snow (also: snowy),snow;snowy
+wind,🌬️,NOUN,A,自然,wind,wind
+fire,🔥,NOUN,A,自然,fire,fire
+ice,🧊,NOUN,A,自然,ice,ice
+sea,🌊,NOUN,A,自然,sea / wave,sea
+mountain,⛰️,NOUN,A,自然,mountain,mountain;hill
+tree,🌳,NOUN,A,自然,tree,tree
+flower,🌸,NOUN,A,自然,flower,flower
+rose,🌹,NOUN,A,自然,rose,rose
+leaf,🍃,NOUN,A,自然,leaf,leaf
+grass,🌿,NOUN,B,自然,grass / plant,grass
+stone,🪨,NOUN,A,自然,stone / rock,stone
+hole,🕳️,NOUN,A,自然,hole,hole
+smoke,💨,NOUN,B,自然,smoke / puff,smoke
+autumn,🍂,NOUN,B,自然,autumn / fall,autumn
+winter,⛄,NOUN,B,自然,winter,winter
+morning,🌅,NOUN,B,自然,morning (sunrise),morning
+evening,🌆,NOUN,B,自然,evening (dusk),evening
+night,🌃,NOUN,B,自然,night,night
+book,📕,NOUN,A,物品,book,book
+notebook,📓,NOUN,A,物品,notebook,notebook
+pen,🖊️,NOUN,A,物品,pen,pen
+pencil,✏️,NOUN,A,物品,pencil,pencil
+ruler,📏,NOUN,A,物品,ruler (for measuring),ruler
+paper,📄,NOUN,B,物品,paper / page,paper;page
+letter,✉️,NOUN,A,物品,letter (mail),letter
+mail,📬,NOUN,B,物品,mail / mailbox,mail
+post,📮,NOUN,A,物品,post / postbox,post
+email,📧,NOUN,A,物品,email,email/e-mail/E-mail
+newspaper,📰,NOUN,A,物品,newspaper,newspaper;news
+box,📦,NOUN,A,物品,box,box
+bottle,🍾,NOUN,B,物品,bottle,bottle
+bowl,🥣,NOUN,A,物品,bowl,bowl
+glass_drink,🥃,NOUN,B,物品,drinking glass,glass
+knife,🔪,NOUN,A,物品,knife,knife
+bucket,🪣,NOUN,A,物品,bucket,bucket
+key,🔑,NOUN,A,物品,key,key
+door,🚪,NOUN,A,物品,door,door
+window,🪟,NOUN,A,物品,window,window
+chair,🪑,NOUN,A,物品,chair,chair
+couch,🛋️,NOUN,A,物品,sofa,couch;sofa
+bed,🛏️,NOUN,A,物品,bed,bed
+bath,🛁,NOUN,A,物品,bathtub / bath,bath
+shower,🚿,NOUN,A,物品,shower,shower
+toilet,🚽,NOUN,A,物品,toilet,toilet
+clock,🕐,NOUN,A,物品,clock,clock
+bell,🔔,NOUN,A,物品,bell,bell
+light_lamp,💡,NOUN,B,物品,light / light bulb,light
+umbrella,☂️,NOUN,A,物品,umbrella,umbrella
+camera,📷,NOUN,A,物品,camera,camera;photo
+computer,💻,NOUN,A,物品,computer,computer
+mouse_device,🖱️,NOUN,B,物品,computer mouse,mouse
+mobile_phone,📱,NOUN,A,物品,mobile phone,mobile;mobile phone;phone
+telephone,☎️,NOUN,A,物品,telephone (landline),telephone
+television,📺,NOUN,A,物品,television,television;TV
+radio,📻,NOUN,A,物品,radio,radio
+cd,💿,NOUN,A,物品,CD,CD
+dvd,📀,NOUN,A,物品,DVD,DVD
+file,📁,NOUN,A,物品,file / folder,file
+list,📋,NOUN,B,物品,list / clipboard,list
+note,📝,NOUN,B,物品,note / memo,note;homework
+picture,🖼️,NOUN,A,物品,picture / painting,picture;painting
+gift,🎁,NOUN,A,物品,gift / present,gift;present
+money,💰,NOUN,A,物品,money,money
+dollar,💵,NOUN,A,物品,dollar / banknote,dollar
+credit_card,💳,NOUN,A,物品,credit card,credit card
+price_tag,🏷️,NOUN,B,物品,price (tag),price
+medicine,💊,NOUN,A,物品,medicine / pill,medicine
+flag,🚩,NOUN,A,物品,flag,flag
+sign,🪧,NOUN,B,物品,sign / placard,sign
+kite,🪁,NOUN,A,物品,kite (toy),kite
+doll,🪆,NOUN,B,物品,doll,doll
+toy,🧸,NOUN,B,物品,toy (teddy bear),toy
+brush,🖌️,NOUN,B,物品,paintbrush,brush
+saw,🪚,NOUN,A,物品,saw (tool),saw
+tool,🔧,NOUN,B,物品,tool (wrench),tool
+machine,⚙️,NOUN,B,物品,machine (gear),machine
+wall,🧱,NOUN,B,物品,wall / bricks,wall;block
+seat,💺,NOUN,A,物品,seat,seat
+vase,🏺,NOUN,B,物品,vase / jar,vase
+piece,🧩,NOUN,B,物品,piece (puzzle piece),piece
+soccer,⚽,NOUN,A,運動娛樂,soccer / (association) football,soccer;football
+american_football,🏈,NOUN,B,運動娛樂,American football,football
+baseball,⚾,NOUN,A,運動娛樂,baseball,baseball
+basketball,🏀,NOUN,A,運動娛樂,basketball,basketball
+volleyball,🏐,NOUN,A,運動娛樂,volleyball,volleyball
+tennis,🎾,NOUN,A,運動娛樂,tennis,tennis
+goal,🥅,NOUN,A,運動娛樂,goal (in sports),goal
+sport,🏅,NOUN,B,運動娛樂,sport / medal,sport;Olympics;contest
+game,🎮,NOUN,B,運動娛樂,(video) game,game
+music,🎵,NOUN,A,運動娛樂,music,music
+song,🎶,NOUN,B,運動娛樂,song,song
+guitar,🎸,NOUN,A,運動娛樂,guitar,guitar
+piano,🎹,NOUN,A,運動娛樂,piano,piano
+drum,🥁,NOUN,A,運動娛樂,drum,drum
+movie,🎬,NOUN,A,運動娛樂,movie / film,movie
+theater,🎭,NOUN,B,運動娛樂,theater / drama,theater/theatre;drama
+party,🎉,NOUN,A,運動娛樂,party / celebration,party;celebration
+picnic,🧺,NOUN,A,運動娛樂,picnic (basket),picnic
+fishing,🎣,NOUN,A,運動娛樂,fishing,fishing
+shopping,🛍️,NOUN,A,運動娛樂,shopping / buy,shopping;buy
+smoking,🚬,NOUN,A,運動娛樂,smoking,smoking
+question,❓,NOUN,A,符號,question,question
+idea,💭,NOUN,B,符號,thought / idea,idea;dream
+conversation,💬,NOUN,B,符號,conversation / message,conversation;message
+peace,☮️,NOUN,B,符號,peace,peace
+circle,⭕,NOUN,A,符號,circle,circle
+internet,🌐,NOUN,B,符號,internet,Internet/internet
+information,ℹ️,NOUN,B,符號,information,information
+math,➕,NOUN,B,符號,math,math/maths
+science,🔬,NOUN,B,符號,science,science
+history,📜,NOUN,B,符號,history (scroll),history
+language,🗣️,NOUN,B,符號,speaking / language,language;speech
+vote,🗳️,NOUN,A,符號,vote / ballot box,vote
+fever,🤒,NOUN,A,身體,fever / being ill,fever
+cold_illness,🤧,NOUN,B,身體,a cold (illness),cold
+kiss,💋,NOUN,A,動作,kiss,kiss
+red,🟥,ADJ,A,顏色,red,red
+blue,🟦,ADJ,A,顏色,blue,blue
+green,🟩,ADJ,A,顏色,green,green
+yellow,🟨,ADJ,A,顏色,yellow,yellow
+orange_color,🟧,ADJ,A,顏色,orange (the colour),orange
+purple,🟪,ADJ,A,顏色,purple,purple
+brown,🟫,ADJ,A,顏色,brown,brown
+black,⬛,ADJ,A,顏色,black,black
+white,⬜,ADJ,A,顏色,white,white
+run,🏃,VERB,A,動作,run,run
+walk,🚶,VERB,A,動作,walk,walk
+swim,🏊,VERB,A,動作,swim,swim;swimming
+dance,💃,VERB,A,動作,dance,dance;dancing
+climb,🧗,VERB,A,動作,climb,climb
+ride_bike,🚴,VERB,A,動作,ride (a bicycle),ride
+surf,🏄,VERB,A,動作,surf,surf
+exercise,🏋️,VERB,A,動作,exercise / lift weights,exercise
+sleep,😴,VERB,A,動作,sleep,sleep
+eat,🍴,VERB,B,動作,eat,eat
+cook,🍳,VERB,A,動作,cook,cook
+write,✍️,VERB,A,動作,write,write
+read,📖,VERB,B,動作,read,read;reading
+paint,🎨,VERB,B,動作,paint / draw / art,paint;draw;art
+sing,🎤,VERB,B,動作,sing,sing
+laugh,😂,VERB,A,動作,laugh,laugh
+smile,😊,VERB,B,動作,smile,smile
+cry,😭,VERB,A,動作,cry,cry
+think,🤔,VERB,A,動作,think,think
+pray,🙏,VERB,B,動作,pray / thank,pray;thanks
+greet,👋,VERB,A,動作,wave hello / goodbye,greet;hello;hi;bye
+call,📞,VERB,A,動作,call on the phone,call;phone
+look,👀,VERB,B,動作,look / see,look;see;watch
+listen,🎧,VERB,B,動作,listen / hear (headphones),listen;hear
+cut,✂️,VERB,A,動作,cut,cut
+wash,🧼,VERB,B,動作,wash (with soap),wash
+brush_teeth,🪥,VERB,B,動作,brush (teeth),brush
+clean,🧹,VERB,B,動作,clean / sweep,clean
+build,🏗️,VERB,B,動作,build,build
+grow,🌱,VERB,A,動作,grow (plant),grow
+fly,🕊️,VERB,B,動作,fly (bird flying),fly
+dig,⛏️,VERB,B,動作,dig,dig
+win,🏆,VERB,A,動作,win,win
+fight,🥊,VERB,B,動作,fight / box,fight
+celebrate,🥳,VERB,A,動作,celebrate,celebrate
+pay,💸,VERB,B,動作,pay (money going out),pay
+travel,🧳,VERB,B,動作,travel / trip,travel;trip
+wait,⏳,VERB,B,動作,wait,wait
+wake,⏰,VERB,B,動作,wake up (alarm clock),wake
+hurt,🤕,VERB,A,動作,hurt / get injured,hurt
+hide,🙈,VERB,B,動作,hide / cover eyes,hide
+happy,😄,ADJ,B,感受,happy,happy;glad
+sad,😢,ADJ,A,感受,sad,sad
+angry,😠,ADJ,A,感受,angry,angry
+afraid,😨,ADJ,A,感受,afraid / scared,afraid
+tired,😫,ADJ,A,感受,tired,tired
+excited,🤩,ADJ,A,感受,excited,excited;exciting
+bored,🥱,ADJ,B,感受,bored / boring,boring
+funny,😆,ADJ,B,感受,funny,funny
+surprised,😮,ADJ,B,感受,surprised,surprise
+worried,😟,ADJ,B,感受,worried,worry
+shy,😳,ADJ,B,感受,shy / embarrassed,shy
+sick,🤢,ADJ,B,感受,sick / feeling ill,sick
+hot,🥵,ADJ,A,感受,hot (feeling hot),hot
+cold,🥶,ADJ,A,感受,cold (feeling cold),cold
+delicious,😋,ADJ,A,感受,delicious / tasty,delicious
+cool,😎,ADJ,B,感受,cool (stylish),cool
+strong,💪,ADJ,B,感受,strong (flexed arm),strong;arm
+rich,🤑,ADJ,B,感受,rich,rich
+lucky,🍀,ADJ,B,感受,lucky / luck,lucky;luck
+foggy,🌫️,ADJ,A,感受,foggy,foggy
+correct,✅,ADJ,A,感受,correct / right,correct;right;true
+wrong,❌,ADJ,A,感受,wrong / incorrect,wrong;false
+good,👍,ADJ,B,感受,good / OK,good;OK/okay;fine
+bad,👎,ADJ,B,感受,bad,bad
+slow,🐢,ADJ,B,感受,slow,slow
+fast,⚡,ADJ,B,感受,fast,fast;quickly
