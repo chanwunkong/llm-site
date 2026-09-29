@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>seed</title><body>seeding
+<script type="module">
+// 測試用：模擬玩過幾局，產生領土與背包資料
+localStorage.clear();
+const { buildLanguage } = await import('./js/engine/content.js');
+const store = await import('./js/engine/store.js');
+const R = await import('./js/engine/run.js');
+const T = await import('./js/engine/territory.js');
+const p = new URLSearchParams(location.search);
+const id = p.get('lang') || 'en', runs = +(p.get('runs') || 8);
+store.state.lang = id;
+const lang = buildLanguage((await import(`./js/data/${id}.js`)).default);
+for (let r = 0; r < runs; r++) {
+  const run = R.buildRun(lang, lang.sources[0].id, 'ear');
+  while (R.current(run)) {
+    const q = R.makeQuestion(run, R.current(run));
+    const ok = Math.random() < 0.85;
+    R.answer(run, q, q.mode === 'pick' ? (ok ? q.answer[0] : 'x') : q.mode === 'order' ? (ok ? q.answer : []) : (ok ? q.answerText : 'x'), { timeLeft: .5 });
+    if (run.pendingChoice) { const c = R.choices(run); c[0] ? R.choose(run, c[0]) : (run.pendingChoice = false); }
+  }
+  R.settle(run);
+  const keep = r === runs - 1 ? 3 : 0;
+  for (const l of store.L().backpack.slice(keep)) T.place(l, T.placeable()[(Math.random() * 3) | 0] || T.placeable()[0]);
+  if (r === 2) store.L().unlocked.push('87A', '85A');
+}
+if (p.get('env')) store.state.env = p.get('env');
+store.save();
+location.href = 'index.html' + (p.get('go') || '');
+</script>
