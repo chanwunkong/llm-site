@@ -273,7 +273,7 @@ theater|🎭|NOUN|theater/theatre;drama|B|運動娛樂|theater / drama
 party|🎉|NOUN|party;celebration|A|運動娛樂|party / celebration
 picnic|🧺|NOUN|picnic|A|運動娛樂|picnic (basket)
 fishing|🎣|NOUN|fishing|A|運動娛樂|fishing
-shopping|🛍️|NOUN|shopping;buy|A|運動娛樂|shopping / buy
+shopping|🛍️|NOUN|shopping|A|運動娛樂|shopping / buy
 smoking|🚬|NOUN|smoking|A|運動娛樂|smoking
 # 符號與抽象（慣用圖示）
 question|❓|NOUN|question|A|符號|question
@@ -356,8 +356,8 @@ surprised|😮|ADJ|surprise|B|感受|surprised
 worried|😟|ADJ|worry|B|感受|worried
 shy|😳|ADJ|shy|B|感受|shy / embarrassed
 sick|🤢|ADJ|sick|B|感受|sick / feeling ill
-hot|🥵|ADJ|hot|A|感受|hot (feeling hot)
-cold|🥶|ADJ|cold|A|感受|cold (feeling cold)
+hot_feel|🥵|ADJ|hot|A|感受|hot (a person feeling hot / hot weather)
+cold_feel|🥶|ADJ|cold|A|感受|cold (a person feeling cold / cold weather)
 delicious|😋|ADJ|delicious|A|感受|delicious / tasty
 cool|😎|ADJ|cool|B|感受|cool (stylish)
 strong|💪|ADJ|strong;arm|B|感受|strong (flexed arm)
@@ -368,21 +368,89 @@ correct|✅|ADJ|correct;right;true|A|感受|correct / right
 wrong|❌|ADJ|wrong;false|A|感受|wrong / incorrect
 good|👍|ADJ|good;OK/okay;fine|B|感受|good / OK
 bad|👎|ADJ|bad|B|感受|bad
-slow|🐢|ADJ|slow|B|感受|slow
-fast|⚡|ADJ|fast;quickly|B|感受|fast
+
+# ---- 組合圖示：場所＋用途 ----
+kitchen|place:🏠+🍳|NOUN|kitchen|B|地點|kitchen
+bedroom|place:🏠+🛏️|NOUN|bedroom|B|地點|bedroom
+bathroom|place:🏠+🛁|NOUN|bathroom|B|地點|bathroom
+living_room|place:🏠+🛋️|NOUN|living room|B|地點|living room
+dining_room|place:🏠+🍽️|NOUN|dining room|B|地點|dining room
+garden|place:🏠+🌷|NOUN|garden|B|地點|garden
+classroom|place:🏫+🪑|NOUN|classroom|B|地點|classroom
+library|place:🏛️+📚|NOUN|library|B|地點|library
+bookstore|place:🏪+📚|NOUN|bookstore|B|地點|bookstore
+cafe|place:🏪+☕|NOUN|cafe/café|B|地點|café
+restaurant|place:🏪+🍽️|NOUN|restaurant|B|地點|restaurant
+office|place:🏢+💼|NOUN|office|B|地點|office
+swimming_pool|place:🏢+🏊|NOUN|swimming pool|B|地點|swimming pool
+field|🌾|NOUN|field|B|自然|field (of crops)
+# ---- 組合圖示：人＋工作 ----
+nurse|role:🧑+💉|NOUN|nurse|B|人|nurse
+waiter|role:🧑+🍽️|NOUN|waiter;waitress|B|人|waiter / waitress (person serving food)
+driver|role:🧑+🚗|NOUN|driver|B|人|driver
+actor|role:🧑+🎬|NOUN|actor|B|人|actor
+live|role:🧑+🏠|VERB|live|B|動作|live (somewhere)
+work|role:🧑+💼|VERB|work;job|B|動作|work / job
+# ---- 組合圖示：動作 A→B ----
+buy|action:💵>🛍️|VERB|buy|B|動作|buy (money becomes goods)
+sell|action:🛍️>💵|VERB|sell|B|動作|sell (goods become money)
+give|action:🎁>🧑|VERB|give|B|動作|give
+drink|action:🥤>👄|VERB|drink|B|動作|drink
+arrive|action:🚆>🚉|VERB|arrive|B|動作|arrive
+kick|action:🦵>⚽|VERB|kick|B|動作|kick
+catch|action:⚾>🧤|VERB|catch|B|動作|catch
+teach|action:🧑‍🏫>🧑‍🎓|VERB|teach|B|動作|teach
+learn|action:📚>🧠|VERB|learn;study|B|動作|learn / study
+ask|action:🧑>❓|VERB|ask|B|動作|ask (a question)
+answer|action:❓>✅|VERB|answer|B|動作|answer
+wear_clothes|action:👕>🧑|VERB|wear|B|動作|wear / put on (clothes on the body)
+wear_shoes|action:👟>🦶|VERB|wear|B|動作|wear / put on (shoes)
+wear_hat|action:🧢>🧑|VERB|wear|B|動作|wear / put on (a hat)
+sit|action:🧑>🪑|VERB|sit|B|動作|sit (down)
+# ---- 其他單一圖示 ----
+find|🔍|VERB|find|B|動作|find / look for
+agree|🤝|VERB|agree|B|動作|agree / shake hands
+repeat|🔁|VERB|repeat|B|動作|repeat
+focus|🎯|VERB|focus|B|動作|focus / aim
+welcome|🤗|VERB|welcome|B|動作|welcome / hug
+finish|🏁|VERB|finish|B|動作|finish (finish line)
+# ---- 組合圖示：對比（* 標記的那個就是答案）----
+big|contrast:*🐘|🐭|ADJ|big;large|B|感受|big
+small|contrast:🐘|*🐭|ADJ|small;little|B|感受|small
+fast|contrast:*🐇|🐢|ADJ|fast;quickly|B|感受|fast
+slow|contrast:🐇|*🐢|ADJ|slow|B|感受|slow
+old_thing|contrast:*🏚️|🏠|ADJ|old|B|感受|old (of a thing)
+new|contrast:🏚️|*🏠|ADJ|new|B|感受|new
+young|contrast:*🧒|👴|ADJ|young|B|感受|young
+heavy|contrast:*🪨|🪶|ADJ|heavy|B|感受|heavy
+light_weight|contrast:🪨|*🪶|ADJ|light|B|感受|light (not heavy)
+hot_touch|contrast:*🔥|🧊|ADJ|hot|B|感受|hot (to the touch, of things)
+cold_touch|contrast:🔥|*🧊|ADJ|cold|B|感受|cold (to the touch, of things)
+open|contrast:*🔓|🔒|ADJ|open|B|感受|open
+closed|contrast:🔓|*🔒|ADJ|closed;close|B|感受|closed / close
+dark|contrast:*🌑|🌕|ADJ|dark|B|感受|dark
+bright|contrast:🌑|*🌕|ADJ|bright|B|感受|bright
+long|contrast:*🐍|🐛|ADJ|long|B|感受|long
+short_length|contrast:🐍|*🐛|ADJ|short|B|感受|short (not long)
+tall|contrast:*🦒|🐧|ADJ|tall|B|感受|tall
+short_height|contrast:🦒|*🐧|ADJ|short|B|感受|short (not tall)
 """
 
 # 具體、日常、但沒有合適 emoji 的字：需要另外找圖示（例如 OpenMoji）或自行繪製
-NEED_ICON = """table cup desk towel shelf apron pocket skirt jeans_legs knee neck shoulder back hair
-cafe drink_verb young ball arm_body headache nurse waiter waitress driver actor uncle aunt brother sister son daughter husband wife cousin parent
-river field yard garden floor room kitchen bedroom bathroom living_room dining_room classroom library restaurant office
-bookstore swimming_pool dictionary magazine poster album card board pair tube ruler_line pet""".split()
+NEED_ICON = """table cup desk towel shelf apron pocket skirt knee neck shoulder back hair arm ball headache
+river yard floor room dictionary magazine poster album card board pair tube pet
+uncle aunt brother sister son daughter husband wife cousin parent""".split()
 
 rows = []
 for line in RAW.strip().splitlines():
     if not line.strip() or line.startswith('#'): continue
-    cid, emoji, upos, heads, clarity, cat, gloss = line.split('|')
-    rows.append(dict(id=cid, emoji=emoji, upos=upos, cefrj_headwords=heads, clarity=clarity, category=cat, gloss=gloss))
+    parts = line.split('|')
+    if parts[1].startswith('contrast:'):
+        parts[1:3] = [parts[1] + '|' + parts[2]]
+    cid, icon, upos, heads, clarity, cat, gloss = parts
+    template, _, spec = icon.partition(':') if ':' in icon else ('single', '', icon)
+    main = spec.replace('*', '').replace('>', '+').replace('|', '+').split('+')[0]
+    rows.append(dict(id=cid, emoji=main, template=template, icon=spec, upos=upos, cefrj_headwords=heads, clarity=clarity, category=cat, gloss=gloss))
 
 ids = [r['id'] for r in rows]
 dup = [i for i, c in collections.Counter(ids).items() if c > 1]
@@ -394,7 +462,7 @@ a1 = {r['headword'] for r in src if r['CEFR'] == 'A1'}
 missing = sorted({h for r in rows for h in r['cefrj_headwords'].split(';') if h not in a1})
 
 with open('concepts-a1.csv', 'w', newline='', encoding='utf-8') as f:
-    w = csv.DictWriter(f, fieldnames=['id', 'emoji', 'upos', 'clarity', 'category', 'gloss', 'cefrj_headwords'])
+    w = csv.DictWriter(f, fieldnames=['id', 'template', 'icon', 'emoji', 'upos', 'clarity', 'category', 'gloss', 'cefrj_headwords'])
     w.writeheader()
     w.writerows(rows)
 with open('concepts-a1-need-icon.txt', 'w', encoding='utf-8') as f:
@@ -403,7 +471,8 @@ with open('concepts-a1-need-icon.txt', 'w', encoding='utf-8') as f:
 print('concepts:', len(rows), '| A:', sum(r['clarity'] == 'A' for r in rows), '| B:', sum(r['clarity'] == 'B' for r in rows))
 print('by category:', dict(collections.Counter(r['category'] for r in rows)))
 print('by upos:', dict(collections.Counter(r['upos'] for r in rows)))
-emo = collections.Counter(r['emoji'] for r in rows)
-print('shared emoji:', {e: [r['id'] for r in rows if r['emoji'] == e] for e, c in emo.items() if c > 1})
+emo = collections.Counter(r['icon'] for r in rows)
+print('shared icon:', {e: [r['id'] for r in rows if r['icon'] == e] for e, c in emo.items() if c > 1})
+print('by template:', dict(collections.Counter(r['template'] for r in rows)))
 print('headwords not in A1:', missing)
 print('need icon:', len(NEED_ICON))

@@ -1,8 +1,15 @@
-# A1 概念清單（第一版）
+# A1 概念清單（第二版）
 
-- `concepts-a1.csv`：351 個以圖像定義的概念。欄位：概念 ID、emoji、UD 詞性、清晰度（A = 單看圖就明確；B = 慣用圖示，需搭配例句）、分類、給譯者的意思說明、對應的 CEFR-J headword。
+- `concepts-a1.csv`：409 個以圖像定義的概念。欄位：概念 ID、圖示模板（single / place / role / action / contrast）、圖示內容、主 emoji、UD 詞性、清晰度（A = 單看圖就明確；B = 慣用圖示，需搭配例句）、分類、給譯者的意思說明、對應的 CEFR-J headword。
 - `concepts-a1-need-icon.txt`：日常、具體，但沒有合適 emoji 的字，需要另外找圖示或繪製。
-- `build_a1.py`：產生與檢查清單的腳本（檢查 headword 都在 A1、沒有共用 emoji）。
+- `build_a1.py`：產生與檢查清單的腳本（檢查 headword 都在 A1、沒有共用圖示）。
+- `gen_preview.py`：產生預覽頁 `site/concepts.html`。
+
+組合圖示只用四種固定模板，讓學習者學一次就能看懂：
+- `place:🏠+🍳`：場所＋用途（主圖大、用途小圖放角落），例如廚房
+- `role:🧑+🚗`：人＋工作，例如司機
+- `action:💵>🛍️`：動作 A→B，例如買
+- `contrast:*🐘|🐭`：對比，兩個並排、`*` 標記的是答案，例如大
 
 原則：同一個意思的名詞、形容詞、動詞（sun / sunny）只保留一個概念，其他詞形在語境中學；多義字依圖像拆開（orange → 🍊 / 🟧）。
 
