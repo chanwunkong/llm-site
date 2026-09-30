@@ -122,7 +122,26 @@ export function chunkComplete(chunk) {
   return true;
 }
 
-// 每局結算時的語塊產出：每個完成的語塊 = 各詞元等級總和 × 3
+// 語塊網絡：共用同一格（同一個詞元）的已完成語塊連在一起
+export function chunkNetworks(chunks) {
+  const done = chunks.filter(chunkComplete);
+  const parent = done.map((_, i) => i);
+  const find = i => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < done.length; i++)
+    for (let j = i + 1; j < done.length; j++)
+      if (done[i].lemmas.some(l => done[j].lemmas.includes(l))) parent[find(i)] = find(j);
+  const groups = new Map();
+  done.forEach((c, i) => { const r = find(i); groups.set(r, [...(groups.get(r) || []), c]); });
+  return [...groups.values()];
+}
+
+// 每局結算時的產出：每個語塊 = 各詞元等級總和 × 3；
+// 同一個網絡的語塊越多，加成越高：× (1 + 0.25 × (語塊數 − 1))
+export const NETWORK_BONUS = 0.25;
 export function chunkProduction(chunks) {
-  return chunks.filter(chunkComplete).map(c => ({ chunk: c, gold: c.lemmas.reduce((s, l) => s + level(l), 0) * 3 }));
+  return chunkNetworks(chunks).map(net => {
+    const base = net.reduce((s, c) => s + c.lemmas.reduce((t, l) => t + level(l), 0) * 3, 0);
+    const mult = 1 + NETWORK_BONUS * (net.length - 1);
+    return { chunks: net, base, mult, gold: Math.round(base * mult) };
+  });
 }

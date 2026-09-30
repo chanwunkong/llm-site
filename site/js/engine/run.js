@@ -286,7 +286,7 @@ export function settle(run) {
   lg.runs++;
   const missed = [...run.missed.values()].sort((a, b) => b.steps - a.steps).slice(0, 3);
   const report = {
-    score: run.score, produced, production: production.map(p => ({ lemmas: p.chunk.lemmas, gold: p.gold })),
+    score: run.score, produced, production: production.map(p => ({ chunks: p.chunks.map(c => c.lemmas), mult: p.mult, gold: p.gold })),
     correct: run.correct, wrong: run.wrong, maxCombo: run.maxCombo,
     levelUps: run.levelUps, levelDowns: run.levelDowns, newTiles: run.newTiles, auto,
     ruleHits: run.ruleHits, missed, progress: before, advanced, sitTitle: run.sit.title,

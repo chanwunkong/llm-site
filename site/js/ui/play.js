@@ -271,7 +271,7 @@ export function createPlay(root, { onEnd }) {
         <div><b>${rep.maxCombo}</b><span>最高連鎖</span></div>
       </div>
       <h3>🪙 金幣 +${rep.score + rep.produced}</h3>
-      <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => esc(p.lemmas.join('＋'))).join('、')}）` : (rep.correct < 5 ? '　（本局答對不到 5 題，語塊沒有產出）' : '　（在領土上完成語塊，每局結算都會產出金幣）')}</p>
+      <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : (rep.correct < 5 ? '　（本局答對不到 5 題，語塊沒有產出）' : '　（在領土上完成語塊，每局結算都會產出金幣）')}</p>
       ${rep.levelUps.length ? `<h3>⬆ 升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
       ${rep.levelDowns.length ? `<h3>⬇ 抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
       ${rep.newTiles.length ? `<h3>🎒 新詞元進背包</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>

@@ -106,8 +106,9 @@ export function createLand(root, { getLang, onChange }) {
   function renderUI() {
     const lang = getLang(), lg = L();
     const done = lang.chunks.filter(T.chunkComplete).length;
+    const biggest = Math.max(0, ...T.chunkNetworks(lang.chunks).map(n => n.length));
     const due = Object.values(lg.territory).filter(l => isDue(word(l))).length;
-    $('#stat').textContent = `🧩 ${T.count()} 格　🧱 ${done}/${lang.chunks.length} 語塊${due ? `　⚠️ ${due} 格快降級` : ''}`;
+    $('#stat').textContent = `🧩 ${T.count()} 格　🧱 ${done}/${lang.chunks.length} 語塊${biggest > 1 ? `　🕸 最大網絡 ${biggest}` : ''}${due ? `　⚠️ ${due} 格快降級` : ''}`;
     $('#bagCount').textContent = `${lg.backpack.length} / ${RULES.backpackSize}`;
     $('#bagList').innerHTML = lg.backpack.length
       ? lg.backpack.map(l => `<button class="bag-item${selected === l ? ' sel' : ''}" data-l="${esc(l)}">${esc(l)}<small>Lv${word(l).lv}</small></button>`).join('')
@@ -251,7 +252,9 @@ export function createLand(root, { getLang, onChange }) {
     const known = l => T.cellOf(l) || lg.backpack.includes(l);
     const list = lang.chunks.filter(c => c.lemmas.every(known));
     openSheet(`<h2>🧱 語塊</h2>
-      <p class="muted">來源裡經常一起出現的字。把它們依序相鄰擺好就完成語塊，每局結算時產出金幣（等級越高產越多）。這裡只列出你已經學過的語塊。</p>
+      <p class="muted">來源裡經常一起出現的字。把它們依序相鄰擺好就完成語塊，每局結算時產出金幣（等級越高產越多）。
+      共用同一格的語塊會連成網絡，網絡裡的語塊越多，產出加成越高（每多一個 +25%）。這裡只列出你已經學過的語塊。</p>
+      ${T.chunkNetworks(lang.chunks).filter(n => n.length > 1).map(n => `<p class="muted">🕸 網絡 ×${1 + T.NETWORK_BONUS * (n.length - 1)}：${n.map(c => esc(c.lemmas.join('＋'))).join(' · ')}</p>`).join('')}
       <div class="stack">${list.length ? list.map(c => `<div class="btn ghost" style="text-align:left">${T.chunkComplete(c) ? '✅' : '⬜'} ${esc(c.lemmas.join(' ＋ '))}<small class="muted">　出現 ${c.count} 次</small></div>`).join('') : '<p class="muted">還沒有。繼續練習來源裡的字吧。</p>'}</div>`);
   };
 
