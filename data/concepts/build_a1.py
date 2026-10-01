@@ -219,7 +219,7 @@ shower|🚿|NOUN|shower|A|物品|shower
 toilet|🚽|NOUN|toilet|A|物品|toilet
 clock|🕐|NOUN|clock|A|物品|clock
 bell|🔔|NOUN|bell|A|物品|bell
-light_lamp|💡|NOUN|light|B|物品|light / light bulb
+light_lamp|🔦|NOUN|light|B|物品|light / lamp (flashlight)
 umbrella|☂️|NOUN|umbrella|A|物品|umbrella
 camera|📷|NOUN|camera;photo|A|物品|camera
 computer|💻|NOUN|computer|A|物品|computer
@@ -278,15 +278,15 @@ smoking|🚬|NOUN|smoking|A|運動娛樂|smoking
 # 符號與抽象（慣用圖示）
 question|❓|NOUN|question|A|符號|question
 idea|💭|NOUN|idea;dream|B|符號|thought / idea
-conversation|💬|NOUN|conversation;message|B|符號|conversation / message
+conversation|🗨️|NOUN|conversation;message|B|符號|conversation / message
 peace|☮️|NOUN|peace|B|符號|peace
 circle|⭕|NOUN|circle|A|符號|circle
 internet|🌐|NOUN|Internet/internet|B|符號|internet
 information|ℹ️|NOUN|information|B|符號|information
-math|➕|NOUN|math/maths|B|符號|math
+math|🧮|NOUN|math/maths|B|符號|math (abacus)
 science|🔬|NOUN|science|B|符號|science
 history|📜|NOUN|history|B|符號|history (scroll)
-language|🗣️|NOUN|language;speech|B|符號|speaking / language
+language|🔤|NOUN|language;speech|B|符號|language (letters)
 vote|🗳️|NOUN|vote|A|符號|vote / ballot box
 fever|🤒|NOUN|fever|A|身體|fever / being ill
 cold_illness|🤧|NOUN|cold|B|身體|a cold (illness)
@@ -441,6 +441,9 @@ NEED_ICON = """table cup desk towel shelf apron pocket skirt knee neck shoulder 
 river yard floor room dictionary magazine poster album card board pair tube pet
 uncle aunt brother sister son daughter husband wife cousin parent""".split()
 
+# 已併入 NSM 基元（第一層）的概念，不在第二層重複
+MERGED = {m for r in csv.DictReader(open('nsm-primes.csv', encoding='utf-8')) for m in r['merges'].split(',') if m}
+
 rows = []
 for line in RAW.strip().splitlines():
     if not line.strip() or line.startswith('#'): continue
@@ -450,6 +453,7 @@ for line in RAW.strip().splitlines():
     cid, icon, upos, heads, clarity, cat, gloss = parts
     template, _, spec = icon.partition(':') if ':' in icon else ('single', '', icon)
     main = spec.replace('*', '').replace('>', '+').replace('|', '+').split('+')[0]
+    if cid in MERGED: continue
     rows.append(dict(id=cid, emoji=main, template=template, icon=spec, upos=upos, cefrj_headwords=heads, clarity=clarity, category=cat, gloss=gloss))
 
 ids = [r['id'] for r in rows]

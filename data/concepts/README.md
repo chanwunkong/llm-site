@@ -1,6 +1,12 @@
-# A1 概念清單（第二版）
+# 基礎單字集（第三版）
 
-- `concepts-a1.csv`：409 個以圖像定義的概念。欄位：概念 ID、圖示模板（single / place / role / action / contrast）、圖示內容、主 emoji、UD 詞性、清晰度（A = 單看圖就明確；B = 慣用圖示，需搭配例句）、分類、給譯者的意思說明、對應的 CEFR-J headword。
+兩層結構：
+- **第一層 `nsm-primes.csv`**：NSM 的 65 個語意基元（Goddard & Wierzbicka 2014）。幾乎所有語言都有對應字，是「我的理解」最基本的材料。欄位：ID、分類、英文說法、日文說法（草稿，需母語者確認）、圖示模板、圖示、清晰度（A／B／C = 待設計）、併入的第二層概念。由 `build_nsm.py` 產生。
+- **第二層 `concepts-a1.csv`**：從 CEFR-J A1 整理的日常概念。和基元重疊的概念（good、big、think、see…）已併入第一層，不重複。
+
+## 第二層說明
+
+- `concepts-a1.csv`：399 個以圖像定義的概念。欄位：概念 ID、圖示模板（single / place / role / action / contrast）、圖示內容、主 emoji、UD 詞性、清晰度（A = 單看圖就明確；B = 慣用圖示，需搭配例句）、分類、給譯者的意思說明、對應的 CEFR-J headword。
 - `concepts-a1-need-icon.txt`：日常、具體，但沒有合適 emoji 的字，需要另外找圖示或繪製。
 - `build_a1.py`：產生與檢查清單的腳本（檢查 headword 都在 A1、沒有共用圖示）。
 - `gen_preview.py`：產生預覽頁 `site/concepts.html`。

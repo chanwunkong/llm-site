@@ -67,7 +67,6 @@ girl,single,👧,👧,NOUN,A,人,girl,girl
 man,single,👨,👨,NOUN,A,人,man,man
 woman,single,👩,👩,NOUN,A,人,woman,woman;lady
 person,single,🧑,🧑,NOUN,A,人,person,person
-people,single,👥,👥,NOUN,B,人,people / group,people;group
 family,single,👪,👪,NOUN,A,人,family,family
 grandfather,single,👴,👴,NOUN,A,人,grandfather (also: old man),grandfather;grandpa
 grandmother,single,👵,👵,NOUN,A,人,grandmother (also: old woman),grandmother;grandma
@@ -204,7 +203,7 @@ shower,single,🚿,🚿,NOUN,A,物品,shower,shower
 toilet,single,🚽,🚽,NOUN,A,物品,toilet,toilet
 clock,single,🕐,🕐,NOUN,A,物品,clock,clock
 bell,single,🔔,🔔,NOUN,A,物品,bell,bell
-light_lamp,single,💡,💡,NOUN,B,物品,light / light bulb,light
+light_lamp,single,🔦,🔦,NOUN,B,物品,light / lamp (flashlight),light
 umbrella,single,☂️,☂️,NOUN,A,物品,umbrella,umbrella
 camera,single,📷,📷,NOUN,A,物品,camera,camera;photo
 computer,single,💻,💻,NOUN,A,物品,computer,computer
@@ -237,7 +236,6 @@ machine,single,⚙️,⚙️,NOUN,B,物品,machine (gear),machine
 wall,single,🧱,🧱,NOUN,B,物品,wall / bricks,wall;block
 seat,single,💺,💺,NOUN,A,物品,seat,seat
 vase,single,🏺,🏺,NOUN,B,物品,vase / jar,vase
-piece,single,🧩,🧩,NOUN,B,物品,piece (puzzle piece),piece
 soccer,single,⚽,⚽,NOUN,A,運動娛樂,soccer / (association) football,soccer;football
 american_football,single,🏈,🏈,NOUN,B,運動娛樂,American football,football
 baseball,single,⚾,⚾,NOUN,A,運動娛樂,baseball,baseball
@@ -261,15 +259,15 @@ shopping,single,🛍️,🛍️,NOUN,A,運動娛樂,shopping / buy,shopping
 smoking,single,🚬,🚬,NOUN,A,運動娛樂,smoking,smoking
 question,single,❓,❓,NOUN,A,符號,question,question
 idea,single,💭,💭,NOUN,B,符號,thought / idea,idea;dream
-conversation,single,💬,💬,NOUN,B,符號,conversation / message,conversation;message
+conversation,single,🗨️,🗨️,NOUN,B,符號,conversation / message,conversation;message
 peace,single,☮️,☮️,NOUN,B,符號,peace,peace
 circle,single,⭕,⭕,NOUN,A,符號,circle,circle
 internet,single,🌐,🌐,NOUN,B,符號,internet,Internet/internet
 information,single,ℹ️,ℹ️,NOUN,B,符號,information,information
-math,single,➕,➕,NOUN,B,符號,math,math/maths
+math,single,🧮,🧮,NOUN,B,符號,math (abacus),math/maths
 science,single,🔬,🔬,NOUN,B,符號,science,science
 history,single,📜,📜,NOUN,B,符號,history (scroll),history
-language,single,🗣️,🗣️,NOUN,B,符號,speaking / language,language;speech
+language,single,🔤,🔤,NOUN,B,符號,language (letters),language;speech
 vote,single,🗳️,🗳️,NOUN,A,符號,vote / ballot box,vote
 fever,single,🤒,🤒,NOUN,A,身體,fever / being ill,fever
 cold_illness,single,🤧,🤧,NOUN,B,身體,a cold (illness),cold
@@ -301,12 +299,9 @@ sing,single,🎤,🎤,VERB,B,動作,sing,sing
 laugh,single,😂,😂,VERB,A,動作,laugh,laugh
 smile,single,😊,😊,VERB,B,動作,smile,smile
 cry,single,😭,😭,VERB,A,動作,cry,cry
-think,single,🤔,🤔,VERB,A,動作,think,think
 pray,single,🙏,🙏,VERB,B,動作,pray / thank,pray;thanks
 greet,single,👋,👋,VERB,A,動作,wave hello / goodbye,greet;hello;hi;bye
 call,single,📞,📞,VERB,A,動作,call on the phone,call;phone
-look,single,👀,👀,VERB,B,動作,look / see,look;see;watch
-listen,single,🎧,🎧,VERB,B,動作,listen / hear (headphones),listen;hear
 cut,single,✂️,✂️,VERB,A,動作,cut,cut
 wash,single,🧼,🧼,VERB,B,動作,wash (with soap),wash
 brush_teeth,single,🪥,🪥,VERB,B,動作,brush (teeth),brush
@@ -344,10 +339,7 @@ strong,single,💪,💪,ADJ,B,感受,strong (flexed arm),strong;arm
 rich,single,🤑,🤑,ADJ,B,感受,rich,rich
 lucky,single,🍀,🍀,ADJ,B,感受,lucky / luck,lucky;luck
 foggy,single,🌫️,🌫️,ADJ,A,感受,foggy,foggy
-correct,single,✅,✅,ADJ,A,感受,correct / right,correct;right;true
 wrong,single,❌,❌,ADJ,A,感受,wrong / incorrect,wrong;false
-good,single,👍,👍,ADJ,B,感受,good / OK,good;OK/okay;fine
-bad,single,👎,👎,ADJ,B,感受,bad,bad
 kitchen,place,🏠+🍳,🏠,NOUN,B,地點,kitchen,kitchen
 bedroom,place,🏠+🛏️,🏠,NOUN,B,地點,bedroom,bedroom
 bathroom,place,🏠+🛁,🏠,NOUN,B,地點,bathroom,bathroom
@@ -389,8 +381,6 @@ repeat,single,🔁,🔁,VERB,B,動作,repeat,repeat
 focus,single,🎯,🎯,VERB,B,動作,focus / aim,focus
 welcome,single,🤗,🤗,VERB,B,動作,welcome / hug,welcome
 finish,single,🏁,🏁,VERB,B,動作,finish (finish line),finish
-big,contrast,*🐘|🐭,🐘,ADJ,B,感受,big,big;large
-small,contrast,🐘|*🐭,🐘,ADJ,B,感受,small,small;little
 fast,contrast,*🐇|🐢,🐇,ADJ,B,感受,fast,fast;quickly
 slow,contrast,🐇|*🐢,🐇,ADJ,B,感受,slow,slow
 old_thing,contrast,*🏚️|🏠,🏚️,ADJ,B,感受,old (of a thing),old
