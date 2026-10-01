@@ -5,9 +5,10 @@ import { speak, speakGap, stopSpeech, sfx, listen, canListen } from '../audio.js
 import { openSheet, closeSheet, esc, toast } from './sheet.js';
 import { iconHtml } from './icon.js';
 import * as P from '../engine/phono.js';
+import { G } from './glyph.js';
 
 const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
-const ENV_NAME = { speak: '🔊 開口', ear: '🎧 耳機', mute: '🔇 靜音' };
+const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
 
 export function createPlay(root, { onEnd }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
@@ -20,7 +21,7 @@ export function createPlay(root, { onEnd }) {
     document.body.classList.add('playing');
     root.hidden = false;
     root.innerHTML = `
-      <div class="hud"><button class="icon-btn" id="quit" aria-label="結束">✕</button>
+      <div class="hud"><button class="icon-btn" id="quit" aria-label="結束">${G.close()}</button>
         <div class="prog"><i></i></div><div class="score">0</div></div>
       <div class="strip"><div class="skills-on"></div><div class="combo"></div></div>
       <div class="qcard" id="qcard"></div>`;
@@ -62,28 +63,28 @@ export function createPlay(root, { onEnd }) {
         <span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
         ${item.kind === 'spot' ? '<span class="badge spot">5 級抽查</span>' : ''}
-        ${q.challenge ? '<span class="badge challenge">⬆ 升級挑戰</span>' : ''}
-        ${active.map(r => `<span class="badge">${r.icon} +50%</span>`).join('')}
+        ${q.challenge ? '<span class="badge challenge">升級挑戰</span>' : ''}
+        ${active.map(r => `<span class="badge rule-b">${r.id} +50%</span>`).join('')}
         <span class="badge" style="margin-left:auto">${ENV_NAME[run.env]}</span>
       </div>
       <div class="qmain">
       ${q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
       <div class="sentence${showText ? '' : ' hidden-text'}" id="sent">${sentenceHtml()}</div>
       ${audio() ? `<div class="listen-row">
-        <button class="btn sm" id="replay">🔊 再聽一次</button>
-        <button class="btn sm" id="eye">${showText ? '🙈 隱藏文字' : '👁 顯示文字'}</button></div>` : ''}
+        <button class="btn sm" id="replay">${G.speaker()} 再聽一次</button>
+        <button class="btn sm" id="eye">${G.eye()} ${showText ? '隱藏文字' : '顯示文字'}</button></div>` : ''}
       ${q.hint ? `<div class="muted" style="text-align:center">提示：第一個字母是「${esc(q.hint)}」</div>` : ''}
       ${q.timer ? '<div class="timer"><i id="tbar" style="width:100%"></i></div>' : ''}
       <div id="fb" class="feedback"></div>
       </div>
       ${cardMode ? `<div class="cards">${q.cards.map((c, i) => `
-        <button class="wcard" data-i="${i}">${esc(c)}${audio() ? `<span class="say" data-say="${i}">🔊</span>` : ''}</button>`).join('')}</div>` : ''}
-      ${useMic ? `<button class="btn gold mic" id="mic">🎤 說出${q.mode === 'pick' ? '答案' : '整段'}</button>
+        <button class="wcard" data-i="${i}">${esc(c)}${audio() ? `<span class="say" data-say="${i}">${G.speaker(14)}</span>` : ''}</button>`).join('')}</div>` : ''}
+      ${useMic ? `<button class="btn gold mic" id="mic">${G.mic()} 說出${q.mode === 'pick' ? '答案' : '整段'}</button>
         <button class="linkish" id="alt">${cardMode ? '改用點選作答（積分以耳機計）' : '改用打字作答（積分以耳機計）'}</button>` : ''}
       ${!cardMode && !useMic ? `<div class="produce"><input id="inp" placeholder="輸入空格裡的內容" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn gold" id="send">送出</button></div>` : ''}`;
 
     $('#replay') && ($('#replay').onclick = () => playGap());
-    $('#eye') && ($('#eye').onclick = () => { showText = !showText; $('#sent').classList.toggle('hidden-text', !showText); $('#eye').textContent = showText ? '🙈 隱藏文字' : '👁 顯示文字'; });
+    $('#eye') && ($('#eye').onclick = () => { showText = !showText; $('#sent').classList.toggle('hidden-text', !showText); $('#eye').innerHTML = `${G.eye()} ${showText ? '隱藏文字' : '顯示文字'}`; });
     root.querySelectorAll('.wcard').forEach(b => (b.onclick = e => {
       const i = +b.dataset.i;
       if (e.target.dataset.say !== undefined || useMic) return speak(q.cards[i]);
@@ -142,8 +143,8 @@ export function createPlay(root, { onEnd }) {
     $('.combo').innerHTML = run.combo >= 2 ? `<b>${run.combo}</b> 連鎖<small>×${mult.toFixed(1)}</small>` : '';
     const lg = L();
     $('.skills-on').innerHTML = [
-      ...run.skills.map(id => WALS.find(w => w.id === id)).map(w => `<span class="chip" title="${esc(w.name)}">${w.icon} ${w.id}</span>`),
-      ...run.aids.map(id => `<span class="chip">${{ trim: '✂️', hint: '🔤', slowtime: '🐢', slowvoice: '🔉' }[id]}</span>`),
+      ...run.skills.map(id => WALS.find(w => w.id === id)).map(w => `<span class="chip" title="${esc(w.name)}">${w.id}</span>`),
+      ...run.aids.map(id => `<span class="chip">${{ trim: '刪選項', hint: '首字', slowtime: '慢速', slowvoice: '慢讀' }[id]}</span>`),
     ].join('') || `<span class="muted">${esc(run.sit.title)}</span>`;
     void lg;
   }
@@ -168,10 +169,10 @@ export function createPlay(root, { onEnd }) {
   async function mic() {
     const btn = $('#mic');
     btn.disabled = true;
-    btn.textContent = '🎤 聆聽中…';
+    btn.textContent = '聆聽中…';
     try {
       const alts = await listen();
-      if (!alts.length) { toast('沒有聽到聲音，再試一次'); btn.disabled = false; btn.textContent = '🎤 再說一次'; return; }
+      if (!alts.length) { toast('沒有聽到聲音，再試一次'); btn.disabled = false; btn.textContent = '再說一次'; return; }
       submit(alts, { spoken: true });
     } catch {
       toast('語音辨識無法使用，已改用點選');
@@ -202,32 +203,32 @@ export function createPlay(root, { onEnd }) {
     if (res.ok) {
       sfx('good');
       const extra = [
-        res.rules.length && res.rules.map(r => WALS.find(w => w.id === r).icon).join('') + ' 規則加成',
-        res.path > 0 && `🧩 領土路徑 +${Math.round(res.path * 100)}%`,
+        res.rules.length && res.rules.join('、') + ' 規則 +50%',
+        res.path > 0 && `領土路徑 +${Math.round(res.path * 100)}%`,
       ].filter(Boolean).join('　');
       fb.className = 'feedback ok';
-      fb.innerHTML = `✓ 答對了 +${res.points}${extra ? `<br><small>${extra}</small>` : ''}`;
+      fb.innerHTML = `正確 +${res.points}${extra ? `<br><small>${extra}</small>` : ''}`;
       floatText(`+${res.points}`);
       const c = $('.combo');
       c.classList.remove('bump'); c.offsetWidth; c.classList.add('bump');
     } else {
       sfx('bad');
       fb.className = 'feedback no';
-      fb.innerHTML = `${timeout ? '⏰ 時間到' : '✗ 答錯了'}　正確答案<span class="ans">${esc(q.answerText)}</span>
+      fb.innerHTML = `${timeout ? '時間到' : '錯誤'}　正確答案<span class="ans">${esc(q.answerText)}</span>
         <small>${q.item.attempts < 3 ? '這題稍後會再出現' : '這題本局先跳過，下一局再練'}</small>`;
     }
     // 發音回饋：只差一個音的字並列比較；4 → 5 級顯示答案的發音並標出難音
     const L_ID = run.lang.id, hard = P.hardSounds(run.lang.wals);
     const ipaHtml = w => { const sg = P.wordSegs(L_ID, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
     const sounds = q.neighbors.filter(n => n.kind === 'sound');
-    if (sounds.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">🎧 ${[q.answer[0], ...sounds.map(n => n.word)].map(w => `<span>${esc(w)} ${ipaHtml(w)}</span>`).join('<i>vs</i>')}</div>`);
+    if (sounds.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">${[q.answer[0], ...sounds.map(n => n.word)].map(w => `<span>${esc(w)} ${ipaHtml(w)}</span>`).join('<i>vs</i>')}</div>`);
     if (q.mode === 'produce') {
       const parts = q.answer.map(w => ipaHtml(w)).filter(Boolean);
       const hs = [...new Set(q.answer.flatMap(w => (P.wordSegs(L_ID, w) || []).filter(x => hard.has(x))))];
-      if (parts.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">🗣️ ${parts.join(' ')}${hs.length ? `<small>難音：${hs.map(esc).join('、')}</small>` : ''}</div>`);
+      if (parts.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">${parts.join(' ')}${hs.length ? `<small>難音：${hs.map(esc).join('、')}</small>` : ''}</div>`);
     }
-    if (res.levelUp) { sfx('level'); setTimeout(() => floatText(`⬆ ${q.item.lemma} Lv${res.levelUp}`, true), 250); }
-    if (res.levelDown) floatText(`⬇ ${q.item.lemma} Lv${res.levelDown}`, true);
+    if (res.levelUp) { sfx('level'); setTimeout(() => floatText(`${q.item.lemma} 升到 Lv${res.levelUp}`, true), 250); }
+    if (res.levelDown) floatText(`${q.item.lemma} 降到 Lv${res.levelDown}`, true);
     hud();
 
     const cont = document.createElement('button');
@@ -258,7 +259,7 @@ export function createPlay(root, { onEnd }) {
     openSheet(`<h2>升級！選一項能力</h2>
       <p class="muted">只在這一局有效。WALS 技能：空格用到這條規則、而且答對時，分數 +50%。</p>
       <div class="stack">${cs.map((c, i) => `<button class="choice${c.type === 'wals' ? ' wals' : ''}" data-i="${i}">
-        <span class="ic">${c.icon}</span><b>${c.type === 'wals' ? `WALS ${c.id}・` : ''}${esc(c.name)}</b><small>${esc(c.desc)}</small></button>`).join('')}</div>`,
+        <span class="ic">${c.type === 'wals' ? c.id : '輔助'}</span><b>${esc(c.name)}</b><small>${esc(c.desc)}</small></button>`).join('')}</div>`,
       { locked: true }, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => { choose(run, cs[+b.dataset.i]); closeSheet(); hud(); next(); })));
   }
 
@@ -274,23 +275,23 @@ export function createPlay(root, { onEnd }) {
     stopSpeech();
     const rep = settle(run);
     const lg = L();
-    const rulesTxt = Object.entries(rep.ruleHits).map(([r, n]) => `${WALS.find(w => w.id === r).icon} ${r} ×${n}`).join('　');
+    const rulesTxt = Object.entries(rep.ruleHits).map(([r, n]) => `${r} ${esc(WALS.find(w => w.id === r).name)} ×${n}`).join('　');
     openSheet(`
-      <h2>🎉 本局結束</h2>
+      <h2>本局結束</h2>
       <div class="stats">
         <div><b>${rep.score}</b><span>得分</span></div>
         <div><b>${rep.correct}/${rep.correct + rep.wrong}</b><span>答對</span></div>
         <div><b>${rep.maxCombo}</b><span>最高連鎖</span></div>
       </div>
-      <h3>🪙 金幣 +${rep.score + rep.produced}</h3>
+      <h3>金幣 +${rep.score + rep.produced}</h3>
       <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : (rep.correct < 5 ? '　（本局答對不到 5 題，語塊沒有產出）' : '　（在領土上完成語塊，每局結算都會產出金幣）')}</p>
-      ${rep.levelUps.length ? `<h3>⬆ 升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
-      ${rep.levelDowns.length ? `<h3>⬇ 抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
-      ${rep.newTiles.length ? `<h3>🎒 新詞元進背包</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>
+      ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
+      ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
+      ${rep.newTiles.length ? `<h3>新詞元進背包</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>
         ${rep.auto.length ? `<p class="muted">背包滿了，${rep.auto.map(esc).join('、')} 已自動放在領土邊緣。</p>` : ''}` : ''}
-      ${rulesTxt ? `<h3>✨ 規則加成</h3><p class="muted">${rulesTxt}</p>` : ''}
-      ${rep.missed.length ? `<h3>🔗 錯過的連結</h3><p class="muted">這些字一起出現，但在領土上離得很遠：${rep.missed.map(m => `${esc(m.a)} ↔ ${esc(m.b)}（${m.steps} 步）`).join('、')}</p>` : ''}
-      <h3>📖 ${esc(rep.sitTitle)}</h3>
+      ${rulesTxt ? `<h3>規則加成</h3><p class="muted">${rulesTxt}</p>` : ''}
+      ${rep.missed.length ? `<h3>錯過的連結</h3><p class="muted">這些字一起出現，但在領土上離得很遠：${rep.missed.map(m => `${esc(m.a)} ↔ ${esc(m.b)}（${m.steps} 步）`).join('、')}</p>` : ''}
+      <h3>${esc(rep.sitTitle)}</h3>
       <p class="muted">${rep.advanced ? `完成了！解鎖下一段：${esc(rep.advanced)}` : `本段進度：${rep.progress.done} 個實詞達到 Lv3`}</p>
       <div class="row" style="margin-top:14px">
         <button class="btn ghost big" id="home">回冒險</button>

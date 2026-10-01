@@ -4,11 +4,12 @@ import { buildRun, currentSituation, situationProgress } from '../engine/run.js'
 import * as T from '../engine/territory.js';
 import { canListen } from '../audio.js';
 import { esc } from './sheet.js';
+import { shape } from './glyph.js';
 
 const ENVS = [
-  { id: 'speak', icon: '🔊', name: '開口', desc: '可以聽和說' },
-  { id: 'ear', icon: '🎧', name: '耳機', desc: '只能聽' },
-  { id: 'mute', icon: '🔇', name: '靜音', desc: '只能看' },
+  { id: 'speak', icon: shape('circle', 'red'), name: '開口', desc: '可以聽和說' },
+  { id: 'ear', icon: shape('half', 'blue'), name: '耳機', desc: '只能聽' },
+  { id: 'mute', icon: shape('square', 'ink'), name: '靜音', desc: '只能看' },
 ];
 
 export function createHome(root, { getLang, onStart }) {
@@ -29,7 +30,7 @@ export function createHome(root, { getLang, onStart }) {
         const sit = currentSituation(lang, src.id), p = situationProgress(lang, sit);
         const need = Math.ceil(p.total * RULES.completeRatio);
         return `<button class="src-card${src.id === srcId ? ' sel' : ''}" data-src="${src.id}">
-          <div class="cover">📖</div>
+          <div class="cover">${shape('square', 'yellow')}</div>
           <div style="flex:1;min-width:0">
             <b>${esc(src.title)}</b>
             <small><span class="tag">${esc(src.kind)}</span>第 ${sit.index + 1} / ${src.situations.length} 段：${esc(sit.title)}</small>

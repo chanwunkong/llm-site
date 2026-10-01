@@ -6,11 +6,13 @@ import * as T from '../engine/territory.js';
 import { speak, sfx } from '../audio.js';
 import { openSheet, closeSheet, toast, esc, stars } from './sheet.js';
 import { iconHtml } from './icon.js';
+import { G, levelBlocks } from './glyph.js';
 
 // 地形圖的高度色階（1 級最淺，5 級最深）
-const FILL = [null, '#efe9d6', '#dfe8c6', '#c6dba6', '#a6c886', '#84b067'];
-const DIM = [null, '#e4e0d6', '#d9dccd', '#cdd3bf', '#bdc6ad', '#adb79c'];
-const INK = '#5d4a36';
+// 包浩斯配色：單一藍色由淺到深表示等級；語塊邊為紅、選取為黃
+const FILL = [null, '#E8E4DA', '#C9D3E6', '#93A9D0', '#5A7BB8', '#1F4FA3'];
+const DIM = [null, '#E2DFD8', '#D3D6DC', '#B8C0CF', '#98A5BE', '#7D8DAD'];
+const INK = '#111111', RED = '#D7262E', YELLOW = '#F2C12E';
 const SQ3 = Math.sqrt(3);
 // 尖頂六角形：第 i 條邊（角 i 到角 i+1）面對 T.DIRS[i] 的鄰居
 const corner = (cx, cy, s, i) => {
@@ -23,8 +25,8 @@ export function createLand(root, { getLang, onChange }) {
     <div class="land2d" id="land2d"><canvas></canvas></div>
     <div class="land-top">
       <span class="chip" id="stat"></span>
-      <button class="chip" id="missedBtn">🔗 錯過的連結</button>
-      <button class="chip" id="chunkBtn">🧱 語塊</button>
+      <button class="chip" id="missedBtn">錯過的連結</button>
+      <button class="chip" id="chunkBtn">語塊</button>
     </div>
     <div class="land-tools">
       <button class="icon-btn" id="zin" aria-label="放大">＋</button>
@@ -33,7 +35,7 @@ export function createLand(root, { getLang, onChange }) {
     </div>
     <div class="bag">
       <div class="hint-line" id="hint"></div>
-      <div class="bag-head"><span><b>🎒 背包</b> <span id="bagCount"></span></span><span>點字，再點虛線格</span></div>
+      <div class="bag-head"><span><b>背包</b> <span id="bagCount"></span></span><span>點字，再點虛線格</span></div>
       <div class="bag-list" id="bagList"></div>
     </div>`;
   const $ = s => root.querySelector(s);
@@ -76,7 +78,7 @@ export function createLand(root, { getLang, onChange }) {
     if (!W) return;
     const lang = getLang(), lg = L(), t = lg.territory, s = cam.s;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#f6f2e7';
+    ctx.fillStyle = '#F3EFE6';
     ctx.fillRect(0, 0, W, H);
     const cells = Object.entries(t).map(([k, lemma]) => {
       const [q, r] = T.parse(k), w = word(lemma);
@@ -108,13 +110,13 @@ export function createLand(root, { getLang, onChange }) {
         const diff = c.lv - n;
         if (diff <= 0) return;           // 只由較高的一側畫，避免重複
         const [x1, y1] = corner(x, y, s, i), [x2, y2] = corner(x, y, s, (i + 1) % 6);
-        ctx.strokeStyle = n === 0 ? INK : `rgba(93,74,54,${0.35 + 0.15 * diff})`;
+        ctx.strokeStyle = n === 0 ? INK : `rgba(17,17,17,${0.3 + 0.15 * diff})`;
         ctx.lineWidth = n === 0 ? Math.max(1.5, s / 14) : Math.max(0.8, (s / 30) * diff);
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       });
     }
     // 3. 完成的語塊：相鄰兩格共用的那條邊畫成金色
-    ctx.strokeStyle = '#d99a1e';
+    ctx.strokeStyle = RED;
     ctx.lineWidth = Math.max(3, s / 6);
     for (const ch of lang.chunks.filter(T.chunkComplete)) {
       const cs = ch.lemmas.map(l => T.parse(T.cellOf(l)));
@@ -130,7 +132,7 @@ export function createLand(root, { getLang, onChange }) {
     if (selected) {
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 260);
       ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = `rgba(217,154,30,${0.5 + 0.4 * pulse})`;
+      ctx.strokeStyle = `rgba(215,38,46,${0.4 + 0.5 * pulse})`;
       ctx.lineWidth = 2;
       for (const k of T.placeable()) { const [x, y] = toScreen(...T.parse(k)); hexPath(x, y, s * 0.9); ctx.stroke(); }
       ctx.setLineDash([]);
@@ -140,20 +142,20 @@ export function createLand(root, { getLang, onChange }) {
       if (!t[k]) continue;
       const [x, y] = toScreen(...T.parse(k));
       hexPath(x, y, s * 0.88);
-      ctx.strokeStyle = k === focus ? '#c0392b' : '#d99a1e';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = k === focus ? INK : YELLOW;
+      ctx.lineWidth = 4;
       ctx.stroke();
     }
     // 6. 文字：放大時顯示，縮小時只剩色塊
     if (s >= 22) {
-      ctx.fillStyle = INK;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (const c of cells) {
         const [x, y] = toScreen(c.q, c.r);
         if (x < -s || y < -s || x > W + s || y > H + s) continue;
         let fs = Math.min(15, s * 0.42);
-        ctx.font = `700 ${fs}px ui-rounded, system-ui, -apple-system, "PingFang TC", "Hiragino Sans", sans-serif`;
+        ctx.font = `700 ${fs}px Futura, "Avenir Next", system-ui, "PingFang TC", "Hiragino Sans", sans-serif`;
         while (fs > 8 && ctx.measureText(c.lemma).width > s * 1.55) { fs -= 1; ctx.font = ctx.font.replace(/\d+(\.\d+)?px/, fs + 'px'); }
+        ctx.fillStyle = c.lv >= 4 && !c.due ? '#FFFFFF' : INK;
         ctx.fillText(c.lemma, x, y);
       }
     }
@@ -171,7 +173,7 @@ export function createLand(root, { getLang, onChange }) {
     const done = lang.chunks.filter(T.chunkComplete).length;
     const biggest = Math.max(0, ...T.chunkNetworks(lang.chunks).map(n => n.length));
     const due = Object.values(lg.territory).filter(l => isDue(word(l))).length;
-    $('#stat').textContent = `⬡ ${T.count()} 格　🧱 ${done}/${lang.chunks.length} 語塊${biggest > 1 ? `　🕸 ${biggest}` : ''}${due ? `　⚠️ ${due} 格快降級` : ''}`;
+    $('#stat').textContent = `${T.count()} 格・語塊 ${done}/${lang.chunks.length}${biggest > 1 ? `・網絡 ${biggest}` : ''}${due ? `・${due} 格快降級` : ''}`;
     $('#bagCount').textContent = `${lg.backpack.length} / ${RULES.backpackSize}`;
     $('#bagList').innerHTML = lg.backpack.length
       ? lg.backpack.map(l => `<button class="bag-item${selected === l ? ' sel' : ''}" data-l="${esc(l)}">${esc(l)}<small>Lv${word(l).lv}</small></button>`).join('')
@@ -255,7 +257,7 @@ export function createLand(root, { getLang, onChange }) {
       if (T.place(selected, k)) {
         sfx('place');
         const done = getLang().chunks.filter(c => c.lemmas.includes(selected) && T.chunkComplete(c));
-        if (done.length) { sfx('coin'); toast(`🧱 完成語塊：${done.map(c => c.lemmas.join('＋')).join('、')}`); }
+        if (done.length) { sfx('coin'); toast(`完成語塊：${done.map(c => c.lemmas.join('＋')).join('、')}`); }
         selected = null;
         focus = k;
         rebuild();
@@ -276,24 +278,24 @@ export function createLand(root, { getLang, onChange }) {
     const info = lang.lemmas.get(lemma);
     const days = RULES.decayDays[w.lv];
     const status = w.lv === 5 ? '5 級：不會因時間降級，但會被隨機抽查'
-      : days ? `${isDue(w) ? '⚠️ 快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
+      : days ? `${isDue(w) ? '快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
     const chunks = lang.chunks.filter(c => c.lemmas.includes(lemma));
     const mine = w.mine?.at(-1);
-    const mineBlock = mine ? `<h3>🧠 ${isDue(w) ? '你當時的理解' : '我的理解'}</h3>${mineHtml(lang, mine.parts)}
+    const mineBlock = mine ? `<h3>${isDue(w) ? '你當時的理解' : '我的理解'}</h3>${mineHtml(lang, mine.parts)}
       <p class="muted">${new Date(mine.t).toLocaleDateString('zh-TW')}${w.mine.length > 1 ? `・修改過 ${w.mine.length - 1} 次` : ''}</p>` : '';
     // 看解釋時，領土上用到的那幾格一起亮起來
     highlight = new Set((mine?.parts || []).map(T.cellOf).filter(Boolean));
     redraw();
     openSheet(`
-      <h2>${lang.base[lemma] ? iconHtml(lang.base[lemma]) + ' ' : ''}${esc(lemma)} <span class="stars">${stars(w.lv)}</span></h2>
+      <h2>${lang.base[lemma] ? iconHtml(lang.base[lemma]) + ' ' : ''}${esc(lemma)} ${levelBlocks(w.lv)}</h2>
       ${isDue(w) ? mineBlock : ''}
       <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>寫法：${[...info.forms].map(esc).join('、')}</p>
       ${isDue(w) ? '' : mineBlock}
-      ${chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '✅' : '⬜'} ${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
-      <button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '✏️ 修改我的理解' : '🧠 寫下我的理解'}</button>
+      ${chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
+      <button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '修改我的理解' : '寫下我的理解'}</button>
       <div class="row" style="margin-top:12px">
-        <button class="btn ghost big" id="say">🔊 發音</button>
-        <button class="btn gold big" id="lift">拿起（🪙${RULES.moveCost}）</button>
+        <button class="btn ghost big" id="say">${G.speaker()} 發音</button>
+        <button class="btn gold big" id="lift">拿起（${RULES.moveCost} 金幣）</button>
       </div>`, { onClose: () => { focus = null; highlight = new Set(); redraw(); } }, body => {
       body.querySelector('#say').onclick = () => speak(lemma, { rate: 0.85 });
       body.querySelector('#mineBtn').onclick = () => composeSheet(k);
@@ -319,9 +321,9 @@ export function createLand(root, { getLang, onChange }) {
     const exs = lang.lemmas.get(lemma).sentences.slice(0, 3).map(id => joinTokens(lang.sentences[id].tokens, lang.joiner));
     openSheet(`<h2>我對「${esc(lemma)}」的理解</h2>
       <p class="muted">用你學過的字，組合出你對這個字的理解。沒有標準答案，只給你自己看。</p>
-      <div class="stack">${exs.map((t, i) => `<button class="ex-row" data-ex="${i}">${esc(t)} 🔊</button>`).join('')}</div>
+      <div class="stack">${exs.map((t, i) => `<button class="ex-row" data-ex="${i}">${esc(t)} ${G.speaker(14)}</button>`).join('')}</div>
       <h3>我的組合</h3><div class="mine compose" id="parts"></div>
-      <input id="filter" class="filter" placeholder="🔍 搜尋學過的字" autocomplete="off" autocapitalize="off">
+      <input id="filter" class="filter" placeholder="搜尋學過的字" autocomplete="off" autocapitalize="off">
       <div class="materials" id="mats"></div>
       <div class="row" style="margin-top:12px"><button class="btn ghost big" id="cancel">取消</button><button class="btn gold big" id="saveMine">儲存</button></div>`,
       {}, body => {
@@ -351,7 +353,7 @@ export function createLand(root, { getLang, onChange }) {
 
   $('#missedBtn').onclick = () => {
     const m = L().lastReport?.missed || [];
-    openSheet(`<h2>🔗 錯過的連結</h2>
+    openSheet(`<h2>錯過的連結</h2>
       <p class="muted">上一局一起出現、但在領土上離得很遠的字。把它們放近一點，下一局的路徑加成會更高。</p>
       <div class="stack">${m.length ? m.map((x, i) => `<button class="btn ghost" data-i="${i}">${esc(x.a)} ↔ ${esc(x.b)}　（${x.steps} 步）</button>`).join('') : '<p class="muted">目前沒有。</p>'}</div>`,
       {}, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => {
@@ -366,11 +368,11 @@ export function createLand(root, { getLang, onChange }) {
     const lang = getLang(), lg = L();
     const known = l => T.cellOf(l) || lg.backpack.includes(l);
     const list = lang.chunks.filter(c => c.lemmas.every(known));
-    openSheet(`<h2>🧱 語塊</h2>
+    openSheet(`<h2>語塊</h2>
       <p class="muted">來源裡經常一起出現的字。把它們依序相鄰擺好就完成語塊，每局結算時產出金幣（等級越高產越多）。
       共用同一格的語塊會連成網絡，網絡裡的語塊越多，產出加成越高（每多一個 +25%）。這裡只列出你已經學過的語塊。</p>
-      ${T.chunkNetworks(lang.chunks).filter(n => n.length > 1).map(n => `<p class="muted">🕸 網絡 ×${1 + T.NETWORK_BONUS * (n.length - 1)}：${n.map(c => esc(c.lemmas.join('＋'))).join(' · ')}</p>`).join('')}
-      <div class="stack">${list.length ? list.map(c => `<div class="btn ghost" style="text-align:left">${T.chunkComplete(c) ? '✅' : '⬜'} ${esc(c.lemmas.join(' ＋ '))}<small class="muted">　出現 ${c.count} 次</small></div>`).join('') : '<p class="muted">還沒有。繼續練習來源裡的字吧。</p>'}</div>`);
+      ${T.chunkNetworks(lang.chunks).filter(n => n.length > 1).map(n => `<p class="muted">網絡 ×${1 + T.NETWORK_BONUS * (n.length - 1)}：${n.map(c => esc(c.lemmas.join('＋'))).join(' · ')}</p>`).join('')}
+      <div class="stack">${list.length ? list.map(c => `<div class="btn ghost" style="text-align:left">${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join(' ＋ '))}<small class="muted">　出現 ${c.count} 次</small></div>`).join('') : '<p class="muted">還沒有。繼續練習來源裡的字吧。</p>'}</div>`);
   };
 
   return {

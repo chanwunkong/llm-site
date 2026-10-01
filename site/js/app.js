@@ -47,7 +47,7 @@ function enterLanguage() {
   setVoiceLang(DATA[state.lang].bcp47);
   getLang();
   const dropped = applyDecay();
-  if (dropped.length) toast(`⬇ ${dropped.length} 個字因為太久沒練而降級`, 2600);
+  if (dropped.length) toast(`${dropped.length} 個字因為太久沒練而降級`, 2600);
   refreshTop();
 }
 
@@ -64,9 +64,9 @@ $('#langBtn').onclick = () => openSheet(`<h2>學習語言</h2><div class="stack"
   })));
 
 $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
-    <button class="btn ghost big" id="snd">${state.sound ? '🔊 聲音：開' : '🔇 聲音：關'}</button>
-    <button class="btn ghost big" id="day">⏩ 時間快轉 1 天（測試降級用）</button>
-    <button class="btn ghost big" id="rst">🗑 重置所有進度</button>
+    <button class="btn ghost big" id="snd">${state.sound ? '聲音：開' : '聲音：關'}</button>
+    <button class="btn ghost big" id="day">時間快轉 1 天（測試降級用）</button>
+    <button class="btn ghost big" id="rst">重置所有進度</button>
   </div><p class="muted">學習資料是依《小王子》劇情自行改寫的範例，詞性與詞元為人工標註。</p>`, {}, body => {
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
   body.querySelector('#day').onclick = () => { skipDay(); closeSheet(); enterLanguage(); views[tab].hide(); setTab(tab); toast('已快轉 1 天'); };

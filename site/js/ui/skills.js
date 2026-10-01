@@ -7,6 +7,7 @@ import { joinTokens } from '../engine/content.js';
 import { sfx, speak } from '../audio.js';
 import { esc, toast, openSheet } from './sheet.js';
 import { editKnown, knownRow, langName } from './known.js';
+import { G } from './glyph.js';
 
 const label = (fid, num) => (num ? FEATURES[fid].values[num] || num : '沒有資料');
 const DOMAINS = ['詞序', '形態', '名詞與動詞範疇', '子句構造'];
@@ -62,7 +63,7 @@ export function createSkills(root, { getLang, onChange }) {
     const nextNames = next ? Object.values(STAGES[next].domains).flat().slice(0, 6).map(ch => FEATURES[Object.keys(FEATURES).find(f => FEATURES[f].ch === ch)].zh) : [];
 
     root.innerHTML = `<div class="skills-page">
-      <h2>✨ 文法</h2>
+      <h2>文法</h2>
       ${knownRow(target())}
 
       <div class="panel stage-card">
@@ -76,14 +77,14 @@ export function createSkills(root, { getLang, onChange }) {
       ${rules.map(r => {
         const on = lg.unlocked.includes(r.id), v = verdict(r.id), ex = examples(r, 1)[0];
         return `<div class="rule${on ? ' on' : ''}${v === 'hard' ? ' hard' : ''}" data-f="${r.id}">
-          <div class="ic">${r.icon}</div>
+          <div class="ic">${r.id}</div>
           <div><b>${esc(r.name)}</b> ${TAG[v]}${r.approx ? ' <span class="tag">近似判斷</span>' : ''}
             <small>${compareLine(r.id)}</small>
             ${ex ? `<small class="ex">例：${esc(ex.span)}</small>` : '<small class="muted">你目前的來源裡還沒有例子</small>'}</div>
-          ${on ? '<span class="own">已解鎖</span>' : `<button class="btn gold sm" data-unlock="${r.id}" ${lg.gold < RULES.walsCost ? 'disabled' : ''}>🪙 ${RULES.walsCost}</button>`}
+          ${on ? '<span class="own">已解鎖</span>' : `<button class="btn gold sm" data-unlock="${r.id}" ${lg.gold < RULES.walsCost ? 'disabled' : ''}>${RULES.walsCost} 金幣</button>`}
         </div>`;
       }).join('')}
-      ${next ? `<p class="muted">🔒 ${next} 會出現：${nextNames.map(esc).join('、')}…（詞彙達到 ${st.next.toLocaleString()} 字）</p>` : ''}
+      ${next ? `<p class="muted">下一階段 ${next} 會出現：${nextNames.map(esc).join('、')}…（詞彙達到 ${st.next.toLocaleString()} 字）</p>` : ''}
 
       <h3>文法對照（參考，不計分）</h3>
       <div class="row-between"><span class="muted">${esc(langName(target()))}和你會的語言，在各個文法特徵上的比較</span>
@@ -121,9 +122,9 @@ export function createSkills(root, { getLang, onChange }) {
     openSheet(`
       <h2>${esc(f.zh)} ${TAG[v]}</h2>
       <p class="muted">WALS ${fid}・${esc(f.en)}${rule ? '' : '<br>這項屬於整個語言的特性，只做比較，不計分。'}</p>
-      <div class="stack">${ids.map((id, i) => `<div class="cmp-val"><span>${i === 0 ? '🎯 ' : ''}${esc(langName(id))}</span><b>${esc(label(fid, VALUES[id]?.[fid]))}</b></div>`).join('')}</div>
+      <div class="stack">${ids.map((id, i) => `<div class="cmp-val"><span>${esc(langName(id))}${i === 0 ? '（目標）' : ''}</span><b>${esc(label(fid, VALUES[id]?.[fid]))}</b></div>`).join('')}</div>
       ${v === 'hard' ? '<p class="muted">你會的語言都不是這樣，學的時候要特別留意。</p>' : ''}
-      ${rule ? `<h3>你的來源裡的例子</h3>${exs.length ? `<div class="stack">${exs.map((x, i) => `<button class="ex-row" data-i="${i}">${x.html} 🔊</button>`).join('')}</div>` : '<p class="muted">目前的來源裡還沒有例子。</p>'}` : ''}
+      ${rule ? `<h3>你的來源裡的例子</h3>${exs.length ? `<div class="stack">${exs.map((x, i) => `<button class="ex-row" data-i="${i}">${x.html} ${G.speaker(14)}</button>`).join('')}</div>` : '<p class="muted">目前的來源裡還沒有例子。</p>'}` : ''}
     `, {}, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => speak(exs[+b.dataset.i].text, { rate: 0.85 }))));
   }
 

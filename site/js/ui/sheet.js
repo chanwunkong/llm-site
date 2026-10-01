@@ -34,4 +34,4 @@ export function toast(msg, ms = 1800) {
 }
 
 export const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-export const stars = lv => '★'.repeat(lv) + '☆'.repeat(5 - lv);
+export const stars = lv => `Lv${lv}`;
