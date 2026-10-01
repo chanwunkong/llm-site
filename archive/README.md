@@ -16,3 +16,8 @@
 
 - Allosaurus 伺服器：`https://allosaurus-api-878665537417.asia-east1.run.app`（Google Cloud Run）。SideTest 根目錄的 `config.js` 仍有這個網址，ClimbingToolbox 也共用那份 config.js。
 - Firebase 專案 `test-5dbba`：IPAMapper 與 SideTest 都用它做登入與雲端存檔。
+
+## 原專案的處理（2026-10-01）
+
+- SideTest：`Lingo/`、`Kyrgyz/`、`allosaurus-server/` 已在 commit 78b9cde 刪除（git 歷史中仍可找回）。
+- IPAMapper：GitHub repo 由擁有者自行刪除；內容與完整歷史保存在 `ipamapper/`。
