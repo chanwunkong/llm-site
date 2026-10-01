@@ -268,3 +268,19 @@ table.ipa td.r { border-left: 1px dotted var(--muted); }
 .materials { display: flex; flex-wrap: wrap; gap: 6px; max-height: 32vh; overflow-y: auto; margin-top: 8px; }
 .filter { width: 100%; margin-top: 12px; border: var(--b); background: var(--white); color: var(--ink); padding: 10px 12px; font-size: 16px; }
 #nav button.active .shape.ink { background: var(--white); }
+
+/* ---- 母音表：單母音／多母音兩層 ---- */
+.seg-toggle { display: inline-flex; align-self: flex-start; border: var(--b); background: var(--white); margin-bottom: 8px; }
+.seg-toggle button { border: 0; background: none; padding: 6px 14px; font-weight: 800; font-size: 13px; }
+.seg-toggle button + button { border-left: var(--b); }
+.seg-toggle button.on { background: var(--ink); color: var(--white); }
+.ipa-stage { position: relative; display: inline-block; padding: 0 56px 40px 0; }
+.ipa-arrows { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.ipa-arrows g { pointer-events: auto; }
+.ipa-labels { position: absolute; inset: 0; pointer-events: none; }
+.ipa-labels button { position: absolute; pointer-events: auto; font-size: 14px; white-space: nowrap; z-index: 2; }
+.ipa-labels button.focus { outline: 3px solid var(--yellow); }
+.ipa-s.start { font-weight: 800; }
+.ipa-s.start sup { font-size: 9px; color: var(--blue); margin-left: 1px; }
+.ipa-s.sel { background: var(--yellow); }
+.ipa-s.dim { opacity: .3; border-style: dotted; pointer-events: none; }

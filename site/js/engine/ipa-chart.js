@@ -56,6 +56,8 @@ export function position(seg) {
   const b = base(seg);
   if (C[b]) { const [manner, place, voiced] = C[b]; return { kind: 'consonant', manner, place, voiced }; }
   if (V[b]) { const [height, back, round] = V[b]; return { kind: 'vowel', height, back, round }; }
-  if ([...b].length > 1 && [...b].every(c => V[c])) return { kind: 'diphthong' };
+  // 多母音（雙母音、三合母音）：依序列出每個組成母音的位置，畫箭頭用
+  if ([...b].length > 1 && [...b].every(c => V[c]))
+    return { kind: 'diphthong', parts: [...b].map(c => ({ c, height: V[c][0], back: V[c][1], round: V[c][2] })) };
   return { kind: 'other' };
 }
