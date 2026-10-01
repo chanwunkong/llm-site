@@ -21,7 +21,7 @@ h1{{font-size:20px;margin:4px 0}} .muted{{color:#b7bddc;font-size:13px;line-heig
 .ic{{height:52px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:36px;line-height:1}}
 .combo{{position:relative;display:inline-block;font-size:40px}} .combo small{{position:absolute;right:-12px;bottom:-6px;font-size:22px;background:#fff8e8;border-radius:50%;width:30px;height:30px;display:grid;place-items:center}}
 .arrow{{font-size:18px;color:#ffcf4a;font-weight:900}} .act{{font-size:28px}}
-.pair span{{font-size:28px;padding:2px 4px;border-radius:10px;opacity:.35}} .pair span.ans{{opacity:1;box-shadow:0 0 0 3px #ffcf4a}}
+.pair{{white-space:nowrap}} .pair span{{font-size:28px;padding:2px 4px;border-radius:10px;opacity:.35}} .pair span.ans{{opacity:1;box-shadow:0 0 0 3px #ffcf4a}}
 .need span{{display:inline-block;background:#0006;border-radius:8px;padding:3px 8px;margin:3px;font-size:13px}}
 .demo{{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 4px}}
 </style></head><body><main>
@@ -47,11 +47,11 @@ function icon(r){{
   const s=r.icon;
   if(r.template==='place'||r.template==='role'){{const [a,b]=s.split('+');return `<span class="combo">${{a}}<small>${{b}}</small></span>`;}}
   if(r.template==='action'){{const [a,b]=s.split('>');return `<span class="act">${{a}}</span><span class="arrow">➜</span><span class="act">${{b}}</span>`;}}
-  if(r.template==='contrast'){{return `<span class="pair">${{s.split('|').map(x=>`<span class="${{x.startsWith('*')?'ans':''}}">${{x.replace('*','')}}</span>`).join('')}}</span>`;}}
+  if(r.template==='contrast'){{return `<span class="pair">${{s.split('|').map(x=>{{const e=x.replace('*','');const n=[...new Intl.Segmenter().segment(e)].length;return `<span class="${{x.startsWith('*')?'ans':''}}" style="${{n>1?'font-size:'+Math.max(12,26-n*4)+'px':''}}">${{e}}</span>`;}}).join('')}}</span>`;}}
   return s;
 }}
 const card=r=>`<div class="c ${{r.clarity}}"><div class="ic">${{icon(r)}}</div><div class="w">${{r.id.replace(/_/g,' ')}}</div><div class="g">${{r.upos}}${{r.template!=='single'?' · '+TPL[r.template]:''}}</div></div>`;
-document.getElementById('demo').innerHTML=['kitchen','driver','buy','big'].map(id=>card(rows.find(r=>r.id===id))).join('');
+document.getElementById('demo').innerHTML=['kitchen','driver','buy','fast'].map(id=>card(rows.find(r=>r.id===id))).join('');
 const cats=['全部',...new Set(rows.map(r=>r.category))];
 const tpls=['全部模板',...Object.keys(TPL)];
 let cur='全部',tpl='全部模板';
@@ -73,7 +73,7 @@ function renderPrimes(){{
  document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{{pg=b.dataset.g;renderPrimes();}});
  const list=primes.filter(p=>pg==='全部'||p.group===pg);
  document.getElementById('pgrid').innerHTML=list.map(p=>`<div class="c ${{p.clarity}}"><div class="ic">${{p.template==='todo'?'<span class="todo">待設計</span>':icon(p)}}</div><div class="w">${{p.en}}</div><div class="ja">${{p.ja_draft}}</div></div>`).join('');
- document.querySelectorAll('#pgrid .c').forEach((el,i)=>el.onclick=()=>alert(list[i].id+'（'+list[i].group+'）\nEN: '+list[i].en+'\nJA（草稿）: '+list[i].ja_draft+(list[i].merges?'\n併入的第二層概念: '+list[i].merges:'')));
+ document.querySelectorAll('#pgrid .c').forEach((el,i)=>el.onclick=()=>alert(list[i].id+'（'+list[i].group+'）\\nEN: '+list[i].en+'\\nJA（草稿）: '+list[i].ja_draft+(list[i].merges?'\\n併入的第二層概念: '+list[i].merges:'')));
 }}
 renderPrimes();
 </script></body></html>'''
