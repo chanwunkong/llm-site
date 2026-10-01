@@ -222,3 +222,13 @@ details.cmp summary { font-weight: 900; cursor: pointer; padding: 4px 0; }
 .cicon.pair { white-space: nowrap; font-size: 0.75em; }
 .cicon.pair span { padding: 0.05em 0.1em; border-radius: 0.25em; opacity: 0.35; }
 .cicon.pair span.ans { opacity: 1; box-shadow: 0 0 0 0.08em #ffcf4a; }
+
+/* ---- 我的理解 ---- */
+.mine { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mine i { font-style: normal; color: var(--muted); font-weight: 900; }
+.mine.compose { min-height: 44px; background: #0000002e; border-radius: 14px; padding: 8px; }
+.mchip { border: 0; border-radius: 12px; background: #ffffff1a; color: var(--ink); font-weight: 800; padding: 6px 10px; font-size: 15px; display: inline-flex; align-items: center; gap: 4px; }
+.mchip:disabled { opacity: 1; }
+.mchip .cicon { font-size: 18px; }
+.materials { display: flex; flex-wrap: wrap; gap: 6px; max-height: 32vh; overflow-y: auto; margin-top: 8px; }
+.filter { width: 100%; margin-top: 12px; border: 2px solid var(--line); background: #0000002e; color: var(--ink); border-radius: 12px; padding: 10px 12px; font-size: 16px; }

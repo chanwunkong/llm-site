@@ -1,6 +1,7 @@
 // 單字領土：平面的六角形等高線地圖（簡約設計）
 // 依等級由淺到深上色；等級不同的相鄰格之間畫等高線，高等級的字聚在一起就像山丘。
-import { L, word, RULES, isDue, decayProgress } from '../engine/store.js';
+import { L, word, RULES, isDue, decayProgress, save, now } from '../engine/store.js';
+import { joinTokens } from '../engine/content.js';
 import * as T from '../engine/territory.js';
 import { speak, sfx } from '../audio.js';
 import { openSheet, closeSheet, toast, esc, stars } from './sheet.js';
@@ -266,6 +267,10 @@ export function createLand(root, { getLang, onChange }) {
   }
 
   // ---------- 格子資訊 ----------
+  // ---------- 我的理解：用學過的其他字組合出對這個字的解釋（不判斷對錯、不計分） ----------
+  const chip = (lang, l, attr = '') => `<button class="mchip" ${attr}>${lang.base[l] ? iconHtml(lang.base[l]) + ' ' : ''}${esc(l)}</button>`;
+  const mineHtml = (lang, parts) => `<div class="mine">${parts.map(p => chip(lang, p, 'disabled')).join('<i>＋</i>')}</div>`;
+
   function tileSheet(k) {
     const lang = getLang(), lg = L(), lemma = lg.territory[k], w = word(lemma);
     const info = lang.lemmas.get(lemma);
@@ -273,15 +278,25 @@ export function createLand(root, { getLang, onChange }) {
     const status = w.lv === 5 ? '5 級：不會因時間降級，但會被隨機抽查'
       : days ? `${isDue(w) ? '⚠️ 快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
     const chunks = lang.chunks.filter(c => c.lemmas.includes(lemma));
+    const mine = w.mine?.at(-1);
+    const mineBlock = mine ? `<h3>🧠 ${isDue(w) ? '你當時的理解' : '我的理解'}</h3>${mineHtml(lang, mine.parts)}
+      <p class="muted">${new Date(mine.t).toLocaleDateString('zh-TW')}${w.mine.length > 1 ? `・修改過 ${w.mine.length - 1} 次` : ''}</p>` : '';
+    // 看解釋時，領土上用到的那幾格一起亮起來
+    highlight = new Set((mine?.parts || []).map(T.cellOf).filter(Boolean));
+    redraw();
     openSheet(`
       <h2>${lang.base[lemma] ? iconHtml(lang.base[lemma]) + ' ' : ''}${esc(lemma)} <span class="stars">${stars(w.lv)}</span></h2>
+      ${isDue(w) ? mineBlock : ''}
       <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>寫法：${[...info.forms].map(esc).join('、')}</p>
+      ${isDue(w) ? '' : mineBlock}
       ${chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '✅' : '⬜'} ${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
-      <div class="row" style="margin-top:16px">
+      <button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '✏️ 修改我的理解' : '🧠 寫下我的理解'}</button>
+      <div class="row" style="margin-top:12px">
         <button class="btn ghost big" id="say">🔊 發音</button>
-        <button class="btn gold big" id="lift">拿起移動（🪙${RULES.moveCost}）</button>
-      </div>`, { onClose: () => { focus = null; redraw(); } }, body => {
+        <button class="btn gold big" id="lift">拿起（🪙${RULES.moveCost}）</button>
+      </div>`, { onClose: () => { focus = null; highlight = new Set(); redraw(); } }, body => {
       body.querySelector('#say').onclick = () => speak(lemma, { rate: 0.85 });
+      body.querySelector('#mineBtn').onclick = () => composeSheet(k);
       body.querySelector('#lift').onclick = () => {
         const r = T.pickUp(k);
         if (!r.ok) return toast(r.reason);
@@ -293,6 +308,45 @@ export function createLand(root, { getLang, onChange }) {
         toast(`已拿起「${lemma}」，點虛線格放下`);
       };
     });
+  }
+
+  function composeSheet(k) {
+    const lang = getLang(), lg = L(), lemma = lg.territory[k], w = word(lemma);
+    let parts = [...(w.mine?.at(-1)?.parts || [])], filter = '';
+    // 材料：學過（Lv2 以上）的其他字；NSM 基元排前面
+    const materials = Object.entries(lg.words).filter(([l, x]) => x.lv >= 2 && l !== lemma && lang.lemmas.get(l)).map(([l]) => l)
+      .sort((a, b) => (lang.base[b]?.tier === 1) - (lang.base[a]?.tier === 1) || a.localeCompare(b));
+    const exs = lang.lemmas.get(lemma).sentences.slice(0, 3).map(id => joinTokens(lang.sentences[id].tokens, lang.joiner));
+    openSheet(`<h2>我對「${esc(lemma)}」的理解</h2>
+      <p class="muted">用你學過的字，組合出你對這個字的理解。沒有標準答案，只給你自己看。</p>
+      <div class="stack">${exs.map((t, i) => `<button class="ex-row" data-ex="${i}">${esc(t)} 🔊</button>`).join('')}</div>
+      <h3>我的組合</h3><div class="mine compose" id="parts"></div>
+      <input id="filter" class="filter" placeholder="🔍 搜尋學過的字" autocomplete="off" autocapitalize="off">
+      <div class="materials" id="mats"></div>
+      <div class="row" style="margin-top:12px"><button class="btn ghost big" id="cancel">取消</button><button class="btn gold big" id="saveMine">儲存</button></div>`,
+      {}, body => {
+        const draw = () => {
+          body.querySelector('#parts').innerHTML = parts.length
+            ? parts.map((p, i) => chip(lang, p, `data-rm="${i}"`)).join('<i>＋</i>')
+            : '<span class="muted">從下面點字加入</span>';
+          const list = materials.filter(l => !filter || l.toLowerCase().includes(filter.toLowerCase()));
+          body.querySelector('#mats').innerHTML = list.map(l => chip(lang, l, `data-add="${esc(l)}"`)).join('') ||
+            `<span class="muted">${materials.length ? '找不到這個字' : '還沒有其他學過的字，先去冒險練習吧'}</span>`;
+          body.querySelectorAll('[data-rm]').forEach(b => (b.onclick = () => { parts.splice(+b.dataset.rm, 1); draw(); }));
+          body.querySelectorAll('[data-add]').forEach(b => (b.onclick = () => { parts.push(b.dataset.add); sfx('tap'); speak(b.dataset.add, { rate: 0.85 }); draw(); }));
+        };
+        draw();
+        body.querySelectorAll('[data-ex]').forEach(b => (b.onclick = () => speak(exs[+b.dataset.ex], { rate: 0.85 })));
+        body.querySelector('#filter').oninput = e => { filter = e.target.value.trim(); draw(); };
+        body.querySelector('#cancel').onclick = () => tileSheet(k);
+        body.querySelector('#saveMine').onclick = () => {
+          if (!parts.length) return toast('至少選一個字');
+          w.mine = [...(w.mine || []), { t: now(), parts }];
+          save();
+          sfx('place');
+          tileSheet(k);
+        };
+      });
   }
 
   $('#missedBtn').onclick = () => {
