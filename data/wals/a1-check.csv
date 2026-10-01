@@ -1,0 +1,241 @@
+language_zh,language,wals_language,feature,sheet_value,wals_value,wals_source_language,verdict
+英語,English,eng,81A,SVO,SVO,eng,ok
+英語,English,eng,87A,AdjN,Adjective-Noun,eng,ok
+英語,English,eng,88A,DemN,Demonstrative-Noun,eng,ok
+英語,English,eng,89A,NumN,Numeral-Noun,eng,ok
+英語,English,eng,26A,suffixing,Strongly suffixing,eng,ok
+英語,English,eng,33A,suffixing,Plural suffix,eng,ok
+英語,English,eng,37A,Def,Definite word distinct from demonstrative,eng,ok
+英語,English,eng,38A,Indf,Indefinite word distinct from 'one',eng,ok
+英語,English,eng,66A,1,"Present, no remoteness distinctions",eng,ok
+英語,English,eng,67A,No inflectional,No inflectional future,eng,ok
+英語,English,eng,112A,particle,Negative particle,eng,ok
+英語,English,eng,116A,word order,Interrogative word order,eng,ok
+德語,Deutsch,ger,81A,SVO,No dominant order,ger,bad
+德語,Deutsch,ger,87A,AdjN,Adjective-Noun,ger,ok
+德語,Deutsch,ger,88A,DemN,Demonstrative-Noun,ger,ok
+德語,Deutsch,ger,89A,NumN,Numeral-Noun,ger,ok
+德語,Deutsch,ger,26A,suffixing,Strongly suffixing,ger,ok
+德語,Deutsch,ger,33A,suffixing,Plural suffix,ger,ok
+德語,Deutsch,ger,37A,Def,Definite word distinct from demonstrative,ger,ok
+德語,Deutsch,ger,38A,Indf,Indefinite word same as 'one',ger,bad
+德語,Deutsch,ger,66A,1,"Present, no remoteness distinctions",ger,ok
+德語,Deutsch,ger,67A,No inflectional,No inflectional future,ger,ok
+德語,Deutsch,ger,112A,particle,Negative particle,ger,ok
+德語,Deutsch,ger,116A,word order,Interrogative word order,ger,ok
+西班牙語,Español,spa,81A,SVO,SVO,spa,ok
+西班牙語,Español,spa,87A,NAdj,Noun-Adjective,spa,ok
+西班牙語,Español,spa,88A,DemN,Demonstrative-Noun,spa,ok
+西班牙語,Español,spa,89A,NumN,Numeral-Noun,spa,ok
+西班牙語,Español,spa,26A,suffixing,Strongly suffixing,spa,ok
+西班牙語,Español,spa,33A,suffixing,Plural suffix,spa,ok
+西班牙語,Español,spa,37A,Def,Definite word distinct from demonstrative,spa,ok
+西班牙語,Español,spa,38A,Indf,Indefinite word same as 'one',spa,bad
+西班牙語,Español,spa,66A,1,"Present, no remoteness distinctions",spa,ok
+西班牙語,Español,spa,67A,Inflectional,Inflectional future exists,spa,ok
+西班牙語,Español,spa,112A,particle,Negative particle,spa,ok
+西班牙語,Español,spa,116A,intonation,Interrogative word order,spa,bad
+葡萄牙語,Português,por,81A,SVO,SVO,por,ok
+葡萄牙語,Português,por,87A,NAdj,Noun-Adjective,por,ok
+葡萄牙語,Português,por,88A,DemN,Demonstrative-Noun,por,ok
+葡萄牙語,Português,por,89A,NumN,,,nodata
+葡萄牙語,Português,por,26A,suffixing,Strongly suffixing,por,ok
+葡萄牙語,Português,por,33A,suffixing,Plural suffix,por,ok
+葡萄牙語,Português,por,37A,Def,Definite word distinct from demonstrative,por,ok
+葡萄牙語,Português,por,38A,Indf,Indefinite word same as 'one',por,bad
+葡萄牙語,Português,por,66A,1,"Present, no remoteness distinctions",por,ok
+葡萄牙語,Português,por,67A,Inflectional,No inflectional future,por,bad
+葡萄牙語,Português,por,112A,particle,Negative particle,por,ok
+葡萄牙語,Português,por,116A,intonation,Question particle,por,bad
+法語,Français,fre,81A,SVO,SVO,fre,ok
+法語,Français,fre,87A,NAdj,Noun-Adjective,fre,ok
+法語,Français,fre,88A,DemN,Demonstrative-Noun,fre,ok
+法語,Français,fre,89A,NumN,Numeral-Noun,fre,ok
+法語,Français,fre,26A,suffixing,Strongly suffixing,fre,ok
+法語,Français,fre,33A,suffixing,Plural suffix,fre,ok
+法語,Français,fre,37A,Def,Definite word distinct from demonstrative,fre,ok
+法語,Français,fre,38A,Indf,Indefinite word same as 'one',fre,bad
+法語,Français,fre,66A,1,"Present, no remoteness distinctions",fre,ok
+法語,Français,fre,67A,Inflectional,Inflectional future exists,fre,ok
+法語,Français,fre,112A,double,Negative particle,fre,bad
+法語,Français,fre,116A,word order/particle,Question particle,fre,ok
+意大利語,Italiano,ita,81A,SVO,SVO,ita,ok
+意大利語,Italiano,ita,87A,NAdj,Noun-Adjective,ita,ok
+意大利語,Italiano,ita,88A,DemN,Demonstrative-Noun,ita,ok
+意大利語,Italiano,ita,89A,NumN,Numeral-Noun,ita,ok
+意大利語,Italiano,ita,26A,suffixing,Strongly suffixing,ita,ok
+意大利語,Italiano,ita,33A,suffixing,Plural suffix,ita,ok
+意大利語,Italiano,ita,37A,Def,Definite word distinct from demonstrative,ita,ok
+意大利語,Italiano,ita,38A,Indf,Indefinite word same as 'one',ita,bad
+意大利語,Italiano,ita,66A,1,,,nodata
+意大利語,Italiano,ita,67A,Inflectional,,,nodata
+意大利語,Italiano,ita,112A,particle,Negative particle,ita,ok
+意大利語,Italiano,ita,116A,intonation,Interrogative intonation only,ita,ok
+俄語,Русский,rus,81A,SVO,SVO,rus,ok
+俄語,Русский,rus,87A,AdjN,Adjective-Noun,rus,ok
+俄語,Русский,rus,88A,DemN,Demonstrative-Noun,rus,ok
+俄語,Русский,rus,89A,NumN,Numeral-Noun,rus,ok
+俄語,Русский,rus,26A,suffixing,Strongly suffixing,rus,ok
+俄語,Русский,rus,33A,suffixing,Plural suffix,rus,ok
+俄語,Русский,rus,37A,None,No definite or indefinite article,rus,ok
+俄語,Русский,rus,38A,None,No definite or indefinite article,rus,ok
+俄語,Русский,rus,66A,1,"Present, no remoteness distinctions",rus,ok
+俄語,Русский,rus,67A,No inflectional,No inflectional future,rus,ok
+俄語,Русский,rus,112A,particle,Negative particle,rus,ok
+俄語,Русский,rus,116A,intonation/particle,Question particle,rus,ok
+孟加拉語,বাংলা,ben,81A,SOV,SOV,ben,ok
+孟加拉語,বাংলা,ben,87A,AdjN,,,nodata
+孟加拉語,বাংলা,ben,88A,DemN,,,nodata
+孟加拉語,বাংলা,ben,89A,NumN,,,nodata
+孟加拉語,বাংলা,ben,26A,suffixing,,,nodata
+孟加拉語,বাংলা,ben,33A,suffixing,,,nodata
+孟加拉語,বাংলা,ben,37A,affix,,,nodata
+孟加拉語,বাংলা,ben,38A,ONE,,,nodata
+孟加拉語,বাংলা,ben,66A,1,"Present, no remoteness distinctions",ben,ok
+孟加拉語,বাংলা,ben,67A,Inflectional,Inflectional future exists,ben,ok
+孟加拉語,বাংলা,ben,112A,particle,Negative particle,ben,ok
+孟加拉語,বাংলা,ben,116A,particle,,,nodata
+印地語,हिंदी,hin,81A,SOV,SOV,hin,ok
+印地語,हिंदी,hin,87A,AdjN,Adjective-Noun,hin,ok
+印地語,हिंदी,hin,88A,DemN,Demonstrative-Noun,hin,ok
+印地語,हिंदी,hin,89A,NumN,Numeral-Noun,hin,ok
+印地語,हिंदी,hin,26A,suffixing,Strongly suffixing,hin,ok
+印地語,हिंदी,hin,33A,suffixing,Plural suffix,hin,ok
+印地語,हिंदी,hin,37A,Dem,No definite or indefinite article,hin,bad
+印地語,हिंदी,hin,38A,ONE,No definite or indefinite article,hin,bad
+印地語,हिंदी,hin,66A,1,"Present, no remoteness distinctions",hin,ok
+印地語,हिंदी,hin,67A,Inflectional,Inflectional future exists,hin,ok
+印地語,हिंदी,hin,112A,particle,Negative particle,hin,ok
+印地語,हिंदी,hin,116A,particle,Question particle,hin,ok
+波斯語,فارسی,prs,81A,SOV,SOV,prs,ok
+波斯語,فارسی,prs,87A,NAdj,Noun-Adjective,prs,ok
+波斯語,فارسی,prs,88A,DemN,Demonstrative-Noun,prs,ok
+波斯語,فارسی,prs,89A,NumN,Numeral-Noun,prs,ok
+波斯語,فارسی,prs,26A,suffixing,Weakly suffixing,prs,ok
+波斯語,فارسی,prs,33A,suffixing,Plural suffix,prs,ok
+波斯語,فارسی,prs,37A,affix,"No definite, but indefinite article",prs,bad
+波斯語,فارسی,prs,38A,affix,,,nodata
+波斯語,فارسی,prs,66A,1,"Present, no remoteness distinctions",prs,ok
+波斯語,فارسی,prs,67A,No inflectional,No inflectional future,prs,ok
+波斯語,فارسی,prs,112A,prefix,Negative affix,prs,ok
+波斯語,فارسی,prs,116A,intonation,Question particle,prs,bad
+阿拉伯語,العربية,ams,81A,VSO,VSO,ams,ok
+阿拉伯語,العربية,ams,87A,NAdj,Noun-Adjective,ams,ok
+阿拉伯語,العربية,ams,88A,NDem,Demonstrative-Noun,ams,bad
+阿拉伯語,العربية,ams,89A,NumN,Numeral-Noun,ams,ok
+阿拉伯語,العربية,ams,26A,suffix/prefix,Strongly suffixing,ams,bad
+阿拉伯語,العربية,ams,33A,suffix/stem,Mixed morphological plural,aeg,ok
+阿拉伯語,العربية,ams,37A,prefix,Definite affix,ams,ok
+阿拉伯語,العربية,ams,38A,None,"No indefinite, but definite article",aeg,ok
+阿拉伯語,العربية,ams,66A,1,"Present, no remoteness distinctions",aeg,ok
+阿拉伯語,العربية,ams,67A,Inflectional,Inflectional future exists,aeg,ok
+阿拉伯語,العربية,ams,112A,particle,Negative particle,aeg,ok
+阿拉伯語,العربية,ams,116A,particle,Question particle,ams,ok
+坦米爾語,தமிழ்,tml,81A,SOV,SOV,tml,ok
+坦米爾語,தமிழ்,tml,87A,AdjN,Adjective-Noun,tml,ok
+坦米爾語,தமிழ்,tml,88A,DemN,Demonstrative-Noun,tml,ok
+坦米爾語,தமிழ்,tml,89A,NumN,Numeral-Noun,tml,ok
+坦米爾語,தமிழ்,tml,26A,suffixing,Strongly suffixing,tml,ok
+坦米爾語,தமிழ்,tml,33A,suffixing,Plural suffix,tml,ok
+坦米爾語,தமிழ்,tml,37A,None,,,nodata
+坦米爾語,தமிழ்,tml,38A,ONE,,,nodata
+坦米爾語,தமிழ்,tml,66A,1,"Present, no remoteness distinctions",tml,ok
+坦米爾語,தமிழ்,tml,67A,Inflectional,Inflectional future exists,tml,ok
+坦米爾語,தமிழ்,tml,112A,suffix,Negative affix,tml,ok
+坦米爾語,தமிழ்,tml,116A,suffix,Interrogative verb morphology,tml,ok
+中文,中文,mnd,81A,SVO,SVO,mnd,ok
+中文,中文,mnd,87A,AdjN,Adjective-Noun,mnd,ok
+中文,中文,mnd,88A,DemN,Demonstrative-Noun,mnd,ok
+中文,中文,mnd,89A,NumN,Numeral-Noun,mnd,ok
+中文,中文,mnd,26A,isolating,Strongly suffixing,mnd,bad
+中文,中文,mnd,33A,plural word,Plural suffix,mnd,bad
+中文,中文,mnd,37A,Dem,,,nodata
+中文,中文,mnd,38A,ONE,,,nodata
+中文,中文,mnd,66A,0,No past tense,mnd,ok
+中文,中文,mnd,67A,No inflectional,No inflectional future,mnd,ok
+中文,中文,mnd,112A,particle,Negative particle,mnd,ok
+中文,中文,mnd,116A,particle,Question particle,mnd,ok
+土耳其語,Türkçe,tur,81A,SOV,SOV,tur,ok
+土耳其語,Türkçe,tur,87A,AdjN,Adjective-Noun,tur,ok
+土耳其語,Türkçe,tur,88A,DemN,Demonstrative-Noun,tur,ok
+土耳其語,Türkçe,tur,89A,NumN,Numeral-Noun,tur,ok
+土耳其語,Türkçe,tur,26A,suffixing,Strongly suffixing,tur,ok
+土耳其語,Türkçe,tur,33A,suffixing,Plural suffix,tur,ok
+土耳其語,Türkçe,tur,37A,None,"No definite, but indefinite article",tur,ok
+土耳其語,Türkçe,tur,38A,Indf,Indefinite word same as 'one',tur,bad
+土耳其語,Türkçe,tur,66A,1,"Present, no remoteness distinctions",tur,ok
+土耳其語,Türkçe,tur,67A,Inflectional,Inflectional future exists,tur,ok
+土耳其語,Türkçe,tur,112A,suffix,Negative affix,tur,ok
+土耳其語,Türkçe,tur,116A,particle,Question particle,tur,ok
+日語,日本語,jpn,81A,SOV,SOV,jpn,ok
+日語,日本語,jpn,87A,AdjN,Adjective-Noun,jpn,ok
+日語,日本語,jpn,88A,DemN,Demonstrative-Noun,jpn,ok
+日語,日本語,jpn,89A,NumN,Numeral-Noun,jpn,ok
+日語,日本語,jpn,26A,suffixing,Strongly suffixing,jpn,ok
+日語,日本語,jpn,33A,clitic,Plural suffix,jpn,bad
+日語,日本語,jpn,37A,None,"No definite, but indefinite article",jpn,ok
+日語,日本語,jpn,38A,None,Indefinite word distinct from 'one',jpn,bad
+日語,日本語,jpn,66A,1,"Present, no remoteness distinctions",jpn,ok
+日語,日本語,jpn,67A,No inflectional,No inflectional future,jpn,ok
+日語,日本語,jpn,112A,suffix,Negative affix,jpn,ok
+日語,日本語,jpn,116A,particle,Question particle,jpn,ok
+韓語,한국어,kor,81A,SOV,SOV,kor,ok
+韓語,한국어,kor,87A,AdjN,Adjective-Noun,kor,ok
+韓語,한국어,kor,88A,DemN,Demonstrative-Noun,kor,ok
+韓語,한국어,kor,89A,NumN,Numeral-Noun,kor,ok
+韓語,한국어,kor,26A,suffixing,Strongly suffixing,kor,ok
+韓語,한국어,kor,33A,clitic,Plural suffix,kor,bad
+韓語,한국어,kor,37A,None,No definite or indefinite article,kor,ok
+韓語,한국어,kor,38A,None,No definite or indefinite article,kor,ok
+韓語,한국어,kor,66A,1,"Present, no remoteness distinctions",kor,ok
+韓語,한국어,kor,67A,Inflectional,No inflectional future,kor,bad
+韓語,한국어,kor,112A,particle/suffix,Negative particle,kor,bad
+韓語,한국어,kor,116A,suffix/particle,Interrogative verb morphology,kor,bad
+越南語,Tiếng Việt,vie,81A,SVO,SVO,vie,ok
+越南語,Tiếng Việt,vie,87A,NAdj,Noun-Adjective,vie,ok
+越南語,Tiếng Việt,vie,88A,NDem,Noun-Demonstrative,vie,ok
+越南語,Tiếng Việt,vie,89A,NumN,Numeral-Noun,vie,ok
+越南語,Tiếng Việt,vie,26A,isolating,Little affixation,vie,ok
+越南語,Tiếng Việt,vie,33A,plural word,Plural word,vie,ok
+越南語,Tiếng Việt,vie,37A,Def,Definite word distinct from demonstrative,vie,ok
+越南語,Tiếng Việt,vie,38A,Indf,,,nodata
+越南語,Tiếng Việt,vie,66A,0,No past tense,vie,ok
+越南語,Tiếng Việt,vie,67A,No inflectional,No inflectional future,vie,ok
+越南語,Tiếng Việt,vie,112A,particle,"Negative word, unclear if verb or particle",vie,bad
+越南語,Tiếng Việt,vie,116A,particle,Question particle,vie,ok
+印尼語,Bahasa Indonesia,ind,81A,SVO,SVO,ind,ok
+印尼語,Bahasa Indonesia,ind,87A,NAdj,Noun-Adjective,ind,ok
+印尼語,Bahasa Indonesia,ind,88A,NDem,Noun-Demonstrative,ind,ok
+印尼語,Bahasa Indonesia,ind,89A,NNum,Numeral-Noun,ind,bad
+印尼語,Bahasa Indonesia,ind,26A,prefix/suffix,Strongly suffixing,ind,bad
+印尼語,Bahasa Indonesia,ind,33A,reduplication,Plural complete reduplication,ind,ok
+印尼語,Bahasa Indonesia,ind,37A,Dem,Demonstrative word used as definite article,ind,ok
+印尼語,Bahasa Indonesia,ind,38A,ONE,"No indefinite, but definite article",ind,bad
+印尼語,Bahasa Indonesia,ind,66A,0,No past tense,ind,ok
+印尼語,Bahasa Indonesia,ind,67A,No inflectional,No inflectional future,ind,ok
+印尼語,Bahasa Indonesia,ind,112A,particle,"Negative word, unclear if verb or particle",ind,bad
+印尼語,Bahasa Indonesia,ind,116A,particle,Question particle,ind,ok
+泰語,ภาษาไทย,tha,81A,SVO,SVO,tha,ok
+泰語,ภาษาไทย,tha,87A,NAdj,Noun-Adjective,tha,ok
+泰語,ภาษาไทย,tha,88A,NDem,Noun-Demonstrative,tha,ok
+泰語,ภาษาไทย,tha,89A,NNum,Noun-Numeral,tha,ok
+泰語,ภาษาไทย,tha,26A,isolating,Little affixation,tha,ok
+泰語,ภาษาไทย,tha,33A,plural word,,,nodata
+泰語,ภาษาไทย,tha,37A,None,"No definite, but indefinite article",tha,ok
+泰語,ภาษาไทย,tha,38A,ONE,Indefinite word distinct from 'one',tha,bad
+泰語,ภาษาไทย,tha,66A,0,No past tense,tha,ok
+泰語,ภาษาไทย,tha,67A,No inflectional,No inflectional future,tha,ok
+泰語,ภาษาไทย,tha,112A,particle,Negative auxiliary verb,tha,bad
+泰語,ภาษาไทย,tha,116A,particle,Question particle,tha,ok
+史瓦希里語,Kiswahili,swa,81A,SVO,SVO,swa,ok
+史瓦希里語,Kiswahili,swa,87A,NAdj,Noun-Adjective,swa,ok
+史瓦希里語,Kiswahili,swa,88A,NDem,Noun-Demonstrative,swa,ok
+史瓦希里語,Kiswahili,swa,89A,NNum,Noun-Numeral,swa,ok
+史瓦希里語,Kiswahili,swa,26A,prefixing,Weakly prefixing,swa,ok
+史瓦希里語,Kiswahili,swa,33A,prefixing,Plural prefix,swa,ok
+史瓦希里語,Kiswahili,swa,37A,None,Demonstrative word used as definite article,swa,bad
+史瓦希里語,Kiswahili,swa,38A,None,,,nodata
+史瓦希里語,Kiswahili,swa,66A,2-3,"Present, no remoteness distinctions",swa,bad
+史瓦希里語,Kiswahili,swa,67A,Inflectional,Inflectional future exists,swa,ok
+史瓦希里語,Kiswahili,swa,112A,prefix,Negative affix,swa,ok
+史瓦希里語,Kiswahili,swa,116A,intonation/particle,Question particle,swa,ok
