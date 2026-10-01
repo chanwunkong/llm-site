@@ -25,7 +25,7 @@ function refreshTop() {
 const views = {
   home: createHome($('#view-home'), { getLang, onStart: (src, env) => play.start(getLang(), src, env) }),
   land: createLand($('#view-land'), { getLang, onChange: refreshTop }),
-  skills: createSkills($('#view-skills'), { onChange: refreshTop }),
+  skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
 };
 const play = createPlay($('#play'), { onEnd: tab => { refreshTop(); setTab(tab); } });
 

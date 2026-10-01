@@ -24,6 +24,7 @@ for (let r = 0; r < runs; r++) {
   if (r === 2) store.L().unlocked.push('87A', '85A');
 }
 if (p.get('env')) store.state.env = p.get('env');
+if (p.get('known')) store.state.known = p.get('known').split(',');
 store.save();
 location.href = 'index.html' + (p.get('go') || '');
 </script>

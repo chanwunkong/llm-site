@@ -1,4 +1,6 @@
 // 存檔與單字狀態。每個學習語言各自有單字、領土、背包、金幣與進度。
+import { STAGES } from '../data/wals.js';
+
 const KEY = 'word-territory-v1';
 const DAY = 86400000;
 
@@ -23,14 +25,14 @@ function load() {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (s && s.langs) return s;
   } catch {}
-  return { lang: 'en', env: 'ear', sound: true, timeOffset: 0, langs: {} };
+  return { lang: 'en', env: 'ear', sound: true, timeOffset: 0, langs: {}, known: ['mnd'] };
 }
 
 export const state = load();
 export function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 export function resetAll() {
   const lang = state.lang;
-  Object.assign(state, { lang, env: 'ear', sound: true, timeOffset: 0, langs: {} });
+  Object.assign(state, { lang, env: 'ear', sound: true, timeOffset: 0, langs: {}, known: ['mnd'] });
   save();
 }
 
@@ -73,3 +75,17 @@ export function applyDecay() {
   if (dropped.length) save();
   return dropped;
 }
+
+// ---- 我會的語言（WALS 語言代碼，可多選）：技能頁與發音頁共用 ----
+export const known = () => (state.known ||= ['mnd']);
+
+// ---- CEFR 階段：依詞彙量（學過、Lv2 以上的字）決定 ----
+export const STAGE_ORDER = Object.keys(STAGES);
+export function vocabCount() { return Object.values(L().words).filter(w => w.lv >= 2).length; }
+export function currentStage() {
+  const v = vocabCount();
+  for (let i = 0; i < STAGE_ORDER.length; i++) if (v < STAGES[STAGE_ORDER[i]].vocab) return { stage: STAGE_ORDER[i], vocab: v, next: STAGES[STAGE_ORDER[i]].vocab, index: i };
+  const last = STAGE_ORDER.length - 1;
+  return { stage: STAGE_ORDER[last], vocab: v, next: null, index: last };
+}
+export const stageReached = st => STAGE_ORDER.indexOf(st) <= currentStage().index;

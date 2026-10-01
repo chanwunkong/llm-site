@@ -159,6 +159,29 @@ body.playing #topbar, body.playing #nav, body.playing #views { display: none; }
 .rule small { color: var(--muted); font-size: 12px; }
 .rule.on { border-color: #ffcf4a88; }
 .rule .own { color: var(--gold); font-weight: 900; font-size: 13px; }
+.rule.hard { border-color: #ff9f4377; }
+.rule small { display: block; margin-top: 3px; line-height: 1.5; }
+.rule small.ex { color: var(--gold); font-weight: 800; }
+.rule small .tgt { color: var(--ink); font-weight: 800; }
+.tag.hard { background: #ff9f43; color: #3a2400; }
+.tag.ok { background: #5fd07a44; color: #c8f5d2; }
+.known-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.stage-card { display: flex; flex-direction: column; gap: 6px; }
+.stage-head { display: flex; justify-content: space-between; align-items: baseline; }
+.stage-head b { font-size: 18px; color: var(--gold); }
+.stage-sum { display: flex; justify-content: space-around; font-size: 13px; color: var(--muted); }
+.stage-sum b { font-size: 18px; color: var(--ink); }
+.stage-sum b.hardc { color: #ff9f43; }
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+details.cmp { background: #0000002e; border-radius: 14px; padding: 8px 10px; }
+details.cmp summary { font-weight: 900; cursor: pointer; padding: 4px 0; }
+.cmp-row { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; border: 0; background: none; padding: 7px 2px; border-top: 1px solid var(--line); font-size: 14px; }
+.cmp-row b { flex: 1; }
+.cmp-val { display: flex; justify-content: space-between; gap: 10px; background: #0000002e; border-radius: 12px; padding: 9px 12px; }
+.cmp-val span { color: var(--muted); }
+.ex-row { text-align: left; border: 0; background: #0000002e; border-radius: 12px; padding: 9px 12px; font-size: 15px; line-height: 1.6; }
+.ex-row mark { background: #ffcf4a; color: #2a2440; border-radius: 4px; padding: 0 3px; }
+.lang-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* ---- 底部面板 ---- */
 #sheet { position: absolute; inset: 0; z-index: 30; }

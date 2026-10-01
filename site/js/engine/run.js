@@ -3,32 +3,86 @@
 import { isContent, isTarget, isWord, joinTokens } from './content.js';
 import { L, word, save, now, RULES, isDue, decayProgress } from './store.js';
 import * as T from './territory.js';
+import { FEATURES, VALUES } from '../data/wals.js';
 
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pickN = (a, n) => shuffle(a.slice()).slice(0, n);
 
-// ---- WALS 規則：以詞性樣式判斷空格裡用到哪些規則 ----
+// ---- WALS 規則：以 UD 詞性與特徵找出句子裡用到規則的片段 ----
+// 只依賴 UD 的通用標記，對任何語言都一樣。可計分的規則依課綱分階段（見 data/curriculum/wals-stages.json）。
 const NOMINAL = ['NOUN', 'PROPN', 'PRON'];
-function adjacentPair(gap, a, bs) {
-  for (let i = 0; i + 1 < gap.length; i++) {
-    const x = gap[i].upos, y = gap[i + 1].upos;
-    if ((x === a && bs.includes(y)) || (bs.includes(x) && y === a)) return true;
-  }
-  return false;
+const isNoun = t => t && (t.upos === 'NOUN' || t.upos === 'PROPN');
+const pairSpans = (tk, a, b) => {
+  const out = [];
+  for (let i = 0; i + 1 < tk.length; i++) if ((a(tk[i]) && b(tk[i + 1])) || (b(tk[i]) && a(tk[i + 1]))) out.push([i, i + 1]);
+  return out;
+};
+// 修飾語 X 與名詞：X 後面隔著形容詞接名詞（three small volcanoes），或名詞後面緊接 X
+function modSpans(tk, isMod) {
+  const out = [];
+  tk.forEach((t, i) => {
+    if (!isMod(t)) return;
+    for (let j = i + 1; j < tk.length && j <= i + 3; j++) {
+      if (isNoun(tk[j])) return out.push([i, j]);
+      if (!['ADJ', 'NUM', 'DET'].includes(tk[j].upos)) break;
+    }
+    if (isNoun(tk[i - 1])) out.push([i - 1, i]);
+  });
+  return out;
 }
+// 介詞的方向依該語言的 WALS 85A：1 = 後置詞（箱の），2 = 前置詞（in the box），其他兩個方向都找
+function adpSpans(tk, prof = {}) {
+  const out = [], dir = prof['85A'];
+  tk.forEach((t, i) => {
+    if (t.upos !== 'ADP') return;
+    if (dir !== '1') for (let j = i + 1; j < tk.length && j <= i + 3; j++) {
+      if (NOMINAL.includes(tk[j].upos)) return out.push([i, j]);
+      if (!['DET', 'ADJ', 'NUM'].includes(tk[j].upos)) break;
+    }
+    if (dir !== '2' && i > 0 && NOMINAL.includes(tk[i - 1].upos)) out.push([i - 1, i]);
+  });
+  return out;
+}
+function argVerbSpans(tk) {
+  const out = [];
+  for (let i = 0; i + 1 < tk.length; i++) {
+    const a = tk[i].upos, b = tk[i + 1].upos, c = tk[i + 2]?.upos;
+    if ((NOMINAL.includes(a) && b === 'VERB') || (a === 'VERB' && NOMINAL.includes(b))) out.push([i, i + 1]);
+    else if (NOMINAL.includes(a) && b === 'ADP' && c === 'VERB') out.push([i, i + 2]);
+  }
+  return out;
+}
+const featSpans = (tk, key, val, uposes) => tk.flatMap((t, i) => (t.feats[key] === val && (!uposes || uposes.includes(t.upos)) ? [[i, i]] : []));
+const featNounSpans = (tk, key, val) => modSpans(tk, t => t.feats[key] === val);
+
 export const WALS = [
-  { id: '87A', icon: '🎨', name: '形容詞與名詞的語序', desc: '形容詞放在名詞的前面還是後面', test: g => adjacentPair(g, 'ADJ', ['NOUN']) },
-  { id: '85A', icon: '📍', name: '介詞與名詞的語序', desc: '介詞（前置或後置）和名詞的相對位置', test: g => adjacentPair(g, 'ADP', NOMINAL) },
-  { id: '33A', icon: '🔢', name: '名詞複數的標示', desc: '名詞複數怎麼標示', test: g => g.some(t => t.upos === 'NOUN' && t.feats.Number === 'Plur') },
-  { id: '81A', icon: '🔀', name: '主詞、受詞與動詞的語序', desc: '名詞和動詞誰先誰後', test: g => g.some(t => NOMINAL.includes(t.upos)) && g.some(t => t.upos === 'VERB') },
+  { id: '81A', stage: 'A1', icon: '🔀', spans: argVerbSpans, approx: true },
+  { id: '87A', stage: 'A1', icon: '🎨', spans: tk => pairSpans(tk, t => t.upos === 'ADJ', isNoun) },
+  { id: '88A', stage: 'A1', icon: '👉', spans: tk => modSpans(tk, t => t.feats.PronType === 'Dem') },
+  { id: '89A', stage: 'A1', icon: '🔢', spans: tk => modSpans(tk, t => t.upos === 'NUM') },
+  { id: '33A', stage: 'A1', icon: '👥', spans: tk => featSpans(tk, 'Number', 'Plur', ['NOUN']) },
+  { id: '37A', stage: 'A1', icon: '🅃', spans: tk => featNounSpans(tk, 'Definite', 'Def') },
+  { id: '38A', stage: 'A1', icon: '🄰', spans: tk => featNounSpans(tk, 'Definite', 'Ind') },
+  { id: '66A', stage: 'A1', icon: '⏪', spans: tk => featSpans(tk, 'Tense', 'Past') },
+  { id: '67A', stage: 'A1', icon: '⏩', spans: tk => featSpans(tk, 'Tense', 'Fut'), approx: true },
+  { id: '112A', stage: 'A1', icon: '🚫', spans: tk => featSpans(tk, 'Polarity', 'Neg') },
+  { id: '116A', stage: 'A1', icon: '❓', spans: tk => (/[?？]/.test(tk.at(-1)?.surface || '') ? [[0, tk.length - 1]] : []), approx: true },
+  { id: '85A', stage: 'A2', icon: '📍', spans: adpSpans },
 ];
+// prof：該語言的 WALS 值（VALUES[語言代碼]），讓規則判斷能依語言的類型調整方向
+export const profileOf = lang => VALUES[lang.wals] || {};
+WALS.forEach(r => {
+  r.test = (tk, prof) => r.spans(tk, prof).length > 0;
+  r.name = FEATURES[r.id].zh;
+  r.desc = '空格用到這條規則、而且答對時，分數 +50%';
+});
 export const AIDS = [
   { id: 'trim', icon: '✂️', name: '刪除錯誤選項', desc: '有字卡的題目少一張錯誤字卡' },
   { id: 'hint', icon: '🔤', name: '顯示首字', desc: '顯示答案的第一個字母' },
   { id: 'slowtime', icon: '🐢', name: '放慢時間', desc: '計時題的時間延長 50%' },
   { id: 'slowvoice', icon: '🔉', name: '慢速朗讀', desc: '句子用較慢的速度朗讀', audio: true },
 ];
-const rulesIn = gap => WALS.filter(r => r.test(gap)).map(r => r.id);
+const rulesIn = (gap, prof) => WALS.filter(r => r.test(gap, prof)).map(r => r.id);
 
 export const normalize = s => s.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{S}\s]/gu, '');
 
@@ -104,12 +158,12 @@ export function buildRun(lang, sourceId, env) {
 }
 
 // ---- 題目 ----
-function gapIndices(tokens, ti, lv) {
+function gapIndices(tokens, ti, lv, prof) {
   const ok = idx => idx.every(i => tokens[i] && isWord(tokens[i]));
   // 優先：能對上規則 > 實詞多 > 不以附著性功能詞開頭、不以限定詞結尾
   const score = idx => {
     const g = idx.map(i => tokens[i]);
-    return rulesIn(g).length * 10 + g.filter(isContent).length * 2
+    return rulesIn(g, prof).length * 10 + g.filter(isContent).length * 2
       - (['ADP', 'AUX', 'PART', 'SCONJ'].includes(g[0].upos) ? 1 : 0) - (g.at(-1).upos === 'DET' ? 1 : 0);
   };
   let cands;
@@ -142,7 +196,7 @@ export function makeQuestion(run, item) {
   const lv = item.kind === 'spot' ? 5 : w.lv;
   let ti = s.tokens.findIndex(t => t.lemma === item.lemma && isTarget(t));
   if (ti < 0) ti = s.tokens.findIndex(t => t.lemma === item.lemma);
-  const gap = gapIndices(s.tokens, ti, Math.min(lv, 4));
+  const gap = gapIndices(s.tokens, ti, Math.min(lv, 4), profileOf(lang));
   const gapTokens = gap.map(i => s.tokens[i]);
   // 句首的字在字卡上用句中的寫法（例如 The → the），避免大小寫洩漏答案
   const display = (t, i) => i === 0 && t.surface.toLocaleLowerCase() !== t.surface && lang.lemmas.get(t.lemma)?.forms.has(t.surface.toLocaleLowerCase()) || (i === 0 && t.surface.toLocaleLowerCase() === t.lemma)
@@ -166,7 +220,7 @@ export function makeQuestion(run, item) {
     item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer,
     image: lv === 1 ? lang.base[item.lemma] : null,
     hint: run.aids.includes('hint') ? answer[0][0] : null,
-    rules: rulesIn(gapTokens),
+    rules: rulesIn(gapTokens, profileOf(lang)),
     before: joinTokens(s.tokens.slice(0, gap[0]), lang.joiner),
     after: joinTokens(s.tokens.slice(gap.at(-1) + 1), lang.joiner),
     full: joinTokens(s.tokens, lang.joiner),
