@@ -232,3 +232,19 @@ details.cmp summary { font-weight: 900; cursor: pointer; padding: 4px 0; }
 .mchip .cicon { font-size: 18px; }
 .materials { display: flex; flex-wrap: wrap; gap: 6px; max-height: 32vh; overflow-y: auto; margin-top: 8px; }
 .filter { width: 100%; margin-top: 12px; border: 2px solid var(--line); background: #0000002e; color: var(--ink); border-radius: 12px; padding: 10px 12px; font-size: 16px; }
+
+/* ---- 發音回饋 ---- */
+.ipa-cmp { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 6px; margin-top: 6px; font-weight: 700; color: var(--paper-ink); font-size: 15px; }
+.ipa-cmp i { font-style: normal; color: #9a8fb0; font-size: 12px; }
+.ipa-cmp small { width: 100%; text-align: center; color: #b4581f; }
+b.hs { color: #d0601a; text-decoration: underline; }
+
+/* ---- 發音頁 ---- */
+.snd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.snd { position: relative; border: 2px solid var(--line); background: #0000002e; border-radius: 14px; padding: 12px 2px; font-size: 22px; font-weight: 700; font-family: "Doulos SIL", "Charis SIL", "Noto Sans", system-ui, sans-serif; }
+.snd.hard { border-color: #ff9f43; background: #ff9f4322; color: #ffd6ad; }
+.snd.known { opacity: .75; }
+.snd i { position: absolute; right: 4px; top: 2px; font-size: 10px; font-style: normal; }
+.snd-title { font-size: 40px; font-family: "Doulos SIL", "Charis SIL", "Noto Sans", system-ui, sans-serif; }
+.snd-title .tag { font-size: 13px; vertical-align: middle; font-family: inherit; }
+#nav i { font-size: 20px; }

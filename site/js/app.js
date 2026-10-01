@@ -10,6 +10,7 @@ import { createHome } from './ui/home.js';
 import { createPlay } from './ui/play.js';
 import { createLand } from './ui/land.js';
 import { createSkills } from './ui/skills.js';
+import { createSounds } from './ui/sounds.js';
 import { openSheet, closeSheet, toast } from './ui/sheet.js';
 
 const DATA = { en, ja };
@@ -27,6 +28,7 @@ const views = {
   home: createHome($('#view-home'), { getLang, onStart: (src, env) => play.start(getLang(), src, env) }),
   land: createLand($('#view-land'), { getLang, onChange: refreshTop }),
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
+  sounds: createSounds($('#view-sounds'), { getLang }),
 };
 const play = createPlay($('#play'), { onEnd: tab => { refreshTop(); setTab(tab); } });
 

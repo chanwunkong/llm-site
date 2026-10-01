@@ -4,6 +4,7 @@ import { L } from '../engine/store.js';
 import { speak, speakGap, stopSpeech, sfx, listen, canListen } from '../audio.js';
 import { openSheet, closeSheet, esc, toast } from './sheet.js';
 import { iconHtml } from './icon.js';
+import * as P from '../engine/phono.js';
 
 const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
 const ENV_NAME = { speak: '🔊 開口', ear: '🎧 耳機', mute: '🔇 靜音' };
@@ -214,6 +215,16 @@ export function createPlay(root, { onEnd }) {
       fb.className = 'feedback no';
       fb.innerHTML = `${timeout ? '⏰ 時間到' : '✗ 答錯了'}　正確答案<span class="ans">${esc(q.answerText)}</span>
         <small>${q.item.attempts < 3 ? '這題稍後會再出現' : '這題本局先跳過，下一局再練'}</small>`;
+    }
+    // 發音回饋：只差一個音的字並列比較；4 → 5 級顯示答案的發音並標出難音
+    const L_ID = run.lang.id, hard = P.hardSounds(run.lang.wals);
+    const ipaHtml = w => { const sg = P.wordSegs(L_ID, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
+    const sounds = q.neighbors.filter(n => n.kind === 'sound');
+    if (sounds.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">🎧 ${[q.answer[0], ...sounds.map(n => n.word)].map(w => `<span>${esc(w)} ${ipaHtml(w)}</span>`).join('<i>vs</i>')}</div>`);
+    if (q.mode === 'produce') {
+      const parts = q.answer.map(w => ipaHtml(w)).filter(Boolean);
+      const hs = [...new Set(q.answer.flatMap(w => (P.wordSegs(L_ID, w) || []).filter(x => hard.has(x))))];
+      if (parts.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">🗣️ ${parts.join(' ')}${hs.length ? `<small>難音：${hs.map(esc).join('、')}</small>` : ''}</div>`);
     }
     if (res.levelUp) { sfx('level'); setTimeout(() => floatText(`⬆ ${q.item.lemma} Lv${res.levelUp}`, true), 250); }
     if (res.levelDown) floatText(`⬇ ${q.item.lemma} Lv${res.levelDown}`, true);

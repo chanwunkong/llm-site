@@ -7,19 +7,23 @@ export const canSpeak = 'speechSynthesis' in window;
 const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
 export const canListen = !!Rec;
 
-function pickVoice() {
+const sameLang = v => v.lang.replace('_', '-').toLowerCase().startsWith(voiceLang.slice(0, 2).toLowerCase());
+function pickVoice(variety) {
   const vs = speechSynthesis.getVoices();
-  return vs.find(v => v.lang === voiceLang) || vs.find(v => v.lang.replace('_', '-').startsWith(voiceLang.slice(0, 2)));
+  // 高變異度：從這個語言的所有語音中隨機挑一個（男聲、女聲、不同口音）
+  if (variety) { const all = vs.filter(sameLang); if (all.length) return all[(Math.random() * all.length) | 0]; }
+  return vs.find(v => v.lang === voiceLang) || vs.find(sameLang);
 }
+export const voiceCount = () => (canSpeak ? speechSynthesis.getVoices().filter(sameLang).length : 0);
 
 const alive = new Set();
-export function speak(text, { rate = 0.9 } = {}) {
+export function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
   return new Promise(resolve => {
     if (!canSpeak || !state.sound || !text) return resolve();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = voiceLang;
     u.rate = rate;
-    const v = pickVoice();
+    const v = voice || pickVoice(variety);
     if (v) u.voice = v;
     alive.add(u);
     const done = () => { alive.delete(u); clearTimeout(t); resolve(); };
@@ -51,11 +55,12 @@ function tone(f1, f2, dur, type = 'sine', vol = 0.12) {
 }
 
 // 句子中的空格：前半句 → 提示音 → 後半句
-export async function speakGap(before, after, rate = 0.9) {
+export async function speakGap(before, after, rate = 0.9, variety = false) {
   stopSpeech();
-  if (before) await speak(before, { rate });
+  const voice = canSpeak ? pickVoice(variety) : null;
+  if (before) await speak(before, { rate, voice });
   if (state.sound) { tone(880, 880, 0.18, 'triangle', 0.1); await new Promise(r => setTimeout(r, 380)); }
-  if (after) await speak(after, { rate });
+  if (after) await speak(after, { rate, voice });
 }
 
 const SFX = {

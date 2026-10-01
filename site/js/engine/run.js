@@ -4,6 +4,7 @@ import { isContent, isTarget, isWord, joinTokens } from './content.js';
 import { L, word, save, now, RULES, isDue, decayProgress } from './store.js';
 import * as T from './territory.js';
 import { FEATURES, VALUES } from '../data/wals.js';
+import * as P from './phono.js';
 
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pickN = (a, n) => shuffle(a.slice()).slice(0, n);
@@ -189,6 +190,18 @@ function distractors(lang, lemma, upos, exclude, n, allowForms) {
   return out;
 }
 
+// 2 → 3 級：有聲音的環境挑「只差一個音」的字（含難音的優先），靜音環境挑拼字相近的字
+function neighborCards(run, lemma, surface, n) {
+  const { lang } = run;
+  const cands = [...new Set([...lang.lemmas.values()].filter(x => x.target && x.lemma !== lemma)
+    .flatMap(x => [...(x.midForms.size ? x.midForms : x.forms)]))];
+  if (run.env === 'mute') return P.spellingNeighbors(surface, cands).slice(0, n).map(w => ({ word: w, kind: 'spell' }));
+  const hard = P.hardSounds(lang.wals);
+  return P.minimalPairs(lang.id, surface, cands)
+    .sort((a, b) => b.involves.filter(x => hard.has(x)).length - a.involves.filter(x => hard.has(x)).length)
+    .slice(0, n).map(m => ({ ...m, kind: 'sound', hard: m.involves.filter(x => hard.has(x)) }));
+}
+
 export function makeQuestion(run, item) {
   const { lang } = run;
   const s = lang.sentences[item.sentence];
@@ -205,7 +218,10 @@ export function makeQuestion(run, item) {
   const mode = lv <= 2 ? 'pick' : lv === 3 ? 'order' : 'produce';
   const target = s.tokens[ti];
   let cards = [];
-  if (mode === 'pick') cards = shuffle([answer[0], ...distractors(lang, item.lemma, target.upos, new Set(answer), 3, false)]);
+  let neighbors = [];
+  if (mode === 'pick' && lv === 2) neighbors = neighborCards(run, item.lemma, answer[0], 2);
+  if (mode === 'pick') cards = shuffle([answer[0], ...neighbors.map(x => x.word),
+    ...distractors(lang, item.lemma, target.upos, new Set([...answer, ...neighbors.map(x => x.word)]), 3 - neighbors.length, false)]);
   if (mode === 'order') cards = shuffle([...answer, ...distractors(lang, item.lemma, target.upos, new Set(answer), 2, true)]);
   if (run.aids.includes('trim') && cards.length) {
     const wrong = cards.findIndex(c => !answer.includes(c));
@@ -217,7 +233,7 @@ export function makeQuestion(run, item) {
   let timer = lv <= 2 ? 0 : lv === 3 ? 15 : 12;
   if (timer && run.aids.includes('slowtime')) timer *= 1.5;
   return {
-    item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer,
+    item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors,
     image: lv === 1 ? lang.base[item.lemma] : null,
     hint: run.aids.includes('hint') ? answer[0][0] : null,
     rules: rulesIn(gapTokens, profileOf(lang)),

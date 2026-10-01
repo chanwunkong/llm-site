@@ -1,13 +1,13 @@
 // 技能（文法）頁：依 CEFR 階段呈現 WALS 文法規則，並和「我會的語言」比較
 // 第一層：目前階段可計分的技能（可解鎖）；第二層：文法對照（參考，不計分）
-import { L, save, RULES, state, known, currentStage, stageReached, STAGE_ORDER } from '../engine/store.js';
+import { L, save, RULES, known, currentStage, stageReached, STAGE_ORDER } from '../engine/store.js';
 import { WALS, profileOf } from '../engine/run.js';
 import { STAGES, FEATURES, LANGS, VALUES } from '../data/wals.js';
 import { joinTokens } from '../engine/content.js';
 import { sfx, speak } from '../audio.js';
-import { esc, toast, openSheet, closeSheet } from './sheet.js';
+import { esc, toast, openSheet } from './sheet.js';
+import { editKnown, knownRow, langName } from './known.js';
 
-const langName = id => LANGS.find(l => l.id === id)?.zh || id;
 const label = (fid, num) => (num ? FEATURES[fid].values[num] || num : '沒有資料');
 const DOMAINS = ['詞序', '形態', '名詞與動詞範疇', '子句構造'];
 
@@ -63,11 +63,7 @@ export function createSkills(root, { getLang, onChange }) {
 
     root.innerHTML = `<div class="skills-page">
       <h2>✨ 文法</h2>
-      <div class="known-row">
-        <span class="muted">我會的語言：</span>
-        ${knownIds().length ? knownIds().map(id => `<span class="chip">${esc(langName(id))}</span>`).join('') : '<span class="muted">尚未設定</span>'}
-        <button class="btn ghost sm" id="editKnown">編輯</button>
-      </div>
+      ${knownRow(target())}
 
       <div class="panel stage-card">
         <div class="stage-head"><b>目前階段 ${st.stage}</b><span class="muted">詞彙 ${st.vocab}${st.next ? ` / ${st.next.toLocaleString()} → ${next}` : ''}</span></div>
@@ -115,7 +111,7 @@ export function createSkills(root, { getLang, onChange }) {
     }));
     root.querySelectorAll('[data-f]').forEach(el => (el.onclick = () => detail(el.dataset.f)));
     root.querySelector('#diffBtn').onclick = () => { onlyDiff = !onlyDiff; render(); };
-    root.querySelector('#editKnown').onclick = editKnown;
+    root.querySelector('[data-edit-known]').onclick = () => editKnown(target(), render);
   }
 
   function detail(fid) {
@@ -129,22 +125,6 @@ export function createSkills(root, { getLang, onChange }) {
       ${v === 'hard' ? '<p class="muted">你會的語言都不是這樣，學的時候要特別留意。</p>' : ''}
       ${rule ? `<h3>你的來源裡的例子</h3>${exs.length ? `<div class="stack">${exs.map((x, i) => `<button class="ex-row" data-i="${i}">${x.html} 🔊</button>`).join('')}</div>` : '<p class="muted">目前的來源裡還沒有例子。</p>'}` : ''}
     `, {}, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => speak(exs[+b.dataset.i].text, { rate: 0.85 }))));
-  }
-
-  function editKnown() {
-    const sel = new Set(known());
-    const draw = body => {
-      body.querySelector('#langs').innerHTML = LANGS.filter(l => l.id !== target()).map(l =>
-        `<button class="btn ${sel.has(l.id) ? 'gold' : 'ghost'} sm" data-l="${l.id}">${esc(l.zh)}</button>`).join('');
-      body.querySelectorAll('[data-l]').forEach(b => (b.onclick = () => { sel.has(b.dataset.l) ? sel.delete(b.dataset.l) : sel.add(b.dataset.l); draw(body); }));
-    };
-    openSheet(`<h2>我會的語言</h2>
-      <p class="muted">可以多選。例如會中文、也學過英文，就兩個都選。目標語言和這些語言都不一樣的地方，會標成「難規則」。</p>
-      <div class="lang-grid" id="langs"></div>
-      <button class="btn gold big" id="done" style="margin-top:14px">完成</button>`, {}, body => {
-      draw(body);
-      body.querySelector('#done').onclick = () => { state.known = [...sel]; save(); closeSheet(); render(); };
-    });
   }
 
   return { show: render, hide() {}, render };
