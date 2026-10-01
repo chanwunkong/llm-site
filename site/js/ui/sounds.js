@@ -8,7 +8,7 @@ import { speak } from '../audio.js';
 import { esc, openSheet } from './sheet.js';
 import { editKnown, knownRow, langName } from './known.js';
 import { G } from './glyph.js';
-import { PLACES, MANNERS, HEIGHTS, BACKS, position, base } from '../engine/ipa-chart.js';
+import { PLACES, MANNERS, HEIGHTS, position, base } from '../engine/ipa-chart.js';
 import { known } from '../engine/store.js';
 
 
@@ -25,7 +25,7 @@ export function createSounds(root, { getLang }) {
     for (const [lemma, info] of lang.lemmas) {
       if (!info.target) continue;
       const sg = P.wordSegs(lang.id, lemma);
-      if (!sg || !sg.includes(seg)) continue;
+      if (!sg || !sg.some(x => P.norm(x) === P.norm(seg))) continue;
       ((lg.words[lemma]?.lv || 1) >= 2 ? out.learned : out.other).push(lemma);
     }
     return out;
@@ -46,7 +46,9 @@ export function createSounds(root, { getLang }) {
     return out.map(x => ({ ...x, pos: position(x.seg) }));
   }
 
-  const btn = x => `<button class="ipa-s ${x.who === 'target' ? x.status : 'absent'}" data-s="${esc(x.seg)}">${esc(x.seg)}${x.who === 'target' && P.markOf(x.seg) !== undefined ? '<i>✎</i>' : ''}</button>`;
+  // 顯示用寫法：去掉附加符號。這裡是比較音之間的差異，不是標出精確的語音
+  const disp = seg => (['vowel', 'diphthong'].includes(position(seg).kind) ? base(seg) : P.norm(seg));
+  const btn = x => `<button class="ipa-s ${x.who === 'target' ? x.status : 'absent'}" data-s="${esc(x.seg)}">${esc(disp(x.seg))}${x.who === 'target' && P.markOf(x.seg) !== undefined ? '<i>✎</i>' : ''}</button>`;
 
   const diphs = all => all.filter(x => x.pos.kind === 'diphthong');
   // 每個起點母音有幾個多母音
@@ -69,8 +71,28 @@ export function createSounds(root, { getLang }) {
   function vbtn(counts) {
     return x => {
       const b = base(x.seg), n = counts.get(b) || 0;
-      return `<button class="ipa-s ${n ? 'start' : 'dim'}${start === b ? ' sel' : ''}" data-v="${esc(b)}"${n ? '' : ' tabindex="-1"'}>${esc(x.seg)}${n ? `<sup>${n}</sup>` : ''}</button>`;
+      return `<button class="ipa-s ${n ? 'start' : 'dim'}${start === b ? ' sel' : ''}" data-v="${esc(b)}"${n ? '' : ' tabindex="-1"'}>${esc(b)}${n ? `<sup>${n}</sup>` : ''}</button>`;
     };
+  }
+
+  // 母音四邊形（上寬下窄的倒梯形）：不畫格線，只有一塊淡色的梯形，母音放在各自的座標上
+  function trapezoid(vs, cellHtml, stage) {
+    const H = HEIGHTS.map(([k]) => k), xF = h => 10 + (h / 6) * 34, xB = 84, yOf = h => 7 + (h / 6) * 86;
+    const xOf = (h, b) => (b === 'front' ? xF(h) : b === 'back' ? xB : (xF(h) + xB) / 2);
+    const slots = new Map();
+    for (const x of vs) {
+      const k = [x.pos.height, x.pos.back, x.pos.round].join('|');
+      if (!slots.has(k)) slots.set(k, []);
+      slots.get(k).push(x);
+    }
+    const sym = [...slots].map(([k, xs]) => {
+      const [ht, bk, rd] = k.split('|'), h = H.indexOf(ht);
+      return `<span class="vq-slot ${rd === 'true' ? 'rd' : 'ur'}" style="left:${xOf(h, bk)}%;top:${yOf(h)}%">${xs.map(cellHtml).join('')}</span>`;
+    }).join('');
+    const bg = `polygon(${xF(0) - 7}% 0%, ${xB + 9}% 0%, ${xB + 9}% 100%, ${xF(6) - 7}% 100%)`;
+    const axes = [['前', xF(0)], ['央', (xF(0) + xB) / 2], ['後', xB]].map(([zh, x]) => `<span class="vq-ax top" style="left:${x}%">${zh}</span>`).join('')
+      + [['高', 0], ['半高', 2], ['半低', 4], ['低', 6]].map(([zh, h]) => `<span class="vq-ax side" style="top:${yOf(h)}%">${zh}</span>`).join('');
+    return `<div class="vq-box"><div class="vq${stage ? ' ipa-stage' : ''}"><div class="vq-bg" style="clip-path:${bg}"></div>${axes}${sym}${stage ? '<svg class="ipa-arrows"></svg><div class="ipa-labels"></div>' : ''}</div></div>`;
   }
 
   function grid(rows, cols, all, keyOf, rowKey, colKey, sideKey, cellHtml = btn, stage = false) {
@@ -102,10 +124,10 @@ export function createSounds(root, { getLang }) {
       <div class="row-between"><span></span><button class="btn ghost sm" id="emptyBtn">${hideEmpty ? '隱藏空欄位 ●' : '顯示空欄位 ○'}</button></div>
       <h3>子音 <small>（列：發音方法；欄：發音部位；每格左清右濁）</small></h3>
       ${grid(MANNERS, PLACES, all, x => x.pos.kind === 'consonant', 'manner', 'place', 'voiced')}
-      <h3>母音 <small>（列：舌位高低；欄：前後；每格左展右圓）</small></h3>
+      <h3>母音 <small>（上下：舌位高低；左右：前後；每個位置左展右圓）</small></h3>
       ${diph.length ? `<div class="seg-toggle"><button data-layer="mono" class="${layer === 'mono' ? 'on' : ''}">單母音</button><button data-layer="multi" class="${layer === 'multi' ? 'on' : ''}">多母音</button></div>` : ''}
       ${layer === 'multi' ? `<p class="muted">點一個標有數字的母音，畫出從它出發的多母音；點終點旁的標籤可以聽例字。</p>` : ''}
-      ${grid(HEIGHTS, BACKS, vowelItems(all), x => x.pos.kind === 'vowel', 'height', 'back', 'round', layer === 'multi' ? vbtn(startCounts(all)) : btn, layer === 'multi')}
+      ${trapezoid(vowelItems(all), layer === 'multi' ? vbtn(startCounts(all)) : btn, layer === 'multi')}
       ${diph.length ? `<h3>多母音</h3><div class="ipa-list">${diph.map(x => btn(x).replace('data-s=', 'data-d=')).join('')}</div>` : ''}
       ${other.length ? `<h3>其他</h3><div class="ipa-list">${other.map(btn).join('')}</div>` : ''}
       <p class="muted">音位清單：PHOIBLE 2.0（Moran & McCloy 2019, CC BY-SA 3.0）${src ? `，${esc(langName(t))}採用 ${esc(src.source.toUpperCase())} 第 ${esc(src.inventory)} 號清單` : ''}。字的發音由 eSpeak NG（英文）與 pyopenjtalk（日文）產生。</p>
@@ -177,7 +199,7 @@ export function createSounds(root, { getLang }) {
       paths += `<g data-hit="${esc(d.seg)}"${dim}>${geom} stroke="${STROKE[st]}" stroke-width="${w}"${dash} stroke-linejoin="round"/>${geom.replace(/ marker-end="[^"]*"/, '')} stroke="transparent" stroke-width="16" style="pointer-events:stroke;cursor:pointer"/></g>`;
       const end = pts[pts.length - 1], key = end.join(), k = stack.get(key) || 0;
       stack.set(key, k + 1);
-      lab.insertAdjacentHTML('beforeend', `<button class="ipa-s ${st}${focus === d.seg ? ' focus' : ''}" data-l="${esc(d.seg)}" style="left:${end[0] + 14}px;top:${end[1] - 13 + k * 26}px"${dim}>${esc(d.seg)}</button>`);
+      lab.insertAdjacentHTML('beforeend', `<button class="ipa-s ${st}${focus === d.seg ? ' focus' : ''}" data-l="${esc(d.seg)}" style="left:${Math.min(end[0] + 14, sr.width - 48)}px;top:${end[1] - 13 + k * 26}px"${dim}>${esc(disp(d.seg))}</button>`);
     }
     svg.innerHTML = `<defs>${defs}</defs>${paths}`;
     svg.querySelectorAll('[data-hit]').forEach(g => (g.onclick = () => detail(g.dataset.hit)));
@@ -192,12 +214,13 @@ export function createSounds(root, { getLang }) {
     const words = inTarget ? wordsWith(seg) : { learned: [], other: [] };
     const row = w => {
       const sg = P.wordSegs(lang.id, w) || [];
-      return `<button class="ex-row" data-w="${esc(w)}">${esc(w)}　/${sg.map(x => x === seg ? `<mark>${esc(x)}</mark>` : esc(x)).join('')}/ ${G.speaker(14)}</button>`;
+      return `<button class="ex-row" data-w="${esc(w)}">${esc(w)}　/${sg.map(x => P.norm(x) === P.norm(seg) ? `<mark>${esc(x)}</mark>` : esc(x)).join('')}/ ${G.speaker(14)}</button>`;
     };
     const mark = P.markOf(seg);
     const TAG = { hard: '<span class="tag hard">難音</span>', known: '<span class="tag ok">已經會</span>', absent: `<span class="tag">${esc(langName(t))}沒有這個音</span>` };
     openSheet(`
-      <h2 class="snd-title">${esc(seg)} ${TAG[status]}</h2>
+      <h2 class="snd-title">${esc(disp(seg))} ${TAG[status]}</h2>
+      ${disp(seg) !== seg ? `<p class="muted">PHOIBLE 原始寫法：${esc(seg)}</p>` : ''}
       <p class="muted">${have.length ? `有這個音的語言：${have.map(l => esc(l.zh)).join('、')}` : '其他語言的清單裡都沒有這個音。'}</p>
       ${inTarget ? `<div class="row">
         <button class="btn ${mark === true ? 'gold' : 'ghost'} sm" id="mk1">這個音我會</button>

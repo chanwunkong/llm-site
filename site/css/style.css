@@ -284,3 +284,16 @@ table.ipa td.r { border-left: 1px dotted var(--muted); }
 .ipa-s.start sup { font-size: 9px; color: var(--blue); margin-left: 1px; }
 .ipa-s.sel { background: var(--yellow); }
 .ipa-s.dim { opacity: .3; border-style: dotted; pointer-events: none; }
+
+/* ---- 母音四邊形 ---- */
+.vq-box { padding: 22px 0 6px 34px; }
+.vq { position: relative; width: 100%; aspect-ratio: 1.3; }
+.vq.ipa-stage { display: block; padding: 0; }
+.vq-bg { position: absolute; inset: 0; background: var(--soft); }
+.vq-ax { position: absolute; font-size: 11px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.vq-ax.top { top: -20px; transform: translateX(-50%); }
+.vq-ax.side { left: -34px; transform: translateY(-50%); }
+.vq-slot { position: absolute; display: flex; gap: 2px; z-index: 1; }
+.vq-slot.ur { transform: translate(calc(-100% - 1px), -50%); }
+.vq-slot.rd { transform: translate(1px, -50%); }
+.vq-slot .ipa-s { margin: 0; }
