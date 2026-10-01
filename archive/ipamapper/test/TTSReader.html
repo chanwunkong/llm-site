@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>義大利文語音朗讀 (Mobile)</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <style>
+    :root{--bg:#0b1220;--card:#111827;--muted:#6b7280;--text:#e5e7eb;--accent:#22d3ee;--btn:#0ea5e9;--danger:#ef4444}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1220,#0f172a);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    .wrap{max-width:680px;margin:0 auto;padding:clamp(16px,5vw,28px)}
+    .app{background:linear-gradient(180deg,#0c1222,#0c1827);border:1px solid #1f2937;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden}
+    header{display:flex;align-items:center;gap:12px;padding:16px 16px;border-bottom:1px solid #1f2937;background:#0b1220;position:sticky;top:0}
+    header .logo{width:36px;height:36px;border-radius:10px;background:radial-gradient(circle at 30% 30%,#22d3ee,#0ea5e9 60%,#0369a1);box-shadow:0 0 0 4px #0b1220}
+    header h1{font-size:18px;margin:0}
+    header p{margin:0;color:var(--muted);font-size:12px}
+
+    .section{padding:16px}
+    .field{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+    .label{font-size:13px;color:#cbd5e1}
+    textarea{width:100%;min-height:120px;border-radius:14px;border:1px solid #1f2937;background:#0b1220;color:var(--text);padding:14px;font-size:16px;resize:vertical}
+
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    select,input[type="range"]{width:100%;border-radius:12px;border:1px solid #1f2937;background:#0b1220;color:var(--text);padding:10px}
+    .hint{font-size:12px;color:var(--muted)}
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
+    .chip{padding:8px 12px;border-radius:999px;border:1px solid #1f2937;color:#cbd5e1;background:#0b1220;font-size:13px;cursor:pointer}
+
+    .actions{display:flex;gap:10px;position:sticky;bottom:0;padding:12px 16px;background:linear-gradient(180deg,rgba(11,18,32,.0),#0b1220 30%)}
+    button{flex:1;border:none;border-radius:14px;padding:14px 16px;font-weight:600;font-size:16px}
+    .primary{background:var(--btn);color:#00111a}
+    .secondary{background:#0b1220;border:1px solid #1f2937;color:#e2e8f0}
+    .danger{background:var(--danger);color:#fff}
+
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#111827;border:1px solid #1f2937;color:#e5e7eb;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.35s}
+    .toast.show{opacity:1;transform:translate(-50%,-6px)}
+
+    footer{padding:10px 16px;color:#94a3b8;font-size:12px;border-top:1px solid #1f2937}
+    a{color:#7dd3fc}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="app" role="application" aria-label="義大利文語音朗讀">
+      <header>
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>義大利文語音朗讀</h1>
+          <p>Mobile-first · 使用瀏覽器語音合成（可離線、免金鑰）</p>
+        </div>
+      </header>
+
+      <div class="section">
+        <div class="field">
+          <label class="label" for="text">要說的義大利文（Italiano）</label>
+          <textarea id="text" placeholder="例如：Ciao! Benvenuto nel mio sito."></textarea>
+          <div class="chips" id="samples"></div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="voice">聲音（僅顯示支援 it-* 的語音）</label>
+          <select id="voice" aria-label="選擇義大利語音"></select>
+          <div class="hint">如果清單是空的，請先播放一次或重新整理；iOS 可能需要靜音鍵關閉。</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label class="label" for="rate">語速 <span id="rateVal">1.0</span></label>
+            <input type="range" id="rate" min="0.6" max="1.6" step="0.05" value="1.0" />
+          </div>
+          <div class="field">
+            <label class="label" for="pitch">音高 <span id="pitchVal">1.0</span></label>
+            <input type="range" id="pitch" min="0.7" max="1.4" step="0.05" value="1.0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="secondary" id="test">試聽語音名稱</button>
+        <button class="primary" id="speak">開始朗讀</button>
+        <button class="danger" id="stop">停止</button>
+      </div>
+
+      <footer>
+        <p>說明：此頁使用 <strong>Web Speech API</strong> 的 <code>speechSynthesis</code> 在裝置端進行 TTS。要改成 OpenAI 雲端 TTS，請看下方註解的整合指引。</p>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = sel => document.querySelector(sel);
+    const text = $('#text');
+    const voiceSel = $('#voice');
+    const rate = $('#rate');
+    const pitch = $('#pitch');
+    const rateVal = $('#rateVal');
+    const pitchVal = $('#pitchVal');
+    const samples = $('#samples');
+    const toast = $('#toast');
+
+    const IT_SAMPLES = [
+      'Ciao! Benvenuto nel mio sito.',
+      'Come stai oggi? Spero tutto bene.',
+      'Questo è un esempio di sintesi vocale in italiano.',
+      'Ordiniamo un caffè e un cornetto, per favore.',
+      'Ti auguro una splendida giornata!'
+    ];
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 1600);
+    }
+
+    function populateSamples(){
+      IT_SAMPLES.forEach(s=>{
+        const chip=document.createElement('button');
+        chip.className='chip';
+        chip.type='button';
+        chip.textContent=s;
+        chip.addEventListener('click',()=>{ text.value=s; speakNow(); });
+        samples.appendChild(chip);
+      });
+    }
+
+    function loadVoices(){
+      const voices = window.speechSynthesis.getVoices();
+      const itVoices = voices.filter(v => /^it(-|_)/i.test(v.lang));
+      voiceSel.innerHTML = '';
+      itVoices.forEach((v, idx)=>{
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} · ${v.lang}`;
+        if(idx===0) opt.selected = true;
+        voiceSel.appendChild(opt);
+      });
+      if(!itVoices.length){
+        const opt=document.createElement('option');
+        opt.textContent='（找不到義大利語音，請重整或先點「試聽語音名稱」）';
+        voiceSel.appendChild(opt);
+      }
+    }
+
+    function getSelectedVoice(){
+      const voices = window.speechSynthesis.getVoices();
+      return voices.find(v => v.name === voiceSel.value) || voices.find(v=>/^it(-|_)/i.test(v.lang));
+    }
+
+    function speakNow(){
+      const t = (text.value||'').trim();
+      if(!t){ showToast('請先輸入要說的義大利文'); return; }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(t);
+      const v = getSelectedVoice();
+      if(v) u.voice = v;
+      u.lang = 'it-IT';
+      u.rate = parseFloat(rate.value);
+      u.pitch = parseFloat(pitch.value);
+      u.onstart = ()=>showToast('開始朗讀…');
+      u.onend = ()=>showToast('朗讀完成');
+      u.onerror = e=>showToast('朗讀錯誤：'+(e.error||'unknown'));
+      window.speechSynthesis.speak(u);
+    }
+
+    function speakVoiceName(){
+      const v = getSelectedVoice();
+      if(!v){ showToast('還沒有載入語音，請稍候或重整'); return; }
+      const u = new SpeechSynthesisUtterance(`Voce: ${v.name}`);
+      u.lang = 'it-IT';
+      u.voice = v; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    }
+
+    // Init
+    populateSamples();
+    loadVoices();
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    rate.addEventListener('input',()=>rateVal.textContent = rate.value);
+    pitch.addEventListener('input',()=>pitchVal.textContent = pitch.value);
+    $('#speak').addEventListener('click', speakNow);
+    $('#stop').addEventListener('click', ()=> speechSynthesis.cancel());
+    $('#test').addEventListener('click', speakVoiceName);
+
+    // --- ▼ Optional: OpenAI TTS（雲端）整合範例（需自行提供金鑰） ▼ ---
+    // 使用方式：
+    // 1) 將下方函式改成向您的後端發請求（請勿把 API Key 放在前端）。
+    // 2) 後端用 OpenAI TTS（例如 gpt-4o-mini-tts）把文字合成成 MP3 或 WAV，然後回傳音訊位元組。
+    // 3) 前端把回傳的 ArrayBuffer 轉成 Blob，建立 audio 來播放。
+    // 下方只示意前端怎麼播放從後端拿到的音訊：
+    async function speakViaOpenAI_TTS(italianText){
+      try{
+        const res = await fetch('/api/tts', { // ← 你的後端端點
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ text: italianText, voice: 'alloy', format:'mp3' })
+        });
+        if(!res.ok) throw new Error('後端 TTS 失敗');
+        const arrayBuf = await res.arrayBuffer();
+        const blob = new Blob([arrayBuf], { type:'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        await audio.play();
+      }catch(err){
+        console.error(err);
+        showToast('OpenAI TTS 播放失敗');
+      }
+    }
+    // 需要切換到 OpenAI TTS 時，呼叫： speakViaOpenAI_TTS(text.value)
+    // --- ▲ Optional: OpenAI TTS 整合示意結束 ▲ ---
+  </script>
+</body>
+</html>

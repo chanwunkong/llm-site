@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase + GPT IPA 產生器（語言/口音/單詞）</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            padding: 20px;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        label {
+            font-size: 14px;
+            color: #555;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            min-width: 260px;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+            background: #0ea5e9;
+            color: #fff;
+            border: none;
+        }
+
+        button.secondary {
+            background: #64748b;
+        }
+
+        pre {
+            background: #0b1220;
+            color: #e5e7eb;
+            padding: 16px;
+            border-radius: 12px;
+            white-space: pre-wrap;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Firebase + Google 登入 + 儲存 GPT API Key + IPA 產生</h1>
+
+    <div class="row">
+        <button id="loginBtn">使用 Google 登入</button>
+        <button id="logoutBtn" class="secondary hidden">登出</button>
+        <span id="userInfo" class="muted"></span>
+    </div>
+
+    <div id="keySection" class="row hidden">
+        <div>
+            <label>你的 OpenAI API Key（僅個人測試，會存回 Firestore: users/{uid}）</label>
+            <input id="gptKey" placeholder="sk-..." style="width:360px;">
+        </div>
+        <div>
+            <label>&nbsp;</label>
+            <button id="saveKeyBtn">儲存 API Key</button>
+            <div id="status" class="muted"></div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- 語言 / 口音 / 單詞 -->
+    <div class="row">
+        <div>
+            <label for="langSel">語言</label>
+            <select id="langSel">
+                <option value="zh-TW">中文（繁體）🇹🇼</option>
+                <option value="en-US">英文 🇺🇸</option>
+                <option value="de-DE">德文 🇩🇪</option>
+                <option value="es-ES">西班牙語 🇪🇸</option>
+                <option value="pt-PT">葡萄牙語 🇵🇹</option>
+                <option value="fr-FR">法語 🇫🇷</option>
+                <option value="it-IT">意大利語 🇮🇹</option>
+                <option value="ru-RU">俄語 🇷🇺</option>
+                <option value="hi-IN">印地-烏爾都語 🇮🇳</option>
+                <option value="bn-BD">孟加拉語 🇧🇩</option>
+                <option value="fa-IR">波斯語 🇮🇷</option>
+                <option value="ta-IN">坦米爾語 🇮🇳</option>
+                <option value="ar-SA">阿拉伯語 🇸🇦</option>
+                <option value="tr-TR">土耳其語 🇹🇷</option>
+                <option value="ja-JP">日語 🇯🇵</option>
+                <option value="ko-KR">韓語 🇰🇷</option>
+                <option value="vi-VN">越南語 🇻🇳</option>
+                <option value="id-ID">印尼-馬來語 🇮🇩</option>
+                <option value="th-TH">泰語 🇹🇭</option>
+                <option value="sw-KE">斯瓦希里語 🇰🇪</option>
+            </select>
+        </div>
+
+        <div id="accentWrap">
+            <label for="accentSel">口音 / 變體</label>
+            <select id="accentSel"></select>
+            <div id="accentHint" class="muted"></div>
+        </div>
+
+        <div>
+            <label for="wordInput">單詞</label>
+            <input id="wordInput" placeholder="輸入要標註 IPA 的字詞（例如：你好 / Hello）" style="width:300px;">
+        </div>
+    </div>
+
+    <div class="row">
+        <div style="flex:1; min-width:320px;">
+            <label>自動產生的 Prompt（送往 GPT）</label>
+            <textarea id="promptBox" rows="4" style="width:100%;" readonly></textarea>
+        </div>
+    </div>
+
+    <div class="row">
+        <button id="genBtn">🚀 產生 IPA</button>
+        <span id="runStatus" class="muted"></span>
+    </div>
+
+    <div class="row">
+        <div style="flex:1; min-width:320px;">
+            <label>結果</label>
+            <pre id="resultBox">（這裡會顯示 IPA）</pre>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // --- Firebase 初始化（用你的專案資訊） ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqZLFskqgyiAEc127dh95rXsOPQVLSurM",
+            authDomain: "test-5dbba.firebaseapp.com",
+            projectId: "test-5dbba",
+            storageBucket: "test-5dbba.appspot.com",
+            messagingSenderId: "878665537417",
+            appId: "1:878665537417:web:xxxxxx" // 請到 Firebase 專案設定複製正確 appId
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // --- 支援的語言口音對照（跟你前面設計一致） ---
+        const VOICE_VARIANTS = {
+            "zh-TW": { include: ["cmn-TW", "cmn-CN"], labels: { "cmn-TW": "台灣", "cmn-CN": "中國" } },
+            "en-US": { include: ["en-US", "en-GB", "en-AU", "en-CA"], labels: { "en-US": "美式", "en-GB": "英式", "en-AU": "澳洲", "en-CA": "加拿大" } },
+            "de-DE": { include: ["de-DE", "de-AT", "de-CH"], labels: { "de-DE": "德國", "de-AT": "奧地利", "de-CH": "瑞士" } },
+            "es-ES": { include: ["es-ES", "es-MX", "es-US", "es-AR"], labels: { "es-ES": "西班牙", "es-MX": "墨西哥", "es-US": "美國", "es-AR": "阿根廷" } },
+            "pt-PT": { include: ["pt-PT", "pt-BR"], labels: { "pt-PT": "歐洲", "pt-BR": "巴西" } },
+            "fr-FR": { include: ["fr-FR", "fr-CA"], labels: { "fr-FR": "法國", "fr-CA": "加拿大" } },
+            "it-IT": { include: ["it-IT"], labels: { "it-IT": "義大利" } },
+            "ru-RU": { include: ["ru-RU"], labels: { "ru-RU": "俄羅斯" } },
+            "hi-IN": { include: ["hi-IN", "ur-PK"], labels: { "hi-IN": "印地語", "ur-PK": "烏爾都語" } },
+            "bn-BD": { include: ["bn-BD", "bn-IN"], labels: { "bn-BD": "孟加拉", "bn-IN": "印度孟加拉" } },
+            "fa-IR": { include: ["fa-IR", "fa-AF"], labels: { "fa-IR": "伊朗", "fa-AF": "阿富汗" } },
+            "ta-IN": { include: ["ta-IN", "ta-LK"], labels: { "ta-IN": "印度", "ta-LK": "斯里蘭卡" } },
+            "ar-SA": { include: ["ar-SA", "ar-EG", "ar-XA"], labels: { "ar-SA": "沙烏地", "ar-EG": "埃及", "ar-XA": "汎阿拉伯" } },
+            "tr-TR": { include: ["tr-TR"], labels: { "tr-TR": "土耳其" } },
+            "ja-JP": { include: ["ja-JP"], labels: { "ja-JP": "日本" } },
+            "ko-KR": { include: ["ko-KR"], labels: { "ko-KR": "韓國" } },
+            "vi-VN": { include: ["vi-VN"], labels: { "vi-VN": "越南（北部）" } },
+            "id-ID": { include: ["id-ID", "ms-MY"], labels: { "id-ID": "印尼語", "ms-MY": "馬來語" } },
+            "th-TH": { include: ["th-TH"], labels: { "th-TH": "泰國" } },
+            "sw-KE": { include: ["sw-KE", "sw-TZ"], labels: { "sw-KE": "肯亞", "sw-TZ": "坦尚尼亞" } }
+        };
+
+        // --- UI 元素 ---
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+        const keySection = document.getElementById('keySection');
+        const gptKeyInput = document.getElementById('gptKey');
+        const saveKeyBtn = document.getElementById('saveKeyBtn');
+        const statusEl = document.getElementById('status');
+
+        const langSel = document.getElementById('langSel');
+        const accentWrap = document.getElementById('accentWrap');
+        const accentSel = document.getElementById('accentSel');
+        const accentHint = document.getElementById('accentHint');
+        const wordInput = document.getElementById('wordInput');
+        const promptBox = document.getElementById('promptBox');
+        const genBtn = document.getElementById('genBtn');
+        const resultBox = document.getElementById('resultBox');
+        const runStatus = document.getElementById('runStatus');
+
+        let currentUser = null;
+        let gptKey = null;
+
+        // --- 登入 / 登出 ---
+        loginBtn.onclick = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .catch(err => { alert("登入失敗：" + err.message); console.error(err); });
+        };
+        logoutBtn.onclick = () => auth.signOut();
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                loginBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                userInfo.textContent = `已登入：${user.email}`;
+                keySection.classList.remove('hidden');
+
+                // 讀取 Firestore 使用者的 gptApiKey
+                try {
+                    const doc = await db.collection('users').doc(user.uid).get();
+                    gptKey = doc.exists ? doc.data().gptApiKey : null;
+                    if (gptKey) {
+                        gptKeyInput.value = gptKey;
+                        statusEl.textContent = "✅ 已載入 Firestore 中的 gptApiKey";
+                    } else {
+                        statusEl.textContent = "⚠️ Firestore 尚未儲存 gptApiKey";
+                    }
+                } catch (e) {
+                    console.error(e);
+                    statusEl.textContent = "❌ 讀取 Firestore 失敗：" + e.message;
+                }
+            } else {
+                currentUser = null;
+                gptKey = null;
+                loginBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                userInfo.textContent = '';
+                keySection.classList.add('hidden');
+            }
+        });
+
+        // --- 儲存 Key：使用 users/{uid} 並 merge，避免覆蓋其他專案資料 ---
+        saveKeyBtn.onclick = async () => {
+            if (!auth.currentUser) return alert("請先登入！");
+            const key = gptKeyInput.value.trim();
+            if (!key) return alert("請輸入 API Key");
+            try {
+                await db.collection('users').doc(auth.currentUser.uid).set({
+                    gptApiKey: key,
+                    gptUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                gptKey = key;
+                statusEl.textContent = "✅ 已合併更新到 users/gptApiKey！";
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = "❌ 儲存失敗：" + err.message;
+            }
+        };
+
+        // --- 根據語言載入口音選項 ---
+        function refreshAccents() {
+            const lang = langSel.value;
+            accentSel.innerHTML = '';
+            const variant = VOICE_VARIANTS[lang];
+
+            if (variant && variant.include?.length) {
+                accentWrap.classList.remove('hidden');
+                variant.include.forEach(code => {
+                    const opt = document.createElement('option');
+                    opt.value = code;
+                    opt.textContent = variant.labels?.[code] || code;
+                    accentSel.appendChild(opt);
+                });
+                accentHint.textContent = "（可選擇主要口音/變體）";
+            } else {
+                accentWrap.classList.add('hidden');
+                accentHint.textContent = "";
+            }
+            updatePromptPreview();
+        }
+
+        // --- 生成 Prompt 預覽 ---
+        function updatePromptPreview() {
+            const lang = langSel.options[langSel.selectedIndex].textContent.replace(/ ?🇧🇩| ?🇮🇳| ?🇯🇵| ?🇹🇼| ?🇺🇸| ?🇩🇪| ?🇪🇸| ?🇵🇹| ?🇫🇷| ?🇮🇹| ?🇷🇺| ?🇮🇷| ?🇸🇦| ?🇹🇷| ?🇰🇷| ?🇻🇳| ?🇮🇩| ?🇹🇭| ?🇰🇪/g, '').trim();
+            const langCode = langSel.value;
+            const hasAccent = !accentWrap.classList.contains('hidden');
+            const accentCode = hasAccent ? accentSel.value : null;
+            const accentLabel = hasAccent ? (VOICE_VARIANTS[langCode].labels?.[accentCode] || accentCode) : null;
+            const word = (wordInput.value || "").trim();
+
+            const prompt = `IPA for "${word}" in ${lang}${accentLabel ? ' (' + accentLabel + ')' : ''}. Only IPA.`;
+
+            promptBox.value = prompt;
+        }
+
+        langSel.onchange = refreshAccents;
+        accentSel.onchange = updatePromptPreview;
+        wordInput.oninput = updatePromptPreview;
+
+        // 初始載入
+        refreshAccents();
+
+        // --- 呼叫 OpenAI（用 Firestore 內的 gptApiKey 或輸入框的） ---
+        async function callOpenAI(prompt) {
+            const key = (gptKeyInput.value || '').trim();
+            if (!key) throw new Error("尚未提供 OpenAI API Key");
+            const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${key}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o-mini",
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0
+                })
+            });
+            const data = await resp.json();
+            if (!resp.ok) {
+                throw new Error(data.error?.message || "OpenAI 呼叫失敗");
+            }
+            return (data.choices?.[0]?.message?.content || "").trim();
+        }
+
+        // --- 執行產生 ---
+        genBtn.onclick = async () => {
+            const word = (wordInput.value || "").trim();
+            if (!word) { alert("請先輸入單詞"); return; }
+            const prompt = promptBox.value;
+            runStatus.textContent = "⏳ 正在向 GPT 產生 IPA...";
+            resultBox.textContent = "（產生中…）";
+            genBtn.disabled = true;
+
+            try {
+                const ipa = await callOpenAI(prompt);
+                resultBox.textContent = ipa || "（沒有回傳內容）";
+                runStatus.textContent = "✅ 完成";
+            } catch (e) {
+                console.error(e);
+                runStatus.textContent = "❌ 失敗";
+                resultBox.textContent = "錯誤：" + e.message;
+            } finally {
+                genBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+
+</html>

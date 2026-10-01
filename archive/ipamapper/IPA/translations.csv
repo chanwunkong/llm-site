@@ -1,0 +1,115 @@
+﻿data-key,en,zh
+simpleMode,simpleMode,簡易模式
+chinese,Chinese 🇹🇼,中文 🇹🇼
+english,English 🇺🇸,英文 🇺🇸
+german,German 🇩🇪,德文 🇩🇪
+spanish,Spanish 🇪🇸,西班牙語 🇪🇸
+portuguese,Portuguese 🇵🇹,葡萄牙語 🇵🇹
+french,French 🇫🇷,法語 🇫🇷
+italian,Italian 🇮🇹,意大利語 🇮🇹
+russian,Russian 🇷🇺,俄語 🇷🇺
+hindiurdu,Hindi-Urdu 🇮🇳,印地-烏爾都語 🇮🇳
+bengali,Bengali 🇧🇩,孟加拉語 🇧🇩
+persian,Persian 🇮🇷,波斯語 🇮🇷
+tamil,Tamil 🇮🇳,坦米爾語 🇮🇳
+arabic,Arabic 🇸🇦,阿拉伯語 🇸🇦
+turkish,Turkish 🇹🇷,土耳其語 🇹🇷
+japanese,Japanese 🇯🇵,日語 🇯🇵
+korean,Korean 🇰🇷,韓語 🇰🇷
+vietnamese,Vietnamese 🇻🇳,越南語 🇻🇳
+indonesian,Indonesian 🇮🇩,印尼語 🇮🇩
+thai,Thai 🇹🇭,泰語 🇹🇭
+swahili,Swahili 🇰🇪,斯瓦希里語 🇰🇪
+ConsonantsPulmonic,Consonants (Pulmonic),輔音(肺部氣流)
+ConsonantsNonPulmonic,Consonants (Non-Pulmonic),輔音(非肺部氣流)
+Bilabial,Bilabial,雙唇
+Labiodental,Labiodental,唇齒
+Dental,Dental,齒
+Alveolar,Alveolar,齦
+Postalveolar,Postalveolar,齦後
+Retroflex,Retroflex,捲舌
+Palatal,Palatal,硬腭
+Velar,Velar,軟腭
+Uvular,Uvular,小舌
+Pharyngeal,Pharyngeal,咽
+Glottal,Glottal,喉
+Plosive,Plosive,爆發音
+Nasal,Nasal,鼻音
+Trill,Trill,顫音
+TapOrFlap,Tap or flap,拍音或閃音
+Fricative,Fricative,擦音
+LateralFricative,Lateral fricative,邊擦音
+Approximant,Approximant,近音
+LateralApproximant,Lateral approximant,邊近音
+ConsonantsPulmonicNote,Symbols to the left in a cell are voiceless. to the right are voiced. Shaded areas denote articulations judged impossible.,成對出現的音標，左邊為清輔音，右邊為濁輔音。陰影區域表示不可能產生的音。
+Clicks,Clicks,嘖音
+VoicedImplosives,Voiced implosives,濁內爆音
+Ejectives,Ejectives,噴音
+NonP-Bilabial,Bilabial,雙唇音
+NonP-Ejective,Ejective,噴音
+NonP-Dental,Dental,齒音
+NonP-DentalAlveolar,Dental/alveolar,齒音/齦音
+NonP-Postalveolar,(Post)alveolar,齦(後)音
+NonP-Palatal,Palatal,硬腭音
+NonP-Palatoalveolar,Palatoalveolar,腭齦音
+NonP-Velar,Velar,軟腭音
+NonP-AlveolarLateral,Alveolar lateral,齦邊音
+NonP-Uvular,Uvular,小舌音
+NonP-AlveolarFricative,Alveolar fricative,齦擦音
+OtherSymbols,Other Symbols,其他符號
+OS-VoicelessLabialvelarFricative,Voiceless labial-velar fricative,唇-軟腭輕擦音
+OS-VoicedLabialvelarApproximant,Voiced labial-velar approximant,唇-軟腭濁近音
+OS-VoicedLabialpalatalApproximant,Voiced labial-palatal approximant,唇-硬腭濁近音
+OS-VoicelessEpiglottalFricative,Voiceless epiglottal fricative,會厭輕擦音
+OS-VoicedEpiglottalFricativeApproximant,Voiced epiglottal fricative,會厭濁擦音
+OS-EpiglottalPlosive,Epiglottal plosive,會厭爆發音
+OS-AlveolopalatalFricatives,Alveolo-palatal fricatives,齦-腭擦音
+OS-VoicedAlveolarLateralFlap,Voiced alveolar lateral flap,齦邊濁閃音
+OS-SimultaneousSJ,Simultaneous /ʃ/ and /x/,同時發/ʃ/和/x/
+OS-TieBar,Tie Bar,連音符
+OS-TieBarNote,Affricates and double articulations can be represented by two symbols joined by a tie bar if necessary.,若有必要，塞擦音及雙重調音可以用連音符連接兩個符號。
+Diacrtics,Diacrtics,附加符號
+D-Voiceless,Voiceless,清化
+D-BreathyVoiced,Breathy voiced,氣聲性
+D-Dental,Dental,齒化
+D-Voiced,Voiced,濁化
+D-CreakyVoiced,Creaky voiced,嘎裂聲性
+D-Apical,Apical,舌尖化
+D-Aspirated,Aspirated,送氣
+D-Linguolabial,Linguolabial,舌唇化
+D-Laminal,Laminal,舌葉性
+D-MoreRounded,More rounded,更圓
+D-Labialized,Labialized,唇化
+D-Nasalized,Nasalized,鼻化
+D-LessRounded,Less rounded,略展
+D-Palatalized,Palatalized,腭化
+D-NasalRelease,Nasal release,鼻除阻
+D-Advanced,Advanced,偏前
+D-Velarized,Velarized,軟腭化
+D-LateralRelease,Lateral release,邊除阻
+D-Retracted,Retracted,偏後
+D-Pharyngealized,Pharyngealized,咽化
+D-NoAudibleRelease,No audible release,無聞除阻
+D-Centralized,Centralized,央化
+D-VelarizedOrPharyngealized,Velarized or pharyngealized,軟腭化或咽化
+D-MidCentralized,Mid-centralized,中-央化
+D-Raised,Raised,偏高
+D-Syllabic,Syllabic,成音節
+D-Lowered,Lowered,偏低
+D-NonSyllabic,Non-syllabic,不成音節
+D-AdvancedTongueRoot,Advanced tongue root,舌根偏前
+D-Rhoticity,Rhoticity,r音色
+D-RetractedTongueRoot,Retracted tongue root,舌根偏後
+D-Note,Some diacritics may be placed above a symbol with a descender.,如果是下伸符號，附加符號可以加在上方。
+Vowels,Vowels,母音
+V-Foront,Foront,前
+V-Central,Central,央
+V-Back,Back,後
+V-Close,Close,閉
+V-NearClose,Near-close,次閉
+V-CloseMid,Close-mid,半閉
+V-Mid,Mid,中
+V-OpenMid,Open-mid,半開
+V-NearOpen,Near-open,次開
+V-Open,Open,開
+VowelsNote,Symbols to the left in a cell are unrounded. to the right are rounded.,左邊為不圓唇，右邊為圓唇。

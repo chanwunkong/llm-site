@@ -1,0 +1,111 @@
+﻿english,Nearopen,Front,Unrounded,/æ/,a
+english,Open,Back,Unrounded,/ɑː/,a
+english,Open,Back,Rounded,/ɒ/,o
+english,Openmid,Back,Rounded,/ɔː/,"a, ough, au"
+english,Openmid,Front,Unrounded,/ɛ/,"e, ea"
+english,Openmid,Back,Unrounded,/ʌ/,"u, oo, a"
+english,Openmid,Central,Unrounded,/ɝ/,"er, ir, or, ur, yr"
+english,Mid,Central,Unrounded,/ə/,"a, o, u"
+english,Close,Front,Unrounded,/i/,"i"
+english,Close,Front,Unrounded,/iː/,"ra, i, ee, y, ry, ie"
+english,Nearclose,NearBack,Rounded,/ʊ/,"oo, u, ou"
+english,Close,Back,Rounded,/uː/,"oo, ew, ue"
+english,Mid,Central,Unrounded,/ɚ/,"ur, ir, er"
+chinese,Open,Back,Unrounded,/ɑ/,ㄚ
+chinese,Nearclose,NearBack,Rounded,/ʊ/,ㄛ
+chinese,Openmid,Back,Rounded,/ɔ/,ㄛ
+chinese,Mid,Central,Unrounded,/ə/,ㄜ
+chinese,Openmid,Front,Unrounded,/ɛ/,ㄝ
+chinese,Mid,Central,Unrounded,/ɚ/,ㄦ
+chinese,Close,Front,Unrounded,/i/,ㄧ
+chinese,Close,Back,Rounded,/u/,ㄨ
+chinese,Close,Front,Rounded,/y/,ㄩ
+german,Open,Front,Unrounded,/a/,a
+german,Open,Front,Unrounded,/aː/,"a, ah, aa"
+german,Nearopen,Central,UnR&R,/ɐ/,er
+german,Nearopen,Central,UnR&R,/ɐ̯/,r
+german,Openmid,Back,Rounded,/ɔ/,o
+german,Closemid,Front,Unrounded,/e/,e
+german,Closemid,Front,Unrounded,/eː/,"e, eh, ee"
+german,Mid,Central,Unrounded,/ə/,e
+german,Openmid,Front,Unrounded,/ɛ/,"e, ä"
+german,Openmid,Front,Unrounded,/ɛː/,"ä, äh"
+german,Nearclose,Nearfront,Unrounded,/ɪ/,i
+german,Close,Front,Unrounded,/i/,i
+german,Close,Front,Unrounded,/i̯/,i
+german,Close,Front,Unrounded,/iː/,"I, ie, ih"
+german,Closemid,Back,Rounded,/o/,o
+german,Closemid,Back,Rounded,/o̯/,o
+german,Closemid,Back,Rounded,/oː/,"o, oh, oo"
+german,Closemid,Front,Rounded,/ø/,ö
+german,Closemid,Front,Rounded,/øː/,"ö, öh, eu"
+german,Open,Front,Rounded,/œ/,ö
+german,Close,Back,Rounded,/u/,"u, ou"
+german,Close,Back,Rounded,/u̯/,"u, ou"
+german,Close,Back,Rounded,/uː/,"u, uh"
+german,Nearclose,NearBack,Rounded,/ʊ/,u
+german,Nearclose,Nearfront,Rounded,/ʏ/,"ü, y"
+german,Close,Front,Rounded,/y/,y
+german,Close,Front,Rounded,/y̑/,u
+german,Close,Front,Rounded,/yː/,"ü, üh, y"
+spanish,Open,Front,Unrounded,/a/,a
+spanish,Closemid,Front,Unrounded,/e/,e
+spanish,Close,Front,Unrounded,/i/,"i, y, ee"
+spanish,Closemid,Back,Rounded,/o/,o
+spanish,Close,Back,Rounded,/u/,"u, oo, ou"
+portuguese,Open,Front,Unrounded,/a/,"e, a, á"
+portuguese,Nearopen,Central,UnR&R,/ɐ/,"a, â, u, e"
+portuguese,Nearopen,Central,UnR&R,/ɐ̃/,
+portuguese,Closemid,Front,Unrounded,/e/,"e, ê"
+portuguese,Closemid,Front,Unrounded, /ẽ/,
+portuguese,Openmid,Front,Unrounded,/ɛ/,"e, é"
+portuguese,Close,Front,Unrounded,/i/,"i, í, ie, y, e"
+portuguese,Close,Front,Unrounded,/ĩ/,
+portuguese,Openmid,Back,Rounded,/ɔ/,"o, ó"
+portuguese,Closemid,Back,Rounded,/o/,"o, ô, ou"
+portuguese,Closemid,Back,Rounded,/õ/,
+portuguese,Close,Back,Rounded,/u/,"u, ú, o"
+portuguese,Close,Back,Rounded,/ũ/,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,

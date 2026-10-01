@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPA Chart Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background-color: #f8fafc;
+            overscroll-behavior-y: none;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .table-wrapper {
+            position: relative;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            background: white;
+            height: 100%;
+        }
+
+        table.ipa-table { border-collapse: separate; border-spacing: 0; width: max-content; }
+        div.ipa-table.active { display: flex; }
+        table.ipa-table.active { display: table; }
+        .ipa-table.hidden { display: none !important; }
+        
+        th, td {
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 2px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 48px;
+            height: 56px;
+        }
+
+        th { background-color: #f1f5f9; position: sticky; top: 0; z-index: 20; font-size: 12px; font-weight: 700; color: #475569; border-top: 1px solid #e2e8f0; }
+        .sticky-col { position: sticky; left: 0; background-color: #f1f5f9; z-index: 20; font-size: 12px; font-weight: 700; color: #475569; border-left: 1px solid #e2e8f0; }
+        .sticky-corner { position: sticky; top: 0; left: 0; z-index: 30; background-color: #e2e8f0; border-left: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; }
+
+        .ipa-cell {
+            position: relative;
+            cursor: pointer;
+            background-color: white;
+            transition: background-color 0.2s;
+        }
+        .ipa-cell:active, .ipa-cell.active { background-color: #e0f2fe; }
+        .ipa-cell.void { background-color: #cbd5e1; pointer-events: none; }
+
+        .visually-hidden-cell {
+            background-color: transparent !important;
+            border-color: transparent !important;
+            pointer-events: none;
+        }
+        .visually-hidden-cell * { display: none !important; }
+
+        .symbol-text {
+            display: block;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f172a;
+            transform: translateY(-4px);
+        }
+        .symbol-pair {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .symbol-pair span {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .indicator-container {
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2px;
+            padding: 0 2px;
+            pointer-events: none;
+        }
+        .micro-flag {
+            width: 12px;
+            height: 8px;
+            object-fit: cover;
+            border-radius: 1px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.3);
+        }
+
+        .lang-toggle {
+            transition: all 0.2s;
+            opacity: 0.5;
+            filter: grayscale(100%);
+        }
+        .lang-toggle.active {
+            opacity: 1;
+            filter: grayscale(0%);
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+
+        .rowspan-header { vertical-align: middle; }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col overflow-hidden relative">
+
+    <header class="flex-shrink-0 bg-white border-b border-slate-200 z-10 shadow-sm relative">
+        <div class="px-4 py-3 flex justify-between items-center">
+            <h1 class="text-lg font-bold text-slate-800">IPA Mapper</h1>
+            
+            <div class="flex items-center gap-3">
+                <label class="flex items-center cursor-pointer">
+                    <div class="relative">
+                        <input type="checkbox" id="hide-empty-toggle" class="sr-only" onchange="filterTable()">
+                        <div class="block bg-slate-200 w-10 h-6 rounded-full transition-colors toggle-label"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform transform"></div>
+                    </div>
+                    <div class="ml-2 text-sm font-medium text-slate-700">隱藏空欄位</div>
+                </label>
+                <a href="test.html" class="text-sm bg-slate-800 text-white px-3 py-1.5 rounded-md font-medium">手寫</a>
+            </div>
+        </div>
+        
+        <div class="px-4 pb-3">
+            <button onclick="toggleLangPanel()" class="w-full flex justify-between items-center bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 focus:outline-none shadow-sm">
+                <span id="lang-btn-text">選擇對比語言 (已選: 0)</span>
+                <svg id="lang-btn-icon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="language-toggles" class="hidden flex-wrap gap-2 pt-3"></div>
+        </div>
+    </header>
+
+    <main class="flex-1 relative bg-slate-50 flex flex-col min-h-0 z-0">
+        <div class="flex-shrink-0 px-4 py-2 border-b border-slate-200 bg-white flex gap-4 overflow-x-auto no-scrollbar">
+            <button class="tab-btn font-bold text-blue-600 border-b-2 border-blue-600 pb-1 whitespace-nowrap" data-tab="pulmonic" onclick="switchTab('pulmonic')">Pulmonic</button>
+            <button class="tab-btn font-bold text-slate-400 pb-1 whitespace-nowrap" data-tab="nonpulmonic" onclick="switchTab('nonpulmonic')">Non-Pulmonic</button>
+            <button class="tab-btn font-bold text-slate-400 pb-1 whitespace-nowrap" data-tab="vowels" onclick="switchTab('vowels')">Vowels</button>
+            <button class="tab-btn font-bold text-slate-400 pb-1 whitespace-nowrap" data-tab="others" onclick="switchTab('others')">Other Symbols</button>
+            <button class="tab-btn font-bold text-slate-400 pb-1 whitespace-nowrap" data-tab="diacritics" onclick="switchTab('diacritics')">Diacritics</button>
+        </div>
+
+        <div class="flex-1 table-wrapper pb-24">
+            <table id="table-pulmonic" class="ipa-table active"><thead></thead><tbody></tbody></table>
+            <table id="table-nonpulmonic" class="ipa-table hidden"></table>
+            <table id="table-vowels" class="ipa-table hidden"></table>
+            <div id="table-others" class="ipa-table hidden flex-wrap gap-3 p-4 justify-center items-start content-start"></div>
+            <div id="table-diacritics" class="ipa-table hidden flex-wrap gap-3 p-4 justify-center items-start content-start"></div>
+        </div>
+    </main>
+
+    <aside id="detail-pane" class="fixed bottom-0 left-0 w-full max-h-[45vh] bg-white border-t border-slate-200 shadow-[0_-10px_20px_rgba(0,0,0,0.1)] flex flex-col z-50 transform translate-y-full transition-transform duration-300 rounded-t-xl">
+        <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+            <div class="flex items-center gap-2">
+                <span id="pane-symbol" class="text-2xl font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-lg">-</span>
+                <span id="pane-coord" class="text-sm font-medium text-slate-600"></span>
+                <button id="wiki-play-btn" onclick="playWikiSound()" class="ml-2 flex items-center gap-1 bg-green-600 text-white text-xs px-2.5 py-1.5 rounded-md font-medium shadow-sm hover:bg-green-700 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <span>示範音檔</span>
+                </button>
+            </div>
+            <button onclick="closePane()" class="p-2 text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="pane-content" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+    </aside>
+
+    <script>
+        const languages = [
+            { id: 'english', name: 'English', flag: 'us' }, { id: 'german', name: 'Deutsch', flag: 'de' },
+            { id: 'spanish', name: 'Español', flag: 'es' }, { id: 'portuguese', name: 'Português', flag: 'pt' },
+            { id: 'french', name: 'Français', flag: 'fr' }, { id: 'italian', name: 'Italiano', flag: 'it' },
+            { id: 'russian', name: 'Русский', flag: 'ru' }, { id: 'bengali', name: 'বাংলা', flag: 'bd' },
+            { id: 'hindiurdu', name: 'हिंदी', flag: 'in' }, { id: 'persian', name: 'فارسی', flag: 'ir' },
+            { id: 'arabic', name: 'العربية', flag: 'sa' }, { id: 'tamil', name: 'தமிழ்', flag: 'in' },
+            { id: 'chinese', name: '中文', flag: 'tw' }, { id: 'turkish', name: 'Türkçe', flag: 'tr' },
+            { id: 'japanese', name: '日本語', flag: 'jp' }, { id: 'korean', name: '한국어', flag: 'kr' },
+            { id: 'vietnamese', name: 'Tiếng Việt', flag: 'vn' }, { id: 'indonesian', name: 'Bahasa Indonesia', flag: 'id' },
+            { id: 'thai', name: 'ภาษาไทย', flag: 'th' }, { id: 'swahili', name: 'Kiswahili', flag: 'ke' }
+        ];
+
+        const pSymbols = { "Plosive-Bilabial": ["p", "b"], "Plosive-Alveolar": ["t", "d"], "Plosive-Retroflex": ["ʈ", "ɖ"], "Plosive-Palatal": ["c", "ɟ"], "Plosive-Velar": ["k", "ɡ"], "Plosive-Uvular": ["q", "ɢ"], "Plosive-Glottal": ["ʔ", ""], "Nasal-Bilabial": ["", "m"], "Nasal-Labiodental": ["", "ɱ"], "Nasal-Alveolar": ["", "n"], "Nasal-Retroflex": ["", "ɳ"], "Nasal-Palatal": ["", "ɲ"], "Nasal-Velar": ["", "ŋ"], "Nasal-Uvular": ["", "ɴ"], "Trill-Bilabial": ["", "ʙ"], "Trill-Alveolar": ["", "r"], "Trill-Uvular": ["", "ʀ"], "TapOrFlap-Labiodental": ["", "ⱱ"], "TapOrFlap-Alveolar": ["", "ɾ"], "TapOrFlap-Retroflex": ["", "ɽ"], "Fricative-Bilabial": ["ɸ", "β"], "Fricative-Labiodental": ["f", "v"], "Fricative-Dental": ["θ", "ð"], "Fricative-Alveolar": ["s", "z"], "Fricative-Postalveolar": ["ʃ", "ʒ"], "Fricative-Retroflex": ["ʂ", "ʐ"], "Fricative-Palatal": ["ç", "ʝ"], "Fricative-Velar": ["x", "ɣ"], "Fricative-Uvular": ["χ", "ʁ"], "Fricative-Pharyngeal": ["ħ", "ʕ"], "Fricative-Glottal": ["h", "ɦ"], "LateralFricative-Alveolar": ["ɬ", "ɮ"], "Approximant-Labiodental": ["", "ʋ"], "Approximant-Alveolar": ["", "ɹ"], "Approximant-Retroflex": ["", "ɻ"], "Approximant-Palatal": ["", "j"], "Approximant-Velar": ["", "ɰ"], "LateralApproximant-Alveolar": ["", "l"], "LateralApproximant-Retroflex": ["", "ɭ"], "LateralApproximant-Palatal": ["", "ʎ"], "LateralApproximant-Velar": ["", "ʟ"] };
+        const pVoids = { "Plosive-Pharyngeal": [0,1], "Plosive-Glottal": [0,1], "Nasal-Pharyngeal": [1,1], "Nasal-Glottal": [1,1], "Trill-Velar": [1,1], "Trill-Glottal": [1,1], "TapOrFlap-Velar": [1,1], "TapOrFlap-Glottal": [1,1], "LateralFricative-Bilabial": [1,1], "LateralFricative-Labiodental": [1,1], "LateralFricative-Pharyngeal": [1,1], "LateralFricative-Glottal": [1,1], "Approximant-Glottal": [1,1], "LateralApproximant-Bilabial": [1,1], "LateralApproximant-Labiodental": [1,1], "LateralApproximant-Pharyngeal": [1,1], "LateralApproximant-Glottal": [1,1] };
+
+        const pulmonicSymbolMap = {};
+        const nonPulmonicSymbols = {
+            "ɓ": "VoicedImplosives-Bilabial", "ɗ": "VoicedImplosives-DentalAlveolar", "ᶑ": "VoicedImplosives-Retroflex", "ʄ": "VoicedImplosives-Palatal", "ɠ": "VoicedImplosives-Velar", "ʛ": "VoicedImplosives-Uvular",
+            "ɓ̥": "VoicelessImplosives-Bilabial", "ɗ̥": "VoicelessImplosives-DentalAlveolar", "ᶑ̥": "VoicelessImplosives-Retroflex", "ʄ̊": "VoicelessImplosives-Palatal", "ɠ̊": "VoicelessImplosives-Velar", "ʛ̥": "VoicelessImplosives-Uvular",
+            "pʼ": "Ejectives-Bilabial", "tʼ": "Ejectives-DentalAlveolar", "ʈʼ": "Ejectives-Retroflex", "cʼ": "Ejectives-Palatal", "kʼ": "Ejectives-Velar", "qʼ": "Ejectives-Uvular",
+            "ɸʼ": "EjectiveFricatives-Bilabial", "fʼ": "EjectiveFricatives-Labiodental", "θʼ": "EjectiveFricatives-Dental", "sʼ": "EjectiveFricatives-AlveolarFricative", "ʃʼ": "EjectiveFricatives-Postalveolar", "ʂʼ": "EjectiveFricatives-Retroflex", "ɕʼ": "EjectiveFricatives-Alveolopalatal", "xʼ": "EjectiveFricatives-Velar", "χʼ": "EjectiveFricatives-Uvular",
+            "ɬʼ": "EjectiveLateralFricatives-Alveolar",
+            "kʘ": "Clicks-Bilabial-TenuisVelar", "qʘ": "Clicks-Bilabial-TenuisVelar", "kǀ": "Clicks-Dental-TenuisVelar", "qǀ": "Clicks-Dental-TenuisVelar", "kǃ": "Clicks-Postalveolar-TenuisVelar", "qǃ": "Clicks-Postalveolar-TenuisVelar", "kǂ": "Clicks-Palatoalveolar-TenuisVelar", "qǂ": "Clicks-Palatoalveolar-TenuisVelar",
+            "ɡʘ": "Clicks-Bilabial-VoicedVelar", "ɢʘ": "Clicks-Bilabial-VoicedVelar", "ɡǀ": "Clicks-Dental-VoicedVelar", "ɢǀ": "Clicks-Dental-VoicedVelar", "ɡǃ": "Clicks-Postalveolar-VoicedVelar", "ɢǃ": "Clicks-Postalveolar-VoicedVelar", "ɡǂ": "Clicks-Palatoalveolar-VoicedVelar", "ɢǂ": "Clicks-Palatoalveolar-VoicedVelar",
+            "ŋʘ": "Clicks-Bilabial-NasalVelar", "ɴʘ": "Clicks-Bilabial-NasalVelar", "ŋǀ": "Clicks-Dental-NasalVelar", "ɴǀ": "Clicks-Dental-NasalVelar", "ŋǃ": "Clicks-Postalveolar-NasalVelar", "ɴǃ": "Clicks-Postalveolar-NasalVelar", "ŋǂ": "Clicks-Palatoalveolar-NasalVelar", "ɴǂ": "Clicks-Palatoalveolar-NasalVelar",
+            "kǁ": "Clicks-AlveolarLateral-TenuisVelar", "qǁ": "Clicks-AlveolarLateral-TenuisVelar", "ɡǁ": "Clicks-AlveolarLateral-VoicedVelar", "ɢǁ": "Clicks-AlveolarLateral-VoicedVelar", "ŋǁ": "Clicks-AlveolarLateral-NasalVelar", "ɴǁ": "Clicks-AlveolarLateral-NasalVelar"
+        };
+        const vowelsSymbols = {
+            'i': { height: 'Close', backRound: 'Front-Unrounded' }, 'y': { height: 'Close', backRound: 'Front-Rounded' }, 'ɨ': { height: 'Close', backRound: 'Central-Unrounded' }, 'ʉ': { height: 'Close', backRound: 'Central-Rounded' }, 'ɯ': { height: 'Close', backRound: 'Back-Unrounded' }, 'u': { height: 'Close', backRound: 'Back-Rounded' },
+            'ɪ': { height: 'Nearclose', backRound: 'Nearfront-Unrounded' }, '`ʏ`': { height: 'Nearclose', backRound: 'Nearfront-Rounded' }, 'ʊ': { height: 'Nearclose', maxh: 'Nearback-Rounded' },
+            'e': { height: 'Closemid', backRound: 'Front-Unrounded' }, 'ø': { height: 'Closemid', backRound: 'Front-Rounded' }, 'ɘ': { height: 'Closemid', backRound: 'Central-Unrounded' }, 'ɵ': { height: 'Closemid', backRound: 'Central-Rounded' }, 'ɤ': { height: 'Closemid', backRound: 'Back-Unrounded' }, 'o': { height: 'Closemid', backRound: 'Back-Rounded' },
+            'ə': { height: 'Mid', backRound: 'Central-Unrounded' },
+            'ɛ': { height: 'Openmid', backRound: 'Front-Unrounded' }, 'œ': { height: 'Openmid', backRound: 'Front-Rounded' }, 'ɜ': { height: 'Openmid', backRound: 'Central-Unrounded' }, 'ɞ': { height: 'Openmid', backRound: 'Central-Rounded' }, 'ʌ': { height: 'Openmid', backRound: 'Back-Unrounded' }, 'ɔ': { height: 'Openmid', backRound: 'Back-Rounded' },
+            'æ': { height: 'Nearopen', backRound: 'Front-Unrounded' }, 'ɐ': { height: 'Nearopen', backRound: 'Central-UnR&R' },
+            'a': { height: 'Open', backRound: 'Front-Unrounded' }, 'ɶ': { height: 'Open', backRound: 'Front-Rounded' }, 'ɑ': { height: 'Open', backRound: 'Back-Unrounded' }, 'ɒ': { height: 'Open', backRound: 'Back-Rounded' }
+        };
+
+        // 維基百科專用對照例外表與特殊轉換
+        const nameFixes = {
+            "taporflap": "flap",
+            "lateralapproximant": "lateral_approximant",
+            "lateralfricative": "lateral_fricative",
+            "postalveolar": "post-alveolar",
+            "closemid": "close-mid",
+            "openmid": "open-mid",
+            "nearclose": "near-close",
+            "nearopen": "near-open",
+            "front-unrounded": "front_unrounded",
+            "front-rounded": "front_rounded",
+            "central-unrounded": "central_unrounded",
+            "central-rounded": "central_rounded",
+            "back-unrounded": "back_unrounded",
+            "back-rounded": "back_rounded",
+            "nearfront-unrounded": "near-front_unrounded",
+            "nearfront-rounded": "near-front_rounded",
+            "nearback-rounded": "near-back_rounded",
+            "central-unr&r": "near-open_central_vowel"
+        };
+
+        function getBaseIpaChar(ipaStr) {
+            if (!ipaStr) return '';
+            const match = ipaStr.match(/\/([^\/])/);
+            if (match) return match[1];
+            const clean = ipaStr.replace(/[\/\s]/g, '');
+            return Array.from(clean)[0] || '';
+        }
+
+        function initSymbolMaps() {
+            for (const [key, symbols] of Object.entries(pSymbols)) {
+                const [manner, place] = key.split('-');
+                if (symbols[0]) pulmonicSymbolMap[symbols[0]] = { manner, place, voicing: 'voiceless' };
+                if (symbols[1]) pulmonicSymbolMap[symbols[1]] = { manner, place, voicing: 'voiced' };
+            }
+            pulmonicSymbolMap['g'] = { manner: 'Plosive', place: 'Velar', voicing: 'voiced' };
+            pulmonicSymbolMap['ɡ'] = { manner: 'Plosive', place: 'Velar', voicing: 'voiced' };
+            pulmonicSymbolMap['ɫ'] = { manner: 'LateralApproximant', place: 'Alveolar', voicing: 'voiced' };
+        }
+
+        const DATA_CONFIGS = {
+            ConsonantsPulmonic: { 
+                file: 'ConsonantsPulmonic.csv', 
+                getTdId: r => {
+                    if (r.length < 6) {
+                        const firstChar = getBaseIpaChar(r[1]);
+                        const mapping = pulmonicSymbolMap[firstChar];
+                        return mapping ? `${mapping.manner}-${mapping.place}-${mapping.voicing}` : '';
+                    }
+                    return `${r[2]}-${r[1]}-${r[3]}`;
+                },
+                getIpa: r => r.length < 6 ? r[1] : r[4],
+                getEx: r => r.length < 6 ? r[2] : r[5]
+            },
+            ConsonantsNonPulmonic: { 
+                file: 'ConsonantsNonPulmonic.csv', 
+                getTdId: r => {
+                    if (r.length < 5) {
+                        const firstChar = getBaseIpaChar(r[1]);
+                        return nonPulmonicSymbols[firstChar] || '';
+                    }
+                    return `${r[1]}-${r[2]}`;
+                },
+                getIpa: r => r.length < 5 ? r[1] : r[3],
+                getEx: r => r.length < 5 ? r[2] : r[4]
+            },
+            OtherSymbols: { 
+                file: 'OtherSymbols.csv', 
+                getTdId: r => r.length < 4 ? getBaseIpaChar(r[1]) : r[1],
+                getIpa: r => r.length < 4 ? r[1] : r[2],
+                getEx: r => r.length < 4 ? r[2] : r[3]
+            },
+            Diacritics: { 
+                file: 'Diacrtics.csv', 
+                getTdId: r => r.length < 4 ? `D-${getBaseIpaChar(r[1])}` : `D-${r[1]}`,
+                getIpa: r => r.length < 4 ? r[1] : r[2],
+                getEx: r => r.length < 4 ? r[2] : r[3]
+            },
+            Vowels: { 
+                file: 'Vowels.csv', 
+                getTdId: r => {
+                    if (r.length < 6) {
+                        const firstChar = getBaseIpaChar(r[1]);
+                        const mapping = vowelsSymbols[firstChar];
+                        return mapping ? `${mapping.height}-${mapping.backRound}` : '';
+                    }
+                    return `${r[1]}-${r[2]}-${r[3]}`;
+                },
+                getIpa: r => r.length < 6 ? r[1] : r[4],
+                getEx: r => r.length < 6 ? r[2] : r[5]
+            }
+        };
+
+        let activeLanguages = new Set();
+        let csvDataMap = {}; 
+        let currentActiveCell = null;
+        let currentAudio = null; 
+        let currentWikiFileName = ""; 
+
+        function toggleLangPanel() {
+            const panel = document.getElementById('language-toggles');
+            const icon = document.getElementById('lang-btn-icon');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden'); panel.classList.add('flex'); icon.classList.add('rotate-180');
+            } else {
+                panel.classList.add('hidden'); panel.classList.remove('flex'); icon.classList.remove('rotate-180');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.ipa-table').forEach(t => {
+                t.classList.add('hidden'); t.classList.remove('active');
+            });
+            const target = document.getElementById(`table-${tabId}`);
+            target.classList.remove('hidden'); target.classList.add('active');
+            
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                b.classList.add('text-slate-400');
+                if (b.dataset.tab === tabId) {
+                    b.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+                    b.classList.remove('text-slate-400');
+                }
+            });
+            filterTable(); 
+            closePane();
+        }
+
+        function renderTables() {
+            const theadP = document.querySelector('#table-pulmonic thead');
+            const tbodyP = document.querySelector('#table-pulmonic tbody');
+            const placesP = ["Bilabial", "Labiodental", "Dental", "Alveolar", "Postalveolar", "Retroflex", "Palatal", "Velar", "Uvular", "Pharyngeal", "Glottal"];
+            const mannersP = ["Plosive", "Nasal", "Trill", "TapOrFlap", "Fricative", "LateralFricative", "Approximant", "LateralApproximant"];
+            
+            let trHeadP = document.createElement('tr');
+            trHeadP.innerHTML = '<th class="sticky-corner"></th>';
+            placesP.forEach(place => trHeadP.innerHTML += `<th colspan="2" data-colspan="2">${place}</th>`);
+            theadP.appendChild(trHeadP);
+
+            mannersP.forEach(manner => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td class="sticky-col">${manner}</td>`;
+                placesP.forEach(place => {
+                    ['voiceless', 'voiced'].forEach((voicing, vIndex) => {
+                        const key = `${manner}-${place}`;
+                        const isVoid = pVoids[key] && pVoids[key][vIndex];
+                        const symbol = pSymbols[key] ? (pSymbols[key][vIndex] || '') : '';
+                        const tdId = `${manner}-${place}-${voicing}`;
+                        tr.innerHTML += isVoid ? `<td class="ipa-cell void"></td>` : `<td class="ipa-cell" id="${tdId}" onclick="selectCell(this, '${symbol}', '${tdId}', 'ConsonantsPulmonic')"><span class="symbol-text">${symbol}</span><div class="indicator-container"></div></td>`;
+                    });
+                });
+                tbodyP.appendChild(tr);
+            });
+
+            const vowelsData = [
+                { label: 'Close', prefix: 'Close', cells: [{c:'Front-Unrounded', s:'i'}, {c:'Front-Rounded', s:'y'}, {c:'Central-Unrounded', s:'ɨ'}, {c:'Central-Rounded', s:'ʉ'}, {c:'Back-Unrounded', s:'ɯ'}, {c:'Back-Rounded', s:'u'}] },
+                { label: 'Near-close', prefix: 'Nearclose', cells: [{c:'Nearfront-Unrounded', s:'ɪ'}, {c:'Nearfront-Rounded', s:'ʏ'}, null, null, null, {c:'Nearback-Rounded', s:'ʊ'}] },
+                { label: 'Close-mid', prefix: 'Closemid', cells: [{c:'Front-Unrounded', s:'e'}, {c:'Front-Rounded', s:'ø'}, {c:'Central-Unrounded', s:'ɘ'}, {c:'Central-Rounded', s:'ɵ'}, {c:'Back-Unrounded', s:'ɤ'}, {c:'Back-Rounded', s:'o'}] },
+                { label: 'Mid', prefix: 'Mid', cells: [null, null, {c:'Central-Unrounded', s:'ə'}, null, null, null] },
+                { label: 'Open-mid', prefix: 'Openmid', cells: [{c:'Front-Unrounded', s:'ɛ'}, {c:'Front-Rounded', s:'œ'}, {c:'Central-Unrounded', s:'ɜ'}, {c:'Central-Rounded', s:'ɞ'}, {c:'Back-Unrounded', s:'ʌ'}, {c:'Back-Rounded', s:'ɔ'}] },
+                { label: 'Near-open', prefix: 'Nearopen', cells: [{c:'Front-Unrounded', s:'æ'}, null, {c:'Central-UnR&R', s:'ɐ'}, null, null, null] },
+                { label: 'Open', prefix: 'Open', cells: [{c:'Front-Unrounded', s:'a'}, {c:'Front-Rounded', s:'ɶ'}, null, null, {c:'Back-Unrounded', s:'ɑ'}, {c:'Back-Rounded', s:'ɒ'}] }
+            ];
+            let vHtml = '<thead><tr><th class="sticky-corner"></th><th colspan="2" data-colspan="2">Front</th><th colspan="2" data-colspan="2">Central</th><th colspan="2" data-colspan="2">Back</th></tr></thead><tbody>';
+            vowelsData.forEach(row => {
+                vHtml += `<tr><td class="sticky-col">${row.label}</td>`;
+                row.cells.forEach(cell => {
+                    if (!cell) vHtml += `<td class="ipa-cell void"></td>`;
+                    else vHtml += `<td class="ipa-cell" id="${row.prefix}-${cell.c}" onclick="selectCell(this, '${cell.s}', '${row.prefix}-${cell.c}', 'Vowels')"><span class="symbol-text">${cell.s}</span><div class="indicator-container"></div></td>`;
+                });
+                vHtml += '</tr>';
+            });
+            document.getElementById('table-vowels').innerHTML = vHtml + '</tbody>';
+
+            const theadNP = document.querySelector('#table-nonpulmonic');
+            const placesNP = ["BL", "LD", "D", "A", "PA", "RF", "P", "V", "U"];
+            
+            let npHtmlStr = `<thead><tr><th class="sticky-corner" colspan="2"></th>`;
+            placesNP.forEach(p => npHtmlStr += `<th data-colspan="1">${p}</th>`);
+            npHtmlStr += `</tr></thead><tbody>`;
+
+            npHtmlStr += `<tr><td class="sticky-col rowspan-header" rowspan="2">Implosive</td><td class="sticky-col">Voiced</td>`;
+            const implosiveVoiced = ["ɓ", null, null, "ɗ", null, "ᶑ", "ʄ", "ɠ", "ʛ"];
+            const implosiveVoicedIds = ["VoicedImplosives-Bilabial", null, null, "VoicedImplosives-DentalAlveolar", null, "VoicedImplosives-Retroflex", "VoicedImplosives-Palatal", "VoicedImplosives-Velar", "VoicedImplosives-Uvular"];
+            implosiveVoiced.forEach((sym, i) => {
+                if(!sym) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${implosiveVoicedIds[i]}" onclick="selectCell(this, '${sym}', '${implosiveVoicedIds[i]}', 'ConsonantsNonPulmonic')"><span class="symbol-text">${sym}</span><div class="indicator-container"></div></td>`;
+            });
+            npHtmlStr += `</tr><tr><td class="sticky-col">Voiceless</td>`;
+            const implosiveVoiceless = ["ɓ̥", null, null, "ɗ̥", null, "ᶑ̥", "ʄ̊", "ɠ̊", "ʛ̥"];
+            const implosiveVoicelessIds = ["VoicelessImplosives-Bilabial", null, null, "VoicelessImplosives-DentalAlveolar", null, "VoicelessImplosives-Retroflex", "VoicelessImplosives-Palatal", "VoicelessImplosives-Velar", "VoicelessImplosives-Uvular"];
+            implosiveVoiceless.forEach((sym, i) => {
+                if(!sym) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${implosiveVoicelessIds[i]}" onclick="selectCell(this, '${sym}', '${implosiveVoicelessIds[i]}', 'ConsonantsNonPulmonic')"><span class="symbol-text">${sym}</span><div class="indicator-container"></div></td>`;
+            });
+            npHtmlStr += `</tr>`;
+
+            npHtmlStr += `<tr><td class="sticky-col rowspan-header" rowspan="3">Ejective</td><td class="sticky-col">Stop</td>`;
+            const ejectiveStop = ["pʼ", null, null, "tʼ", null, "ʈʼ", "cʼ", "kʼ", "qʼ"];
+            const ejectiveStopIds = ["Ejectives-Bilabial", null, null, "Ejectives-DentalAlveolar", null, "Ejectives-Retroflex", "Ejectives-Palatal", "Ejectives-Velar", "Ejectives-Uvular"];
+            ejectiveStop.forEach((sym, i) => {
+                if(!sym) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${ejectiveStopIds[i]}" onclick="selectCell(this, '${sym}', '${ejectiveStopIds[i]}', 'ConsonantsNonPulmonic')"><span class="symbol-text">${sym}</span><div class="indicator-container"></div></td>`;
+            });
+            npHtmlStr += `</tr><tr><td class="sticky-col">Fricative</td>`;
+            const ejectiveFricative = ["ɸʼ", "fʼ", "θʼ", "sʼ", "ʃʼ", "ʂʼ", "ɕʼ", "xʼ", "χʼ"];
+            const ejectiveFricativeIds = ["EjectiveFricatives-Bilabial", "EjectiveFricatives-Labiodental", "EjectiveFricatives-Dental", "EjectiveFricatives-AlveolarFricative", "EjectiveFricatives-Postalveolar", "EjectiveFricatives-Retroflex", "EjectiveFricatives-Alveolopalatal", "EjectiveFricatives-Velar", "EjectiveFricatives-Uvular"];
+            ejectiveFricative.forEach((sym, i) => {
+                if(!sym) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${ejectiveFricativeIds[i]}" onclick="selectCell(this, '${sym}', '${ejectiveFricativeIds[i]}', 'ConsonantsNonPulmonic')"><span class="symbol-text">${sym}</span><div class="indicator-container"></div></td>`;
+            });
+            npHtmlStr += `</tr><tr><td class="sticky-col">Lateral fricative</td>`;
+            const ejectiveLatFricative = [null, null, null, "ɬʼ", null, null, null, null, null];
+            const ejectiveLatFricativeIds = [null, null, null, "EjectiveLateralFricatives-Alveolar", null, null, null, null, null];
+            ejectiveLatFricative.forEach((sym, i) => {
+                if(!sym) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${ejectiveLatFricativeIds[i]}" onclick="selectCell(this, '${sym}', '${ejectiveLatFricativeIds[i]}', 'ConsonantsNonPulmonic')"><span class="symbol-text">${sym}</span><div class="indicator-container"></div></td>`;
+            });
+            npHtmlStr += `</tr>`;
+
+            npHtmlStr += `<tr><td class="sticky-col rowspan-header" rowspan="6">Click<br><span style="font-size:10px; font-weight:normal;">(top: velar;<br>bottom: uvular)</span></td><td class="sticky-col">Tenuis</td>`;
+            const clickTenuis = [
+                {t:"kʘ", b:"qʘ", idT:"Clicks-Bilabial-TenuisVelar", idB:"Clicks-Bilabial-TenuisUvular"}, 
+                {t:"kǀ", b:"qǀ", idT:"Clicks-Dental-TenuisVelar", idB:"Clicks-Dental-TenuisUvular"}, 
+                null, 
+                {t:"kǃ", b:"qǃ", idT:"Clicks-Postalveolar-TenuisVelar", idB:"Clicks-Postalveolar-TenuisUvular"}, 
+                null, null, 
+                {t:"kǂ", b:"qǂ", idT:"Clicks-Palatoalveolar-TenuisVelar", idB:"Clicks-Palatoalveolar-TenuisUvular"}, 
+                null, null
+            ];
+            clickTenuis.forEach((item) => {
+                if(!item) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${item.idT}" onclick="selectCell(this, '${item.t}', '${item.idT}', 'ConsonantsNonPulmonic')"><div class="symbol-pair"><span>${item.t}</span><span>${item.b}</span></div><div class="indicator-container"></div></td>`;
+            });
+            
+            npHtmlStr += `</tr><tr><td class="sticky-col">Voiced</td>`;
+            const clickVoiced = [
+                {t:"ɡʘ", b:"ɢʘ", idT:"Clicks-Bilabial-VoicedVelar", idB:"Clicks-Bilabial-VoicedUvular"}, 
+                {t:"ɡǀ", b:"ɢǀ", idT:"Clicks-Dental-VoicedVelar", idB:"Clicks-Dental-VoicedUvular"}, 
+                null, 
+                {t:"ɡǃ", b:"ɢǃ", idT:"Clicks-Postalveolar-VoicedVelar", idB:"Clicks-Postalveolar-VoicedUvular"}, 
+                null, null, 
+                {t:"ɡǂ", b:"ɢǂ", idT:"Clicks-Palatoalveolar-VoicedVelar", idB:"Clicks-Palatoalveolar-VoicedUvular"}, 
+                null, null
+            ];
+            clickVoiced.forEach((item) => {
+                if(!item) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${item.idT}" onclick="selectCell(this, '${item.t}', '${item.idT}', 'ConsonantsNonPulmonic')"><div class="symbol-pair"><span>${item.t}</span><span>${item.b}</span></div><div class="indicator-container"></div></td>`;
+            });
+
+            npHtmlStr += `</tr><tr><td class="sticky-col">Nasal</td>`;
+            const clickNasal = [
+                {t:"ŋʘ", b:"ɴʘ", idT:"Clicks-Bilabial-NasalVelar", idB:"Clicks-Bilabial-NasalUvular"}, 
+                {t:"ŋǀ", b:"ɴǀ", idT:"Clicks-Dental-NasalVelar", idB:"Clicks-Dental-NasalUvular"}, 
+                null, 
+                {t:"ŋǃ", b:"ɴǃ", idT:"Clicks-Postalveolar-NasalVelar", idB:"Clicks-Postalveolar-NasalUvular"}, 
+                null, null, 
+                {t:"ŋǂ", b:"ɴǂ", idT:"Clicks-Palatoalveolar-NasalVelar", idB:"Clicks-Palatoalveolar-NasalUvular"}, 
+                null, null
+            ];
+            clickNasal.forEach((item) => {
+                if(!item) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${item.idT}" onclick="selectCell(this, '${item.t}', '${item.idT}', 'ConsonantsNonPulmonic')"><div class="symbol-pair"><span>${item.t}</span><span>${item.b}</span></div><div class="indicator-container"></div></td>`;
+            });
+
+            npHtmlStr += `</tr><tr><td class="sticky-col">Tenuis lateral</td>`;
+            const clickLatTenuis = [null, null, null, {t:"kǁ", b:"qǁ", idT:"Clicks-AlveolarLateral-TenuisVelar", idB:"Clicks-AlveolarLateral-TenuisUvular"}, null, null, null, null, null];
+            clickLatTenuis.forEach((item) => {
+                if(!item) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${item.idT}" onclick="selectCell(this, '${item.t}', '${item.idT}', 'ConsonantsNonPulmonic')"><div class="symbol-pair"><span>${item.t}</span><span>${item.b}</span></div><div class="indicator-container"></div></td>`;
+            });
+
+            npHtmlStr += `</tr><tr><td class="sticky-col">Voiced lateral</td>`;
+            const clickLatVoiced = [null, null, null, {t:"ɡǁ", b:"ɢǁ", idT:"Clicks-AlveolarLateral-VoicedVelar", idB:"Clicks-AlveolarLateral-VoicedUvular"}, null, null, null, null, null];
+            clickLatVoiced.forEach((item) => {
+                if(!item) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${item.idT}" onclick="selectCell(this, '${item.t}', '${item.idT}', 'ConsonantsNonPulmonic')"><div class="symbol-pair"><span>${item.t}</span><span>${item.b}</span></div><div class="indicator-container"></div></td>`;
+            });
+
+            npHtmlStr += `</tr><tr><td class="sticky-col">Nasal lateral</td>`;
+            const clickLatNasal = [null, null, null, {t:"ŋǁ", b:"ɴǁ", idT:"Clicks-AlveolarLateral-NasalVelar", idB:"Clicks-AlveolarLateral-NasalUvular"}, null, null, null, null, null];
+            clickLatNasal.forEach((item) => {
+                if(!item) npHtmlStr += `<td class="ipa-cell void"></td>`;
+                else npHtmlStr += `<td class="ipa-cell" id="${item.idT}" onclick="selectCell(this, '${item.t}', '${item.idT}', 'ConsonantsNonPulmonic')"><div class="symbol-pair"><span>${item.t}</span><span>${item.b}</span></div><div class="indicator-container"></div></td>`;
+            });
+
+            npHtmlStr += `</tr></tbody>`;
+            theadNP.innerHTML = npHtmlStr;
+        }
+
+        function renderDynamicFlex(containerId, dataKey) {
+            const data = csvDataMap[dataKey];
+            if (!data || data.length === 0) return;
+            const config = DATA_CONFIGS[dataKey];
+            const uniqueSymbols = new Map();
+            data.forEach(row => {
+                if(row.length < 2) return;
+                const id = config.getTdId(row);
+                if (id) {
+                    const rowIpa = config.getIpa ? config.getIpa(row) : row[config.ipa];
+                    if(!uniqueSymbols.has(id)) uniqueSymbols.set(id, rowIpa);
+                }
+            });
+
+            let html = '';
+            uniqueSymbols.forEach((sym, id) => {
+                html += `<div class="ipa-cell border border-slate-200 bg-white rounded-lg w-16 h-16 flex flex-col items-center justify-center relative flex-shrink-0" id="${id}" onclick="selectCell(this, '${sym}', '${id}', '${dataKey}')">
+                    <span class="symbol-text text-xl font-bold translate-y-[-4px]">${sym}</span>
+                    <div class="indicator-container absolute bottom-1 w-full flex flex-wrap justify-center gap-[2px]"></div>
+                </div>`;
+            });
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+        function parseCSV(csvText) {
+            return csvText.trim().split("\n").map(row => {
+                const match = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+                return match ? match.map(cell => cell.replace(/^"|"$/g, '').trim()) : [];
+            });
+        }
+
+        function initLangToggles() {
+            const container = document.getElementById('language-toggles');
+            languages.forEach(lang => {
+                const btn = document.createElement('button');
+                btn.className = 'lang-toggle flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-full bg-white shadow-sm';
+                btn.innerHTML = `<img src="https://flagcdn.com/w20/${lang.flag}.png" class="w-4 h-3 object-cover rounded-sm"> <span class="text-sm font-medium text-slate-700">${lang.name}</span>`;
+                btn.onclick = () => {
+                    btn.classList.toggle('active');
+                    if (activeLanguages.has(lang.id)) activeLanguages.delete(lang.id);
+                    else activeLanguages.add(lang.id);
+                    document.getElementById('lang-btn-text').textContent = `選擇對比語言 (已選: ${activeLanguages.size})`;
+                    updateGridIndicators();
+                    closePane();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        async function loadData() {
+            for (const [key, config] of Object.entries(DATA_CONFIGS)) {
+                try {
+                    const res = await fetch(`./${config.file}`);
+                    if (res.ok) csvDataMap[key] = parseCSV(await res.text());
+                    else csvDataMap[key] = [];
+                } catch(e) {
+                    csvDataMap[key] = [];
+                }
+            }
+            renderDynamicFlex('table-others', 'OtherSymbols');
+            renderDynamicFlex('table-diacritics', 'Diacritics');
+        }
+
+        function updateGridIndicators() {
+            document.querySelectorAll('.indicator-container').forEach(c => c.innerHTML = '');
+            if (activeLanguages.size === 0) { filterTable(); return; }
+
+            for (const [key, config] of Object.entries(DATA_CONFIGS)) {
+                const data = csvDataMap[key];
+                if (!data) continue;
+                data.forEach(row => {
+                    if (row.length < 2) return;
+                    const lang = row[0].toLowerCase();
+                    if (!activeLanguages.has(lang)) return;
+                    
+                    const tdId = config.getTdId(row);
+                    if (!tdId) return;
+                    
+                    if(key === 'ConsonantsNonPulmonic') {
+                        const matchingEls = document.querySelectorAll(`[id^="${tdId}"]`);
+                        matchingEls.forEach(td => {
+                           addFlagToCell(td, lang);
+                        });
+                    } else {
+                        const td = document.getElementById(tdId);
+                        addFlagToCell(td, lang);
+                    }
+                });
+            }
+            filterTable();
+        }
+
+        function addFlagToCell(td, lang) {
+            if (td && !td.classList.contains('void')) {
+                const container = td.querySelector('.indicator-container');
+                const langObj = languages.find(l => l.id === lang);
+                if (langObj && container && !container.innerHTML.includes(langObj.flag)) {
+                    const img = document.createElement('img');
+                    img.src = `https://flagcdn.com/w20/${langObj.flag}.png`;
+                    img.className = 'micro-flag';
+                    container.appendChild(img);
+                }
+            }
+        }
+
+        function filterTable() {
+            const hideEmpty = document.getElementById('hide-empty-toggle').checked;
+            const activeTable = document.querySelector('.ipa-table.active');
+            if (!activeTable) return;
+
+            if (activeTable.tagName === 'DIV') {
+                Array.from(activeTable.children).forEach(cell => {
+                    if (!hideEmpty) {
+                        cell.style.display = '';
+                    } else {
+                        const container = cell.querySelector('.indicator-container');
+                        const hasFlag = container ? container.innerHTML.trim() !== '' : false;
+                        cell.style.display = hasFlag ? '' : 'none';
+                    }
+                });
+                return;
+            }
+
+            const tbodyRows = Array.from(activeTable.querySelectorAll('tbody tr'));
+            const theadRows = Array.from(activeTable.querySelectorAll('thead tr'));
+            
+            if (tbodyRows.length === 0) return;
+            const colCount = tbodyRows[0].children.length;
+            
+            const isStandardGrid = activeTable.id === 'table-pulmonic' || activeTable.id === 'table-vowels';
+            
+            if (!hideEmpty) {
+                tbodyRows.forEach(row => {
+                    row.style.display = '';
+                    Array.from(row.children).forEach(td => {
+                        td.style.display = '';
+                        td.classList.remove('visually-hidden-cell');
+                    });
+                });
+                theadRows.forEach(row => {
+                    Array.from(row.children).forEach(th => {
+                        th.style.display = '';
+                        if (th.hasAttribute('data-colspan')) th.colSpan = th.getAttribute('data-colspan');
+                    });
+                });
+                return;
+            }
+
+            if (isStandardGrid) {
+                const colHasData = new Array(colCount).fill(false);
+                colHasData[0] = true; 
+
+                tbodyRows.forEach(row => {
+                    Array.from(row.children).forEach((td, index) => {
+                        if (index > 0) {
+                            const container = td.querySelector('.indicator-container');
+                            const hasFlag = container ? container.innerHTML.trim() !== '' : false;
+                            if (hasFlag) colHasData[index] = true;
+                        }
+                    });
+                });
+
+                tbodyRows.forEach(row => {
+                    let rowHasData = false;
+                    Array.from(row.children).forEach((td, index) => {
+                        const container = td.querySelector('.indicator-container');
+                        const hasFlag = container ? container.innerHTML.trim() !== '' : false;
+                        
+                        td.style.display = colHasData[index] ? '' : 'none';
+                        
+                        if (index > 0 && colHasData[index]) {
+                            if (hasFlag) {
+                                rowHasData = true;
+                                td.classList.remove('visually-hidden-cell');
+                            } else {
+                                td.classList.add('visually-hidden-cell');
+                            }
+                        }
+                    });
+                    row.style.display = rowHasData ? '' : 'none';
+                });
+
+                if (theadRows.length > 0) {
+                    const tr = theadRows[0];
+                    for (let i = 1; i < tr.children.length; i++) {
+                        const th = tr.children[i];
+                        const leftData = colHasData[i * 2 - 1];
+                        const rightData = (i * 2) < colCount ? colHasData[i * 2] : false;
+                        
+                        if (!leftData && !rightData) {
+                            th.style.display = 'none';
+                        } else {
+                            th.style.display = '';
+                            th.colSpan = (leftData ? 1 : 0) + (rightData ? 1 : 0);
+                        }
+                    }
+                }
+            } else {
+                tbodyRows.forEach(row => {
+                    let rowHasData = false;
+                    Array.from(row.children).forEach((td, index) => {
+                        if(td.tagName === 'TH' || td.classList.contains('sticky-col')) return;
+                        
+                        const container = td.querySelector('.indicator-container');
+                        const hasFlag = container ? container.innerHTML.trim() !== '' : false;
+                        
+                        if (hasFlag) {
+                            rowHasData = true;
+                            td.classList.remove('visually-hidden-cell');
+                        } else if (!td.classList.contains('void')) {
+                            td.classList.add('visually-hidden-cell');
+                        }
+                    });
+                });
+            }
+        }
+
+        // 根據表格ID與座標生成對應的維基百科檔名
+        function calculateWikiFileName(tdId, tableType, symbol) {
+            if (!tdId) return "";
+            const parts = tdId.split('-');
+            
+            // 例外防呆處理：若符號為空白或特殊無音檔符號直接返回
+            if (!symbol || symbol === 'ʔ') return ""; 
+
+            let fileName = "";
+            if (tableType === "ConsonantsPulmonic") {
+                // 格式: Voiceless_bilabial_fricative.ogg
+                let voicing = parts[2];
+                let place = parts[1].toLowerCase();
+                let manner = parts[0].toLowerCase();
+                
+                // 修正對應名稱
+                place = nameFixes[place] || place;
+                manner = nameFixes[manner] || manner;
+                
+                fileName = `${voicing}_${place}_${manner}.ogg`;
+            } else if (tableType === "Vowels") {
+                // 格式: Open_front_unrounded_vowel.ogg 或是 Open-mid_front_unrounded_vowel.ogg
+                let height = parts[0].toLowerCase();
+                let backRound = parts[1].toLowerCase();
+
+                height = nameFixes[height] || height;
+                backRound = nameFixes[backRound] || backRound;
+
+                // 特殊中央元音處理
+                if (backRound === "near-open_central_vowel") {
+                    fileName = "Near-open_central_vowel.ogg";
+                } else if (symbol === "ə") {
+                    fileName = "Mid-central_vowel.ogg";
+                } else {
+                    fileName = `${height}_${backRound}_vowel.ogg`;
+                }
+            } else if (tableType === "ConsonantsNonPulmonic") {
+                // 格式轉換範例: Voiced_bilabial_implosive.ogg
+                let type = parts[0]; 
+                let place = parts[1]; 
+                
+                if (type.includes("Implosives")) {
+                    let voicing = type.startsWith("Voiced") ? "Voiced" : "Voiceless";
+                    let pName = place.replace("DentalAlveolar", "alveolar").toLowerCase();
+                    fileName = `${voicing}_${pName}_implosive.ogg`;
+                } else if (type.includes("Ejectives")) {
+                    let pName = place.replace("DentalAlveolar", "alveolar").toLowerCase();
+                    let mName = type.includes("Fricative") ? "fricative" : "plosive";
+                    fileName = `${pName}_ejective_${mName}.ogg`;
+                }
+            }
+
+            // 首字母大寫轉換符合維基標準
+            if (fileName) {
+                fileName = fileName.charAt(0).toUpperCase() + fileName.slice(1);
+                // 替換多餘底線
+                fileName = fileName.replace(/__/g, '_');
+            }
+            return fileName;
+        }
+
+        // 動態請求 Wikimedia Commons API 獲取播放路徑並播放
+        async function playWikiSound() {
+            if (!currentWikiFileName) {
+                alert("此符號暫無維基百科對應示範音檔。");
+                return;
+            }
+
+            const playBtn = document.getElementById('wiki-play-btn');
+            const originalHtml = playBtn.innerHTML;
+            playBtn.innerHTML = `<span>讀取中...</span>`;
+            playBtn.disabled = true;
+
+            try {
+                // 停止先前正在播放的音訊
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                }
+
+                // 呼叫維基媒體庫 API
+                const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=File:${encodeURIComponent(currentWikiFileName)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+                const res = await fetch(apiUrl);
+                const json = await res.json();
+                
+                const pages = json.query.pages;
+                const pageId = Object.keys(pages)[0];
+                
+                if (pageId === "-1" || !pages[pageId].imageinfo) {
+                    throw new Error("找不到音檔");
+                }
+
+                const audioUrl = pages[pageId].imageinfo[0].url;
+
+                // 實例化 Audio 元件並播放
+                currentAudio = new Audio(audioUrl);
+                currentAudio.play();
+                
+                currentAudio.onended = () => {
+                    playBtn.innerHTML = originalHtml;
+                    playBtn.disabled = false;
+                };
+
+            } catch (error) {
+                alert(`無法載入音檔，請確認網路連線或該音標檔名是否變動。\n檔名: ${currentWikiFileName}`);
+                playBtn.innerHTML = originalHtml;
+                playBtn.disabled = false;
+            }
+        }
+
+        function selectCell(cellElement, symbol, tdId, tableType) {
+            if (cellElement.classList.contains('void') || cellElement.classList.contains('visually-hidden-cell')) return;
+            if (currentActiveCell) currentActiveCell.classList.remove('active');
+            currentActiveCell = cellElement;
+            currentActiveCell.classList.add('active');
+
+            const coords = tdId.split('-');
+            document.getElementById('pane-symbol').textContent = symbol || '無';
+            document.getElementById('pane-coord').textContent = coords.join(' ');
+            const paneContent = document.getElementById('pane-content');
+            paneContent.innerHTML = '';
+            document.getElementById('detail-pane').classList.remove('translate-y-full');
+
+            // 計算當前點擊符號的維基媒體庫檔名並顯示按鈕
+            currentWikiFileName = calculateWikiFileName(tdId, tableType, symbol);
+            const playBtn = document.getElementById('wiki-play-btn');
+            if (currentWikiFileName) {
+                playBtn.style.display = 'flex';
+            } else {
+                playBtn.style.display = 'none';
+            }
+
+            if (activeLanguages.size === 0) {
+                paneContent.innerHTML = '<div class="text-center text-slate-400 mt-4 text-sm">請先在上方選擇比對語言</div>';
+                return;
+            }
+
+            const config = DATA_CONFIGS[tableType];
+            let hasData = false;
+
+            if (csvDataMap[tableType]) {
+                csvDataMap[tableType].forEach(row => {
+                    if (row.length < 2) return;
+                    const lang = row[0].toLowerCase();
+                    const rowTdId = config.getTdId(row);
+                    if (rowTdId && activeLanguages.has(lang) && tdId.startsWith(rowTdId)) {
+                        hasData = true;
+                        const langObj = languages.find(l => l.id === lang);
+                        const rowIpa = config.getIpa ? config.getIpa(row) : row[config.ipa];
+                        const rowEx = config.getEx ? config.getEx(row) : row[config.ex];
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-100';
+                        div.innerHTML = `
+                            <img src="https://flagcdn.com/w40/${langObj.flag}.png" class="w-8 h-6 object-cover rounded shadow-sm">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-baseline">
+                                    <span class="font-bold text-slate-800 text-lg">${rowEx || ''}</span>
+                                    <span class="text-xs font-medium text-slate-500">${langObj.name}</span>
+                                </div>
+                                <span class="text-sm font-mono text-blue-600 bg-blue-50 px-1 rounded">${rowIpa || ''}</span>
+                            </div>
+                        `;
+                        paneContent.appendChild(div);
+                    }
+                });
+            }
+
+            if (!hasData) paneContent.innerHTML = '<div class="text-center text-slate-400 mt-4 text-sm">所選語言無此發音資料</div>';
+        }
+
+        function closePane() {
+            document.getElementById('detail-pane').classList.add('translate-y-full');
+            if (currentActiveCell) currentActiveCell.classList.remove('active');
+            currentActiveCell = null;
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initSymbolMaps();
+            renderTables();
+            initLangToggles();
+            await loadData();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,26 @@
+﻿chinese,VoicelessAlveolopalatalFricatives,/ɕ/,ㄒ
+chinese,VoicedLabialvelarApproximant,/w/,ㄨ
+English,VoicedLabialvelarApproximant,/w/,w
+german,VoicedLabialvelarApproximant,/w/,w
+spanish,VoicedLabialvelarApproximant,/w/,"u, ü, w, ou"
+portuguese,VoicedLabialvelarApproximant,/w/,"u, ü, o, w,"
+french,VoicedLabialvelarApproximant,/w/,"ou, o, w"
+french,VoicedLabialpalatalApproximant,/ɥ/,u
+italian,VoicedLabialvelarApproximant,/w/,u
+russian,VoicelessAlveolopalatalFricatives,/ɕː/,"щ, сч, жч"
+russian,VoicedAlveolopalatalFricatives,/ʑː/,"зж, щ"
+hindiurdu,VoicedLabialvelarApproximant,/w/,"वा,  و"
+bengali,VoicedLabialvelarApproximant,/w/,"ও, উ"
+tamil,VoicelessAlveolopalatalFricatives,/ɕ/,ஶி
+arabic,VoicedLabialvelarApproximant,/w/,و
+japanese,VoicelessAlveolopalatalFricatives,/ɕ/,"し, シ"
+japanese,VoicedAlveolopalatalFricatives,/ʑ/,"ぢ, ヂ, じ,  ジ"
+korean,VoicelessAlveolopalatalFricatives,/ɕ/,ㅅ
+korean,VoicelessAlveolopalatalFricatives,/ɕ͈/,"ㅆ, ㅅ"
+korean,VoicedLabialvelarApproximant,/w/,"ㅙ, ㅞ"
+vietnamese,VoicedAlveolopalatalFricatives,/ʑ/,"gi, d, r"
+vietnamese,VoicedLabialvelarApproximant,/ʷ/,"o, u"
+vietnamese,VoicedLabialvelarApproximant,/w/,"o, u"
+indonesian,VoicedLabialvelarApproximant,/w/,w
+thai,VoicedLabialvelarApproximant,/w/,"ว, หว"
+swahili,VoicedLabialvelarApproximant,/w/,w
