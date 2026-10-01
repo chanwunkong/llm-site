@@ -1,7 +1,8 @@
-// 領土：方格座標 "x,y" -> 詞元。必須相連、不限大小。
+// 領土：六角形軸座標 "q,r" -> 詞元。必須相連、不限大小。
 import { L, save, RULES, level } from './store.js';
 
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// 六角形（尖頂）軸座標的 6 個鄰居，順序對應畫面上的 6 條邊：東、東南、西南、西、西北、東北
+export const DIRS = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
 export const key = (x, y) => `${x},${y}`;
 export const parse = k => k.split(',').map(Number);
 
@@ -78,7 +79,7 @@ export function receive(lemmas) {
   save();
   return auto;
 }
-const dist0 = k => { const [x, y] = parse(k); return Math.abs(x) + Math.abs(y); };
+const dist0 = k => { const [q, r] = parse(k); return (Math.abs(q) + Math.abs(r) + Math.abs(q + r)) / 2; };
 
 // 沿著領土實際存在的格子走，步數最少的走法
 export function pathSteps(a, b) {

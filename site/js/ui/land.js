@@ -1,15 +1,24 @@
-// 單字領土：low poly 3D 方格、拖曳平移、雙指縮放、背包擺放、付費移動
-import * as THREE from 'three';
-import { Scene3D } from './scene.js';
-import * as LP from './lowpoly.js';
+// 單字領土：平面的六角形等高線地圖（簡約設計）
+// 依等級由淺到深上色；等級不同的相鄰格之間畫等高線，高等級的字聚在一起就像山丘。
 import { L, word, RULES, isDue, decayProgress } from '../engine/store.js';
 import * as T from '../engine/territory.js';
 import { speak, sfx } from '../audio.js';
 import { openSheet, closeSheet, toast, esc, stars } from './sheet.js';
 
+// 地形圖的高度色階（1 級最淺，5 級最深）
+const FILL = [null, '#efe9d6', '#dfe8c6', '#c6dba6', '#a6c886', '#84b067'];
+const DIM = [null, '#e4e0d6', '#d9dccd', '#cdd3bf', '#bdc6ad', '#adb79c'];
+const INK = '#5d4a36';
+const SQ3 = Math.sqrt(3);
+// 尖頂六角形：第 i 條邊（角 i 到角 i+1）面對 T.DIRS[i] 的鄰居
+const corner = (cx, cy, s, i) => {
+  const a = (Math.PI / 180) * (60 * i - 30);
+  return [cx + s * Math.cos(a), cy + s * Math.sin(a)];
+};
+
 export function createLand(root, { getLang, onChange }) {
   root.innerHTML = `
-    <div class="land3d" id="land3d"><div class="labels" id="labels"></div></div>
+    <div class="land2d" id="land2d"><canvas></canvas></div>
     <div class="land-top">
       <span class="chip" id="stat"></span>
       <button class="chip" id="missedBtn">🔗 錯過的連結</button>
@@ -18,97 +27,149 @@ export function createLand(root, { getLang, onChange }) {
     <div class="land-tools">
       <button class="icon-btn" id="zin" aria-label="放大">＋</button>
       <button class="icon-btn" id="zout" aria-label="縮小">－</button>
-      <button class="icon-btn" id="home" aria-label="回到中心">🎯</button>
+      <button class="icon-btn" id="home" aria-label="看全部">◎</button>
     </div>
     <div class="bag">
       <div class="hint-line" id="hint"></div>
-      <div class="bag-head"><span><b>🎒 背包</b> <span id="bagCount"></span></span><span>點字，再點發光的空地</span></div>
+      <div class="bag-head"><span><b>🎒 背包</b> <span id="bagCount"></span></span><span>點字，再點虛線格</span></div>
       <div class="bag-list" id="bagList"></div>
     </div>`;
   const $ = s => root.querySelector(s);
-  const box = $('#land3d'), labelsEl = $('#labels');
-  const s3 = new Scene3D(box);
-  const sc = s3.scene;
-  LP.lights(sc, { ext: 14 });
-  const cam = (s3.camera = new THREE.OrthographicCamera(-5, 5, 5, -5, 0.1, 200));
-  const target = new THREE.Vector3();
-  const OFFSET = new THREE.Vector3(0, 12, 9);
-  const HALF = 4.5;
-  let zoom = 1;
+  const box = $('#land2d'), cv = box.querySelector('canvas'), ctx = cv.getContext('2d');
 
-  const tilesG = new THREE.Group(), linksG = new THREE.Group(), ghostsG = new THREE.Group();
-  sc.add(tilesG, linksG, ghostsG);
-  const ghostMat = new THREE.MeshBasicMaterial({ color: '#ffe066', transparent: true, opacity: 0.35 });
-  const selRing = new THREE.Mesh(new THREE.BoxGeometry(1, 0.04, 1), new THREE.MeshBasicMaterial({ color: '#ffcf4a', transparent: true, opacity: 0.6 }));
-  selRing.visible = false;
-  sc.add(selRing);
+  let W = 0, H = 0, dpr = 1;
+  let cam = { x: 0, y: 0, s: 34 };   // 地圖中心的像素座標與六角形半徑
+  let selected = null, focus = null, running = false, raf = 0, highlight = new Set();
 
-  let selected = null;       // 背包中選中的詞元
-  let focus = null;          // 領土上選中的格子
-  let labels = [];
-
-  // ---------- 相機 ----------
-  function updateCamera() {
-    const a = (s3.w || 1) / (s3.h || 1);
-    Object.assign(cam, { left: -HALF * a, right: HALF * a, top: HALF, bottom: -HALF, zoom });
-    cam.position.copy(target).add(OFFSET);
-    cam.lookAt(target);
-    cam.updateProjectionMatrix();
-  }
-  s3.onResize = updateCamera;
-
-  const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.05);
-  function groundAt(cx, cy) {
-    const r = box.getBoundingClientRect();
-    ray.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), cam);
-    return ray.ray.intersectPlane(plane, new THREE.Vector3());
+  // ---------- 座標 ----------
+  const hexToPx = (q, r) => [cam.s * SQ3 * (q + r / 2), cam.s * 1.5 * r];
+  const toScreen = (q, r) => { const [x, y] = hexToPx(q, r); return [W / 2 + x - cam.x, H / 2 + y - cam.y]; };
+  function screenToHex(sx, sy) {
+    const x = sx - W / 2 + cam.x, y = sy - H / 2 + cam.y;
+    let q = ((SQ3 / 3) * x - y / 3) / cam.s, r = ((2 / 3) * y) / cam.s, z = -q - r;
+    let rq = Math.round(q), rr = Math.round(r), rz = Math.round(z);
+    const dq = Math.abs(rq - q), dr = Math.abs(rr - r), dz = Math.abs(rz - z);
+    if (dq > dr && dq > dz) rq = -rr - rz; else if (dr > dz) rr = -rq - rz;
+    return T.key(rq, rr);
   }
 
-  // ---------- 建立場景 ----------
-  function rebuild() {
-    const lang = getLang(), lg = L();
-    for (const g of [tilesG, linksG, ghostsG]) { g.traverse(o => o !== g && o.geometry?.dispose()); g.clear(); }
-    labelsEl.innerHTML = '';
-    labels = [];
-    for (const [k, lemma] of Object.entries(lg.territory)) {
-      const [x, y] = T.parse(k), w = word(lemma);
-      const t = LP.tile(w.lv, isDue(w));
-      t.position.set(x, 0, y);
-      t.userData.cell = k;
-      tilesG.add(t);
-      const el = document.createElement('div');
-      el.className = 'tl' + (focus === k ? ' sel' : '');
-      el.textContent = lemma;
-      labelsEl.appendChild(el);
-      labels.push({ el, pos: new THREE.Vector3(x, 0.25 + (w.lv >= 4 ? 0.1 : 0), y + 0.28) });
-    }
-    // 完成的語塊：格子之間的金色通道
-    for (const c of lang.chunks.filter(T.chunkComplete)) {
-      const cells = c.lemmas.map(l => T.parse(T.cellOf(l)));
-      for (let i = 0; i + 1 < cells.length; i++) {
-        const [ax, ay] = cells[i], [bx, by] = cells[i + 1];
-        const bar = LP.mesh(new THREE.BoxGeometry(ax === bx ? 0.16 : 1, 0.06, ax === bx ? 1 : 0.16), '#ffcf4a', { emissive: '#b37a00', emissiveIntensity: 0.6 }, false);
-        bar.position.set((ax + bx) / 2, 0.07, (ay + by) / 2);
-        linksG.add(bar);
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = box.clientWidth; H = box.clientHeight;
+    if (!W || !H) return;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    draw();
+  }
+  new ResizeObserver(resize).observe(box);
+
+  // ---------- 繪圖 ----------
+  function hexPath(cx, cy, s) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) { const [x, y] = corner(cx, cy, s, i); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.closePath();
+  }
+
+  function draw() {
+    if (!W) return;
+    const lang = getLang(), lg = L(), t = lg.territory, s = cam.s;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#f6f2e7';
+    ctx.fillRect(0, 0, W, H);
+    const cells = Object.entries(t).map(([k, lemma]) => {
+      const [q, r] = T.parse(k), w = word(lemma);
+      return { k, q, r, lemma, lv: w.lv, due: isDue(w) };
+    });
+    const lvAt = k => (t[k] ? word(t[k]).lv : 0);
+
+    // 1. 底色
+    for (const c of cells) {
+      const [x, y] = toScreen(c.q, c.r);
+      if (x < -s * 2 || y < -s * 2 || x > W + s * 2 || y > H + s * 2) continue;
+      hexPath(x, y, s);
+      ctx.fillStyle = (c.due ? DIM : FILL)[c.lv];
+      ctx.fill();
+      if (c.due) {             // 快要降級：淡淡的斜線
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = '#00000014'; ctx.lineWidth = 1;
+        for (let d = -s * 2; d < s * 2; d += 5) { ctx.beginPath(); ctx.moveTo(x + d, y - s); ctx.lineTo(x + d + s * 1.2, y + s); ctx.stroke(); }
+        ctx.restore();
       }
     }
-    if (selected) for (const k of T.placeable()) {
-      const [x, y] = T.parse(k);
-      const g = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.06, 0.86), ghostMat);
-      g.position.set(x, 0, y);
-      ghostsG.add(g);
+    // 2. 等高線：每條邊依兩側的等級差畫線；領土邊界最粗
+    ctx.lineCap = 'round';
+    for (const c of cells) {
+      const [x, y] = toScreen(c.q, c.r);
+      if (x < -s * 2 || y < -s * 2 || x > W + s * 2 || y > H + s * 2) continue;
+      T.DIRS.forEach(([dq, dr], i) => {
+        const n = lvAt(T.key(c.q + dq, c.r + dr));
+        const diff = c.lv - n;
+        if (diff <= 0) return;           // 只由較高的一側畫，避免重複
+        const [x1, y1] = corner(x, y, s, i), [x2, y2] = corner(x, y, s, (i + 1) % 6);
+        ctx.strokeStyle = n === 0 ? INK : `rgba(93,74,54,${0.35 + 0.15 * diff})`;
+        ctx.lineWidth = n === 0 ? Math.max(1.5, s / 14) : Math.max(0.8, (s / 30) * diff);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      });
     }
-    selRing.visible = !!focus && !!lg.territory[focus];
-    if (selRing.visible) { const [x, y] = T.parse(focus); selRing.position.set(x, 0.1, y); }
-    renderUI();
+    // 3. 完成的語塊：相鄰兩格共用的那條邊畫成金色
+    ctx.strokeStyle = '#d99a1e';
+    ctx.lineWidth = Math.max(3, s / 6);
+    for (const ch of lang.chunks.filter(T.chunkComplete)) {
+      const cs = ch.lemmas.map(l => T.parse(T.cellOf(l)));
+      for (let j = 0; j + 1 < cs.length; j++) {
+        const [q, r] = cs[j], [q2, r2] = cs[j + 1];
+        const i = T.DIRS.findIndex(([dq, dr]) => q + dq === q2 && r + dr === r2);
+        const [x, y] = toScreen(q, r);
+        const [x1, y1] = corner(x, y, s, i), [x2, y2] = corner(x, y, s, (i + 1) % 6);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+    }
+    // 4. 可以放下的位置（虛線）
+    if (selected) {
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 260);
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = `rgba(217,154,30,${0.5 + 0.4 * pulse})`;
+      ctx.lineWidth = 2;
+      for (const k of T.placeable()) { const [x, y] = toScreen(...T.parse(k)); hexPath(x, y, s * 0.9); ctx.stroke(); }
+      ctx.setLineDash([]);
+    }
+    // 5. 選取與標示
+    for (const k of [focus, ...highlight].filter(Boolean)) {
+      if (!t[k]) continue;
+      const [x, y] = toScreen(...T.parse(k));
+      hexPath(x, y, s * 0.88);
+      ctx.strokeStyle = k === focus ? '#c0392b' : '#d99a1e';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+    // 6. 文字：放大時顯示，縮小時只剩色塊
+    if (s >= 22) {
+      ctx.fillStyle = INK;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (const c of cells) {
+        const [x, y] = toScreen(c.q, c.r);
+        if (x < -s || y < -s || x > W + s || y > H + s) continue;
+        let fs = Math.min(15, s * 0.42);
+        ctx.font = `700 ${fs}px ui-rounded, system-ui, -apple-system, "PingFang TC", "Hiragino Sans", sans-serif`;
+        while (fs > 8 && ctx.measureText(c.lemma).width > s * 1.55) { fs -= 1; ctx.font = ctx.font.replace(/\d+(\.\d+)?px/, fs + 'px'); }
+        ctx.fillText(c.lemma, x, y);
+      }
+    }
   }
 
-  function renderUI() {
+  function loop() {
+    draw();
+    if (running && selected) raf = requestAnimationFrame(loop);
+  }
+  const redraw = () => { cancelAnimationFrame(raf); loop(); };
+
+  // ---------- 介面 ----------
+  function rebuild() {
     const lang = getLang(), lg = L();
     const done = lang.chunks.filter(T.chunkComplete).length;
     const biggest = Math.max(0, ...T.chunkNetworks(lang.chunks).map(n => n.length));
     const due = Object.values(lg.territory).filter(l => isDue(word(l))).length;
-    $('#stat').textContent = `🧩 ${T.count()} 格　🧱 ${done}/${lang.chunks.length} 語塊${biggest > 1 ? `　🕸 最大網絡 ${biggest}` : ''}${due ? `　⚠️ ${due} 格快降級` : ''}`;
+    $('#stat').textContent = `⬡ ${T.count()} 格　🧱 ${done}/${lang.chunks.length} 語塊${biggest > 1 ? `　🕸 ${biggest}` : ''}${due ? `　⚠️ ${due} 格快降級` : ''}`;
     $('#bagCount').textContent = `${lg.backpack.length} / ${RULES.backpackSize}`;
     $('#bagList').innerHTML = lg.backpack.length
       ? lg.backpack.map(l => `<button class="bag-item${selected === l ? ' sel' : ''}" data-l="${esc(l)}">${esc(l)}<small>Lv${word(l).lv}</small></button>`).join('')
@@ -120,81 +181,74 @@ export function createLand(root, { getLang, onChange }) {
       focus = null;
       rebuild();
     }));
-    $('#hint').textContent = selected ? `把「${selected}」放到發光的格子上（和常一起出現的字放在一起，得分更高）` : '';
+    $('#hint').textContent = selected ? `把「${selected}」放到虛線格（和常一起出現的字放近，得分更高）` : '';
     onChange?.();
+    redraw();
   }
 
-  // ---------- 標籤：放大時顯示文字，縮小時變成色點 ----------
-  s3.onFrame = () => {
-    const ppu = (s3.h / (HALF * 2)) * zoom;
-    const show = ppu > 34;
-    labelsEl.style.display = show ? '' : 'none';
-    if (show) for (const { el, pos } of labels) {
-      const [x, y] = s3.toScreen(pos);
-      el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
-    }
-    ghostsG.children.forEach(g => (g.material.opacity = 0.25 + Math.sin(performance.now() / 250) * 0.12));
-  };
+  function fitAll() {
+    const ks = Object.keys(L().territory).map(T.parse);
+    if (!ks.length) { cam = { x: 0, y: 0, s: 34 }; return; }
+    cam.s = 34;
+    const pts = ks.map(([q, r]) => hexToPx(q, r));
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const spanX = Math.max(...xs) - Math.min(...xs) + cam.s * 3, spanY = Math.max(...ys) - Math.min(...ys) + cam.s * 3;
+    const k = Math.min(1.3, Math.max(0.15, Math.min((W || 360) / spanX, ((H || 500) - 160) / spanY)));
+    cam.s *= k;
+    const p2 = ks.map(([q, r]) => hexToPx(q, r));
+    cam.x = (Math.min(...p2.map(p => p[0])) + Math.max(...p2.map(p => p[0]))) / 2;
+    cam.y = (Math.min(...p2.map(p => p[1])) + Math.max(...p2.map(p => p[1]))) / 2 + 50;
+  }
+  function lookAtCell(k) {
+    const [q, r] = T.parse(k);
+    cam.s = Math.max(cam.s, 34);
+    [cam.x, cam.y] = hexToPx(q, r);
+  }
+  function zoomBy(f, sx = W / 2, sy = H / 2) {
+    const ns = Math.min(80, Math.max(5, cam.s * f)), k = ns / cam.s;
+    // 以手指或滑鼠位置為中心縮放
+    cam.x = (cam.x + sx - W / 2) * k - (sx - W / 2);
+    cam.y = (cam.y + sy - H / 2) * k - (sy - H / 2);
+    cam.s = ns;
+    redraw();
+  }
 
   // ---------- 操作：拖曳平移、雙指縮放、點擊 ----------
   const pts = new Map();
-  let moved = false, pinch0 = 0, zoom0 = 1, downAt = null;
+  let moved = false, pinch0 = 0, s0 = 34, downAt = null;
   box.addEventListener('pointerdown', e => {
     box.setPointerCapture(e.pointerId);
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 1) { moved = false; downAt = { x: e.clientX, y: e.clientY }; }
-    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; moved = true; }
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); s0 = cam.s; moved = true; }
   });
   box.addEventListener('pointermove', e => {
     const p = pts.get(e.pointerId);
     if (!p) return;
     if (pts.size === 1) {
       if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 8) moved = true;
-      if (moved) {
-        const a = groundAt(p.x, p.y), b = groundAt(e.clientX, e.clientY);
-        if (a && b) { target.add(a.sub(b)); updateCamera(); }
-      }
+      if (moved) { cam.x -= e.clientX - p.x; cam.y -= e.clientY - p.y; redraw(); }
     }
     p.x = e.clientX; p.y = e.clientY;
     if (pts.size === 2) {
-      const [a, b] = [...pts.values()];
-      zoom = THREE.MathUtils.clamp(zoom0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch0, 0.15, 2.5);
-      updateCamera();
+      const [a, b] = [...pts.values()], rect = box.getBoundingClientRect();
+      zoomBy((s0 * Math.hypot(a.x - b.x, a.y - b.y)) / pinch0 / cam.s, (a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top);
     }
   });
-  const up = e => {
+  box.addEventListener('pointerup', e => {
     const wasTap = pts.size === 1 && !moved;
     pts.delete(e.pointerId);
-    if (wasTap) tap(e.clientX, e.clientY);
-  };
-  box.addEventListener('pointerup', up);
+    if (wasTap) { const r = box.getBoundingClientRect(); tap(e.clientX - r.left, e.clientY - r.top); }
+  });
   box.addEventListener('pointercancel', e => pts.delete(e.pointerId));
-  box.addEventListener('wheel', e => { e.preventDefault(); zoom = THREE.MathUtils.clamp(zoom * (e.deltaY < 0 ? 1.12 : 0.89), 0.15, 2.5); updateCamera(); }, { passive: false });
-  $('#zin').onclick = () => { zoom = Math.min(2.5, zoom * 1.3); updateCamera(); };
-  $('#zout').onclick = () => { zoom = Math.max(0.15, zoom / 1.3); updateCamera(); };
-  $('#home').onclick = () => fitAll();
+  box.addEventListener('wheel', e => { e.preventDefault(); const r = box.getBoundingClientRect(); zoomBy(e.deltaY < 0 ? 1.12 : 0.89, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  $('#zin').onclick = () => zoomBy(1.3);
+  $('#zout').onclick = () => zoomBy(1 / 1.3);
+  $('#home').onclick = () => { fitAll(); redraw(); };
 
-  function fitAll() {
-    const ks = Object.keys(L().territory).map(T.parse);
-    if (!ks.length) { target.set(0, 0, 0); zoom = 1; return updateCamera(); }
-    const xs = ks.map(k => k[0]), ys = ks.map(k => k[1]);
-    target.set((Math.min(...xs) + Math.max(...xs)) / 2, 0, (Math.min(...ys) + Math.max(...ys)) / 2);
-    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 3;
-    zoom = THREE.MathUtils.clamp((HALF * 2) / span, 0.15, 1.3);
-    updateCamera();
-  }
-  function lookAtCell(k) {
-    const [x, y] = T.parse(k);
-    target.set(x, 0, y);
-    zoom = Math.max(zoom, 1);
-    updateCamera();
-  }
-
-  function tap(cx, cy) {
-    const p = groundAt(cx, cy);
-    if (!p) return;
-    const k = T.key(Math.round(p.x), Math.round(p.z));
-    const lg = L();
+  function tap(sx, sy) {
+    const k = screenToHex(sx, sy), lg = L();
+    highlight = new Set();
     if (selected) {
       if (T.place(selected, k)) {
         sfx('place');
@@ -203,11 +257,11 @@ export function createLand(root, { getLang, onChange }) {
         selected = null;
         focus = k;
         rebuild();
-      } else if (!lg.territory[k]) toast('只能放在發光的格子上（領土要相連）');
+      } else if (!lg.territory[k]) toast('只能放在虛線格上（領土要相連）');
       return;
     }
-    if (lg.territory[k]) { focus = k; rebuild(); tileSheet(k); }
-    else if (focus) { focus = null; rebuild(); }
+    if (lg.territory[k]) { focus = k; redraw(); tileSheet(k); }
+    else if (focus) { focus = null; redraw(); }
   }
 
   // ---------- 格子資訊 ----------
@@ -225,7 +279,7 @@ export function createLand(root, { getLang, onChange }) {
       <div class="row" style="margin-top:16px">
         <button class="btn ghost big" id="say">🔊 發音</button>
         <button class="btn gold big" id="lift">拿起移動（🪙${RULES.moveCost}）</button>
-      </div>`, { onClose: () => { focus = null; rebuild(); } }, body => {
+      </div>`, { onClose: () => { focus = null; redraw(); } }, body => {
       body.querySelector('#say').onclick = () => speak(lemma, { rate: 0.85 });
       body.querySelector('#lift').onclick = () => {
         const r = T.pickUp(k);
@@ -235,7 +289,7 @@ export function createLand(root, { getLang, onChange }) {
         focus = null;
         closeSheet();
         rebuild();
-        toast(`已拿起「${lemma}」，點發光的格子放下`);
+        toast(`已拿起「${lemma}」，點虛線格放下`);
       };
     });
   }
@@ -245,7 +299,13 @@ export function createLand(root, { getLang, onChange }) {
     openSheet(`<h2>🔗 錯過的連結</h2>
       <p class="muted">上一局一起出現、但在領土上離得很遠的字。把它們放近一點，下一局的路徑加成會更高。</p>
       <div class="stack">${m.length ? m.map((x, i) => `<button class="btn ghost" data-i="${i}">${esc(x.a)} ↔ ${esc(x.b)}　（${x.steps} 步）</button>`).join('') : '<p class="muted">目前沒有。</p>'}</div>`,
-      {}, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => { closeSheet(); lookAtCell(T.cellOf(m[+b.dataset.i].a)); })));
+      {}, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => {
+        const x = m[+b.dataset.i];
+        closeSheet();
+        highlight = new Set([T.cellOf(x.a), T.cellOf(x.b)].filter(Boolean));
+        lookAtCell(T.cellOf(x.a));
+        redraw();
+      })));
   };
   $('#chunkBtn').onclick = () => {
     const lang = getLang(), lg = L();
@@ -259,8 +319,8 @@ export function createLand(root, { getLang, onChange }) {
   };
 
   return {
-    show() { rebuild(); if (!labels.length || !s3.running) fitAll(); s3.start(); },
-    hide() { s3.stop(); selected = null; focus = null; },
+    show() { running = true; resize(); fitAll(); rebuild(); },
+    hide() { running = false; cancelAnimationFrame(raf); selected = null; focus = null; highlight = new Set(); },
     rebuild,
   };
 }
