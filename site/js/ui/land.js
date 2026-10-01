@@ -4,6 +4,7 @@ import { L, word, RULES, isDue, decayProgress } from '../engine/store.js';
 import * as T from '../engine/territory.js';
 import { speak, sfx } from '../audio.js';
 import { openSheet, closeSheet, toast, esc, stars } from './sheet.js';
+import { iconHtml } from './icon.js';
 
 // 地形圖的高度色階（1 級最淺，5 級最深）
 const FILL = [null, '#efe9d6', '#dfe8c6', '#c6dba6', '#a6c886', '#84b067'];
@@ -273,7 +274,7 @@ export function createLand(root, { getLang, onChange }) {
       : days ? `${isDue(w) ? '⚠️ 快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
     const chunks = lang.chunks.filter(c => c.lemmas.includes(lemma));
     openSheet(`
-      <h2>${esc(lemma)} <span class="stars">${stars(w.lv)}</span></h2>
+      <h2>${lang.base[lemma] ? iconHtml(lang.base[lemma]) + ' ' : ''}${esc(lemma)} <span class="stars">${stars(w.lv)}</span></h2>
       <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>寫法：${[...info.forms].map(esc).join('、')}</p>
       ${chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '✅' : '⬜'} ${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
       <div class="row" style="margin-top:16px">

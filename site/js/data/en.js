@@ -7,13 +7,6 @@ export default {
   bcp47: 'en-US',
   wals: 'eng',
   joiner: ' ',
-  base: {
-    prince: '🤴', pilot: '🧑‍✈️', airplane: '✈️', desert: '🏜️', water: '💧', sheep: '🐑', box: '📦',
-    planet: '🪐', house: '🏠', volcano: '🌋', tree: '🌳', sunset: '🌇', sun: '☀️', star: '⭐',
-    flower: '🌸', rose: '🌹', wind: '🌬️', bird: '🐦', fox: '🦊', heart: '❤️', eye: '👁️',
-    morning: '🌅', night: '🌙', draw: '✏️', sleep: '😴', smile: '😊', eat: '🍽️', fly: '🕊️',
-    red: '🟥', sad: '😢', cold: '🥶', old: '👴', small: '🤏', secret: '🤫', earth: '🌍',
-  },
   sources: [
     {
       id: 'en-prince', kind: '故事', title: 'The Little Prince（改寫版）',

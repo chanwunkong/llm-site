@@ -2,6 +2,7 @@
 import en from './data/en.js';
 import ja from './data/ja.js';
 import { buildLanguage } from './engine/content.js';
+import { BASE } from './data/base.js';
 import { state, save, L, applyDecay, skipDay, resetAll } from './engine/store.js';
 import * as T from './engine/territory.js';
 import { setVoiceLang, speak } from './audio.js';
@@ -13,7 +14,7 @@ import { openSheet, closeSheet, toast } from './ui/sheet.js';
 
 const DATA = { en, ja };
 const built = {};
-const getLang = () => (built[state.lang] ||= buildLanguage(DATA[state.lang]));
+const getLang = () => (built[state.lang] ||= buildLanguage(DATA[state.lang], BASE[state.lang]));
 const $ = s => document.querySelector(s);
 
 function refreshTop() {

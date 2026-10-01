@@ -33,7 +33,8 @@ export function joinTokens(tokens, joiner) {
   return out;
 }
 
-export function buildLanguage(data) {
+// base：基礎單字集（詞元 → 概念與圖示），由 data/concepts/build_base.py 產生
+export function buildLanguage(data, base = {}) {
   const sentences = [];
   const situations = [];
   const lemmas = new Map(); // lemma -> { lemma, upos, content, forms:Set, freq, sentences:[] , home }
@@ -64,7 +65,7 @@ export function buildLanguage(data) {
       situations.push(sitObj);
     });
   }
-  const lang = { ...data, sentences, situations, lemmas };
+  const lang = { ...data, base, sentences, situations, lemmas };
   lang.chunks = mineChunks(lang);
   return lang;
 }

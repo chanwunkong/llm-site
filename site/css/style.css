@@ -212,3 +212,13 @@ details.cmp summary { font-weight: 900; cursor: pointer; padding: 4px 0; }
 #loading { position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; text-align: center; background: var(--sky1); color: var(--muted); z-index: 50; }
 .spin { font-size: 36px; animation: spin 1.2s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- 概念圖示（單一或組合模板） ---- */
+.cicon { display: inline-flex; align-items: center; justify-content: center; gap: 0.12em; line-height: 1; }
+.cicon.combo { position: relative; }
+.cicon.combo small { position: absolute; right: -0.35em; bottom: -0.2em; font-size: 0.5em; background: #fff8e8; border-radius: 50%; width: 1.25em; height: 1.25em; display: grid; place-items: center; box-shadow: 0 1px 3px #0003; }
+.cicon.act { font-size: 0.8em; }
+.cicon.act i { font-style: normal; font-size: 0.45em; color: #c9921a; font-weight: 900; }
+.cicon.pair { white-space: nowrap; font-size: 0.75em; }
+.cicon.pair span { padding: 0.05em 0.1em; border-radius: 0.25em; opacity: 0.35; }
+.cicon.pair span.ans { opacity: 1; box-shadow: 0 0 0 0.08em #ffcf4a; }

@@ -3,6 +3,7 @@ import { buildRun, makeQuestion, answer, current, choices, choose, settle, WALS 
 import { L } from '../engine/store.js';
 import { speak, speakGap, stopSpeech, sfx, listen, canListen } from '../audio.js';
 import { openSheet, closeSheet, esc, toast } from './sheet.js';
+import { iconHtml } from './icon.js';
 
 const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
 const ENV_NAME = { speak: '🔊 開口', ear: '🎧 耳機', mute: '🔇 靜音' };
@@ -65,7 +66,7 @@ export function createPlay(root, { onEnd }) {
         <span class="badge" style="margin-left:auto">${ENV_NAME[run.env]}</span>
       </div>
       <div class="qmain">
-      ${q.image ? `<div class="pic">${q.image}</div>` : ''}
+      ${q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
       <div class="sentence${showText ? '' : ' hidden-text'}" id="sent">${sentenceHtml()}</div>
       ${audio() ? `<div class="listen-row">
         <button class="btn sm" id="replay">🔊 再聽一次</button>
