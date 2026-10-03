@@ -3,12 +3,12 @@
 import { L } from '../engine/store.js';
 import * as P from '../engine/phono.js';
 import { INVENTORY_SOURCES } from '../data/phonology.js';
-import { LANGS } from '../data/wals.js';
-import { speak } from '../audio.js';
+import { speak, playFiles } from '../audio.js';
+import { IPA_AUDIO } from '../data/ipa-audio.js';
 import { esc, openSheet } from './sheet.js';
 import { editKnown, knownRow, langName } from './known.js';
 import { G } from './glyph.js';
-import { PLACES, MANNERS, HEIGHTS, position, base } from '../engine/ipa-chart.js';
+import { PLACES, MANNERS, HEIGHTS, BACKS, position, base } from '../engine/ipa-chart.js';
 import { known } from '../engine/store.js';
 
 
@@ -206,22 +206,43 @@ export function createSounds(root, { getLang }) {
     lab.querySelectorAll('[data-l]').forEach(b => (b.onclick = () => detail(b.dataset.l)));
   }
 
+  // 單音錄音：依顯示用寫法找檔案（送氣、顎化等附加的音沒有單獨錄音）
+  const rec = seg => IPA_AUDIO[disp(seg) === 'g' ? 'ɡ' : disp(seg)];
+  const url = seg => `audio/ipa/${rec(seg).file}`;
+  // 表上相鄰的音：子音看部位、方法、清濁；母音看高低、前後、圓展。差距小的排前面
+  function nearby(seg) {
+    const a = position(seg), idx = (list, k) => list.findIndex(([x]) => x === k);
+    const dist = b => {
+      if (a.kind === 'consonant' && b.kind === 'consonant')
+        return Math.abs(idx(PLACES, a.place) - idx(PLACES, b.place)) + (a.manner !== b.manner ? 1.5 : 0) + (a.voiced !== b.voiced ? 1 : 0);
+      if (a.kind === 'vowel' && b.kind === 'vowel')
+        return Math.abs(idx(HEIGHTS, a.height) - idx(HEIGHTS, b.height)) + Math.abs(idx(BACKS, a.back) - idx(BACKS, b.back)) + (a.round !== b.round ? 1 : 0);
+      return 99;
+    };
+    const seen = new Set([disp(seg)]);
+    return lastAll.filter(x => rec(x.seg) && !seen.has(disp(x.seg)) && seen.add(disp(x.seg)))
+      .map(x => ({ ...x, d: dist(x.pos) })).filter(x => x.d <= 2).sort((x, y) => x.d - y.d).slice(0, 4);
+  }
+
   function detail(seg) {
     const t = target(), lang = getLang();
     const inTarget = P.inventory(t).includes(seg);
     const status = inTarget ? P.soundStatus(seg, t) : 'absent';
-    const have = LANGS.filter(l => l.id !== t && P.inventory(l.id).some(x => P.norm(x) === P.norm(seg)));
     const words = inTarget ? wordsWith(seg) : { learned: [], other: [] };
     const row = w => {
       const sg = P.wordSegs(lang.id, w) || [];
-      return `<button class="ex-row" data-w="${esc(w)}">${esc(w)}　/${sg.map(x => P.norm(x) === P.norm(seg) ? `<mark>${esc(x)}</mark>` : esc(x)).join('')}/ ${G.speaker(14)}</button>`;
+      return `<button class="ex-row" data-w="${esc(w)}"><span>${esc(w)}　<span class="ipa">/${sg.map(x => P.norm(x) === P.norm(seg) ? `<mark>${esc(disp(x))}</mark>` : esc(disp(x))).join('')}/</span></span>${G.speaker(14)}</button>`;
     };
-    const mark = P.markOf(seg);
+    const mark = P.markOf(seg), near = rec(seg) ? nearby(seg) : [];
+    const credit = rec(seg) && [seg, ...near.map(x => x.seg)].map(x => ({ sym: disp(x), ...rec(x) }));
     const TAG = { hard: '<span class="tag hard">難音</span>', known: '<span class="tag ok">已經會</span>', absent: `<span class="tag">${esc(langName(t))}沒有這個音</span>` };
     openSheet(`
       <h2 class="snd-title">${esc(disp(seg))} ${TAG[status]}</h2>
       ${disp(seg) !== seg ? `<p class="muted">PHOIBLE 原始寫法：${esc(seg)}</p>` : ''}
-      <p class="muted">${have.length ? `有這個音的語言：${have.map(l => esc(l.zh)).join('、')}` : '其他語言的清單裡都沒有這個音。'}</p>
+      ${rec(seg) ? `<button class="btn gold sm" id="one">${G.speaker(14).replaceAll('#111111', '#FFFFFF')} 聽這個音</button>` : '<p class="muted">這個音沒有單獨的錄音。</p>'}
+      ${rec(seg) && near.length ? `<h3>和相近的音比較 <small>（連續播放兩個音）</small></h3>
+        <div class="cmp-snds">${near.map(x => `<button class="cmp-snd" data-b="${esc(x.seg)}"><b>${esc(disp(seg))}</b><i>⇄</i><b>${esc(disp(x.seg))}</b>
+          <small>${x.who !== 'target' ? '只有你會的語言有' : x.status === 'hard' ? '難音' : '已經會'}</small></button>`).join('')}</div>` : ''}
       ${inTarget ? `<div class="row">
         <button class="btn ${mark === true ? 'gold' : 'ghost'} sm" id="mk1">這個音我會</button>
         <button class="btn ${mark === false ? 'gold' : 'ghost'} sm" id="mk0">我還不會</button>
@@ -231,7 +252,11 @@ export function createSounds(root, { getLang }) {
       ${words.learned.length ? `<div class="stack">${words.learned.slice(0, 8).map(row).join('')}</div>` : '<p class="muted">還沒有。</p>'}
       ${words.other.length ? `<h3>來源裡含有這個音的字</h3><div class="stack">${words.other.slice(0, 5).map(row).join('')}</div>` : ''}`
       : '<p class="muted">這是你會的語言裡有、但目標語言沒有的音。放在表格裡，是為了和旁邊目標語言的音比較。</p>'}
+      ${credit ? `<p class="muted credit">單音錄音：維基共享資源（${[...new Set(credit.map(c => c.license))].join('、')}）${credit.map(c => `<a href="${esc(c.source)}" target="_blank" rel="noopener">${esc(c.sym)}</a>`).join(' ')}</p>` : ''}
     `, {}, body => {
+      if (rec(seg)) playFiles([url(seg)]);
+      body.querySelector('#one')?.addEventListener('click', () => playFiles([url(seg)]));
+      body.querySelectorAll('[data-b]').forEach(b => (b.onclick = () => playFiles([url(seg), url(b.dataset.b)])));
       body.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => speak(b.dataset.w, { rate: 0.8 })));
       body.querySelector('#mk1')?.addEventListener('click', () => { P.setMark(seg, true); render(); detail(seg); });
       body.querySelector('#mk0')?.addEventListener('click', () => { P.setMark(seg, false); render(); detail(seg); });

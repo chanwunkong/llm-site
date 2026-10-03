@@ -11,3 +11,7 @@ python3 -m venv .venv && .venv/bin/pip install pyopenjtalk-prebuilt "numpy<2"
 curl -L -o /tmp/phoible.csv https://raw.githubusercontent.com/phoible/dev/master/data/phoible.csv
 .venv/bin/python data/phonology/build_phonology.py /tmp/phoible.csv
 ```
+
+## 單音錄音
+
+`fetch_ipa_audio.py` 從維基共享資源下載 IPA 各音的標準錄音（多數為 Peter Isotalo 等人錄製），轉成 mp3 放在 `site/audio/ipa/`，並產生 `site/js/data/ipa-audio.js`。每個檔案的來源、作者與授權（CC BY-SA 3.0／4.0、CC BY、CC0、公眾領域）記錄在 `site/audio/ipa/credits.json`，發音頁的詳細面板也會顯示來源。ɥ 沒有標準錄音，不收。

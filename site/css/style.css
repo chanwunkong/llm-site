@@ -308,3 +308,14 @@ table.ipa td.r { border-left: 1px dotted var(--muted); }
 #simBar .btn { padding: 3px 10px; }
 body.playing #simBar { display: none; }
 .choice.sel { background: var(--yellow); }
+
+/* ---- 發音詳細面板：單音與比較 ---- */
+.cmp-snds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.cmp-snd { border: var(--b); background: var(--white); padding: 8px 10px; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 6px; }
+.cmp-snd b { font-size: 24px; font-family: "Doulos SIL", "Charis SIL", "Noto Sans", sans-serif; }
+.cmp-snd i { font-style: normal; color: var(--muted); }
+.cmp-snd small { width: 100%; text-align: center; color: var(--muted); font-size: 11px; }
+.cmp-snd:active { background: var(--yellow); }
+.ex-row .ipa { font-family: "Doulos SIL", "Charis SIL", "Noto Sans", sans-serif; }
+.credit { font-size: 11px; word-break: break-all; }
+.credit a { color: var(--muted); margin-right: 4px; }

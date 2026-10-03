@@ -32,6 +32,18 @@ export function speak(text, { rate = 0.9, variety = false, voice = null } = {}) 
     speechSynthesis.speak(u);
   });
 }
+// 錄音檔（單音）：用 <audio> 播放，手機靜音模式下也聽得到。依序播放多個檔案，中間停一下
+let player;
+export async function playFiles(urls, gap = 250) {
+  if (!state.sound) return;
+  player?.pause();
+  for (const [i, url] of urls.entries()) {
+    if (i) await new Promise(r => setTimeout(r, gap));
+    const a = (player = new Audio(url));
+    await new Promise(r => { a.onended = a.onerror = r; a.play().catch(r); });
+    if (player !== a) return;   // 中途又按了別的
+  }
+}
 export function stopSpeech() { if (canSpeak) speechSynthesis.cancel(); }
 
 let ac;
