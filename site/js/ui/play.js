@@ -50,21 +50,25 @@ export function createPlay(root, { onEnd }) {
     else startTimer();
   }
 
-  const playGap = () => speakGap(q.before, q.after, run.aids.includes('slowvoice') ? 0.65 : 0.9);
+  const playGap = () => speakGap(q.before, q.after, 0.9);
 
   // ---------- 畫面 ----------
   function renderQ() {
     const lg = L(), item = q.item;
-    const active = q.rules.filter(r => run.skills.includes(r) && lg.unlocked.includes(r)).map(r => WALS.find(w => w.id === r));
+    const chain = item.kind === 'chain';
+    const active = chain ? [] : q.rules.filter(r => run.skills[r] && lg.unlocked.includes(r)).map(r => WALS.find(w => w.id === r));
+    const ruleOf = id => WALS.find(w => w.id === id);
+    $('#qcard').classList.toggle('chain', chain);
     const cardMode = q.mode !== 'produce';
     const useMic = speakMode() && (cardMode ? !tapMode : !typeMode);
     $('#qcard').innerHTML = `
       <div class="badges">
-        <span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>
+        ${chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule} ${esc(ruleOf(item.rule).name)}</span>`
+          : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>`}
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
         ${item.kind === 'spot' ? '<span class="badge spot">5 級抽查</span>' : ''}
         ${q.challenge ? '<span class="badge challenge">升級挑戰</span>' : ''}
-        ${active.map(r => `<span class="badge rule-b">${r.id} +50%</span>`).join('')}
+        ${active.map(r => `<span class="badge rule-b">${r.id} 可觸發連鎖</span>`).join('')}
         <span class="badge" style="margin-left:auto">${ENV_NAME[run.env]}</span>
       </div>
       <div class="qmain">
@@ -73,7 +77,6 @@ export function createPlay(root, { onEnd }) {
       ${audio() ? `<div class="listen-row">
         <button class="btn sm" id="replay">${G.speaker()} 再聽一次</button>
         <button class="btn sm" id="eye">${G.eye()} ${showText ? '隱藏文字' : '顯示文字'}</button></div>` : ''}
-      ${q.hint ? `<div class="muted" style="text-align:center">提示：第一個字母是「${esc(q.hint)}」</div>` : ''}
       ${q.timer ? '<div class="timer"><i id="tbar" style="width:100%"></i></div>' : ''}
       <div id="fb" class="feedback"></div>
       </div>
@@ -140,11 +143,10 @@ export function createPlay(root, { onEnd }) {
     $('.prog i').style.width = `${(run.pos / run.queue.length) * 100}%`;
     $('.score').textContent = run.score;
     const mult = Math.min(3, 1 + 0.1 * (run.combo - 1));
-    $('.combo').innerHTML = run.combo >= 2 ? `<b>${run.combo}</b> 連鎖<small>×${mult.toFixed(1)}</small>` : '';
+    $('.combo').innerHTML = run.combo >= 2 ? `<b>${run.combo}</b> 連擊<small>×${mult.toFixed(1)}</small>` : '';
     const lg = L();
     $('.skills-on').innerHTML = [
-      ...run.skills.map(id => WALS.find(w => w.id === id)).map(w => `<span class="chip" title="${esc(w.name)}">${w.id}</span>`),
-      ...run.aids.map(id => `<span class="chip">${{ trim: '刪選項', hint: '首字', slowtime: '慢速', slowvoice: '慢讀' }[id]}</span>`),
+      ...Object.entries(run.skills).map(([id, lv]) => `<span class="chip" title="${esc(WALS.find(w => w.id === id).name)}">${id}${lv > 1 ? ` Lv${lv}` : ''}</span>`),
     ].join('') || `<span class="muted">${esc(run.sit.title)}</span>`;
     void lg;
   }
@@ -200,15 +202,28 @@ export function createPlay(root, { onEnd }) {
     ['#mic', '#alt', '.produce', '.listen-row'].forEach(s => $(s)?.remove());
 
     const fb = $('#fb');
-    if (res.ok) {
+    if (res.chain) {
+      const c = res.chain;
+      fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;
+      if (res.ok) {
+        sfx('good');
+        fb.innerHTML = `連鎖 ${c.link}/${c.of} 正確 +${res.points}<br><small>${c.link < c.of ? (res.next ? `倍率 ×${(1 + 0.5 * (c.link + 1)).toFixed(1)}，繼續跳到下一個句子` : '來源裡沒有更多這個模式的句子，連鎖結束') : '連鎖完成！'}</small>`;
+        floatText(`+${res.points}`);
+        if (res.next) setTimeout(() => floatText(`連鎖 → ${c.link + 1}/${c.of}`, true), 250);
+      } else {
+        sfx('bad');
+        fb.innerHTML = `連鎖中斷　正確答案<span class="ans">${esc(q.answerText)}</span>`;
+      }
+    } else if (res.ok) {
       sfx('good');
       const extra = [
-        res.rules.length && res.rules.join('、') + ' 規則 +50%',
+        res.chains?.length && `觸發連鎖：${res.chains.map(c => c.rule).join('、')}`,
         res.path > 0 && `領土路徑 +${Math.round(res.path * 100)}%`,
       ].filter(Boolean).join('　');
       fb.className = 'feedback ok';
       fb.innerHTML = `正確 +${res.points}${extra ? `<br><small>${extra}</small>` : ''}`;
       floatText(`+${res.points}`);
+      if (res.chains?.length) setTimeout(() => floatText(`連鎖！${res.chains.map(c => c.rule).join(' ＋ ')}`, true), 250);
       const c = $('.combo');
       c.classList.remove('bump'); c.offsetWidth; c.classList.add('bump');
     } else {
@@ -256,10 +271,10 @@ export function createPlay(root, { onEnd }) {
     const cs = choices(run);
     if (!cs.length) { run.pendingChoice = false; return next(); }
     sfx('level');
-    openSheet(`<h2>升級！選一項能力</h2>
-      <p class="muted">只在這一局有效。WALS 技能：空格用到這條規則、而且答對時，分數 +50%。</p>
-      <div class="stack">${cs.map((c, i) => `<button class="choice${c.type === 'wals' ? ' wals' : ''}" data-i="${i}">
-        <span class="ic">${c.type === 'wals' ? c.id : '輔助'}</span><b>${esc(c.name)}</b><small>${esc(c.desc)}</small></button>`).join('')}</div>`,
+    openSheet(`<h2>升級！選一條規則</h2>
+      <p class="muted">只在這一局有效。答對用到這條規則的空格時觸發連鎖；第 k 環分數 ×(1 + 0.5k)，答錯就斷掉。</p>
+      <div class="stack">${cs.map((c, i) => `<button class="choice" data-i="${i}">
+        <span class="ic">${c.id}${c.next > 1 ? `<br>Lv${c.next}` : ''}</span><b>${esc(c.name)}</b><small>${esc(c.desc)}</small></button>`).join('')}</div>`,
       { locked: true }, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => { choose(run, cs[+b.dataset.i]); closeSheet(); hud(); next(); })));
   }
 
@@ -275,13 +290,13 @@ export function createPlay(root, { onEnd }) {
     stopSpeech();
     const rep = settle(run);
     const lg = L();
-    const rulesTxt = Object.entries(rep.ruleHits).map(([r, n]) => `${r} ${esc(WALS.find(w => w.id === r).name)} ×${n}`).join('　');
+    const rulesTxt = Object.entries(rep.ruleHits).map(([r, n]) => `${r} ${esc(WALS.find(w => w.id === r).name)} ${n} 環`).join('　');
     openSheet(`
       <h2>本局結束</h2>
       <div class="stats">
         <div><b>${rep.score}</b><span>得分</span></div>
         <div><b>${rep.correct}/${rep.correct + rep.wrong}</b><span>答對</span></div>
-        <div><b>${rep.maxCombo}</b><span>最高連鎖</span></div>
+        <div><b>${rep.maxChain}</b><span>最長連鎖</span></div>
       </div>
       <h3>金幣 +${rep.score + rep.produced}</h3>
       <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : (rep.correct < 5 ? '　（本局答對不到 5 題，語塊沒有產出）' : '　（在領土上完成語塊，每局結算都會產出金幣）')}</p>
@@ -289,7 +304,7 @@ export function createPlay(root, { onEnd }) {
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
       ${rep.newTiles.length ? `<h3>新詞元進背包</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>
         ${rep.auto.length ? `<p class="muted">背包滿了，${rep.auto.map(esc).join('、')} 已自動放在領土邊緣。</p>` : ''}` : ''}
-      ${rulesTxt ? `<h3>規則加成</h3><p class="muted">${rulesTxt}</p>` : ''}
+      ${rulesTxt ? `<h3>連鎖（共 ${rep.chainLinks} 環）</h3><p class="muted">${rulesTxt}</p>` : ''}
       ${rep.missed.length ? `<h3>錯過的連結</h3><p class="muted">這些字一起出現，但在領土上離得很遠：${rep.missed.map(m => `${esc(m.a)} ↔ ${esc(m.b)}（${m.steps} 步）`).join('、')}</p>` : ''}
       <h3>${esc(rep.sitTitle)}</h3>
       <p class="muted">${rep.advanced ? `完成了！解鎖下一段：${esc(rep.advanced)}` : `本段進度：${rep.progress.done} 個實詞達到 Lv3`}</p>

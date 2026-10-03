@@ -73,7 +73,7 @@ export function createSkills(root, { getLang, onChange }) {
       </div>
 
       <h3>可計分的技能</h3>
-      <p class="muted">解鎖後，冒險中升級時才有機會選到；空格用到這條規則、而且答對時，分數 +50%。和你會的語言不同的「難規則」排在前面。</p>
+      <p class="muted">解鎖後，冒險中升級時才有機會選到。選到後，答對用到這條規則的空格會觸發連鎖：跳到同一個來源裡有相同模式的句子，越後面的環分數越高；同一局再選一次，連鎖多跳一環。和你會的語言不同的「難規則」排在前面。</p>
       ${rules.map(r => {
         const on = lg.unlocked.includes(r.id), v = verdict(r.id), ex = examples(r, 1)[0];
         return `<div class="rule${on ? ' on' : ''}${v === 'hard' ? ' hard' : ''}" data-f="${r.id}">

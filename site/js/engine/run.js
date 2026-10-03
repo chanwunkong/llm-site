@@ -1,7 +1,7 @@
 // 內層：一局的出題、作答判定、計分與結算。
 // 規則只依賴詞元、UD 詞性與單字等級，對任何語言都相同。
 import { isContent, isTarget, isWord, joinTokens } from './content.js';
-import { L, word, save, now, RULES, isDue, decayProgress } from './store.js';
+import { L, word, save, now, RULES, isDue, decayProgress, state } from './store.js';
 import * as T from './territory.js';
 import { FEATURES, VALUES } from '../data/wals.js';
 import * as P from './phono.js';
@@ -75,14 +75,10 @@ export const profileOf = lang => VALUES[lang.wals] || {};
 WALS.forEach(r => {
   r.test = (tk, prof) => r.spans(tk, prof).length > 0;
   r.name = FEATURES[r.id].zh;
-  r.desc = '空格用到這條規則、而且答對時，分數 +50%';
+  r.desc = '答對用到這條規則的空格時，觸發連鎖：跳到同一個來源裡、有相同模式的句子';
 });
-export const AIDS = [
-  { id: 'trim', icon: '✂️', name: '刪除錯誤選項', desc: '有字卡的題目少一張錯誤字卡' },
-  { id: 'hint', icon: '🔤', name: '顯示首字', desc: '顯示答案的第一個字母' },
-  { id: 'slowtime', icon: '🐢', name: '放慢時間', desc: '計時題的時間延長 50%' },
-  { id: 'slowvoice', icon: '🔉', name: '慢速朗讀', desc: '句子用較慢的速度朗讀', audio: true },
-];
+// 連鎖：技能等級 = 連鎖可以跳幾環；第 k 環分數 ×(1 + 0.5k)
+export const CHAIN = { maxLevel: 3, linkBonus: 0.5, maxSpan: 5, timer: 10 };
 const rulesIn = (gap, prof) => WALS.filter(r => r.test(gap, prof)).map(r => r.id);
 
 export const normalize = s => s.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{S}\s]/gu, '');
@@ -152,7 +148,8 @@ export function buildRun(lang, sourceId, env) {
   return {
     lang, sourceId, sit, env, queue, pos: 0,
     score: 0, combo: 0, maxCombo: 0, correct: 0, wrong: 0,
-    skills: [], aids: [], pendingChoice: false,
+    skills: state.sim?.autoSkills ? Object.fromEntries(lg.unlocked.filter(id => WALS.some(r => r.id === id)).map(id => [id, 1])) : {},
+    pendingChoice: false, chainUsed: new Set(), maxChain: 0, chainLinks: 0,
     firstEncounter: {}, leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
     ruleHits: {}, pathTotal: 0, missed: new Map(), log: [],
   };
@@ -203,6 +200,7 @@ function neighborCards(run, lemma, surface, n) {
 }
 
 export function makeQuestion(run, item) {
+  if (item.kind === 'chain') return makeChainQuestion(run, item);
   const { lang } = run;
   const s = lang.sentences[item.sentence];
   const w = word(item.lemma);
@@ -223,19 +221,13 @@ export function makeQuestion(run, item) {
   if (mode === 'pick') cards = shuffle([answer[0], ...neighbors.map(x => x.word),
     ...distractors(lang, item.lemma, target.upos, new Set([...answer, ...neighbors.map(x => x.word)]), 3 - neighbors.length, false)]);
   if (mode === 'order') cards = shuffle([...answer, ...distractors(lang, item.lemma, target.upos, new Set(answer), 2, true)]);
-  if (run.aids.includes('trim') && cards.length) {
-    const wrong = cards.findIndex(c => !answer.includes(c));
-    if (wrong >= 0) cards.splice(wrong, 1);
-  }
   // 這題答對就會達到門檻時，這題就是升級挑戰
   const challenge = item.kind !== 'spot' && lv >= 2 && lv < 5 && !run.leveled.has(item.lemma) &&
     w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
-  let timer = lv <= 2 ? 0 : lv === 3 ? 15 : 12;
-  if (timer && run.aids.includes('slowtime')) timer *= 1.5;
+  const timer = lv <= 2 ? 0 : lv === 3 ? 15 : 12;
   return {
     item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors,
     image: lv === 1 ? lang.base[item.lemma] : null,
-    hint: run.aids.includes('hint') ? answer[0][0] : null,
     rules: rulesIn(gapTokens, profileOf(lang)),
     before: joinTokens(s.tokens.slice(0, gap[0]), lang.joiner),
     after: joinTokens(s.tokens.slice(gap.at(-1) + 1), lang.joiner),
@@ -249,13 +241,15 @@ export const current = run => run.queue[run.pos] || null;
 // ---- 作答 ----
 // response：pick 為選中的字，order 為依序選的字陣列，produce 為輸入或辨識出的文字
 export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) {
-  const item = q.item, w = word(item.lemma), lg = L();
+  const item = q.item;
   let ok;
   if (spoken) ok = [].concat(response).some(r => normalize(r).includes(normalize(q.answerText)));
   else if (q.mode === 'pick') ok = response === q.answer[0];
   else if (q.mode === 'order') ok = response.join('\u0000') === q.answer.join('\u0000');
   else ok = normalize(response) === normalize(q.answerText);
 
+  if (item.kind === 'chain') return answerChain(run, q, ok, timeLeft);
+  const w = word(item.lemma);
   w.last = now();
   if (!w.home) w.home = item.home;
   const result = { ok, points: 0, gained: 0, levelUp: null, levelDown: null, rules: [], path: 0, newTile: null };
@@ -267,16 +261,15 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
     w.correct++;
     const comboMult = Math.min(3, 1 + 0.1 * (run.combo - 1));
     const speed = q.timer ? 0.5 * timeLeft : 0;
-    const active = q.rules.filter(r => run.skills.includes(r) && lg.unlocked.includes(r));
+    const active = activeRules(run, q);
     const contentLemmas = q.tokens.filter(isContent).map(t => t.lemma);
     const path = T.pathBonus(contentLemmas);
     for (const [a, b, st] of path.pairs) if (st >= 3) run.missed.set(`${a}|${b}`, { a, b, steps: st });
     const attemptFactor = [1, 0.5, 0.25][item.attempts] ?? 0.25;
-    const points = Math.round(10 * comboMult * (1 + speed) * (1 + 0.5 * active.length) * (1 + path.bonus) * attemptFactor);
+    const points = Math.round(10 * comboMult * (1 + speed) * (1 + path.bonus) * attemptFactor);
     run.score += points;
     run.pathTotal += path.bonus;
-    active.forEach(r => (run.ruleHits[r] = (run.ruleHits[r] || 0) + 1));
-    Object.assign(result, { points, rules: active, path: path.bonus, comboMult });
+    Object.assign(result, { points, rules: active, path: path.bonus, comboMult, chains: startChains(run, q, active) });
 
     const envPts = RULES.envPoints[spoken || run.env !== 'speak' ? run.env : 'ear'];
     const gained = item.attempts ? Math.ceil(envPts / 2) : envPts;
@@ -322,19 +315,101 @@ function levelUp(run, lemma, w, result) {
   if (w.lv === 2 && run.lang.lemmas.get(lemma).content) run.newTiles.push(lemma);
 }
 
-// ---- 局中升級：三選一 ----
+// ---- 局中升級：三選一（只有已解鎖的規則；再選一次同一條規則 = 連鎖多跳一環） ----
 export function choices(run) {
   const lg = L();
-  const pool = [
-    ...WALS.filter(r => lg.unlocked.includes(r.id) && !run.skills.includes(r.id)).map(r => ({ ...r, type: 'wals' })),
-    ...AIDS.filter(a => !run.aids.includes(a.id) && !(a.audio && run.env === 'mute')).map(a => ({ ...a, type: 'aid' })),
-  ];
+  const pool = WALS.filter(r => lg.unlocked.includes(r.id) && (run.skills[r.id] || 0) < CHAIN.maxLevel).map(r => {
+    const next = (run.skills[r.id] || 0) + 1;
+    return { ...r, type: 'wals', next, desc: next === 1 ? `開啟連鎖：答對用到這條規則的空格，跳到另一個有相同模式的句子（1 環）` : `升到 Lv${next}：連鎖跳 ${next} 環` };
+  });
   return pickN(pool, 3);
 }
 export function choose(run, c) {
-  if (c.type === 'wals') run.skills.push(c.id);
-  else run.aids.push(c.id);
+  run.skills[c.id] = (run.skills[c.id] || 0) + 1;
   run.pendingChoice = false;
+}
+
+// ---- 連鎖 ----
+const activeRules = (run, q) => q.rules.filter(r => run.skills[r] && L().unlocked.includes(r));
+
+// 找同一個來源裡、有這條規則模式的另一個句子；空格就是規則對應的那一段
+function findChainTarget(run, ruleId, exclude) {
+  const { lang } = run, rule = WALS.find(r => r.id === ruleId), prof = profileOf(lang);
+  const ids = [...new Set(lang.situations.filter(s => s.key.startsWith(`${run.sourceId}#`)).flatMap(s => s.sentences))]
+    .filter(id => id !== exclude && !run.chainUsed.has(id));
+  const cands = [];
+  for (const id of ids) {
+    const tk = lang.sentences[id].tokens;
+    for (let [a, b] of rule.spans(tk, prof)) {
+      while (a <= b && !isWord(tk[a])) a++;
+      while (b >= a && !isWord(tk[b])) b--;
+      if (a > b || b - a + 1 > CHAIN.maxSpan) continue;
+      const idx = Array.from({ length: b - a + 1 }, (_, k) => a + k);
+      if (idx.every(i => isWord(tk[i]))) cands.push({ sentence: id, gap: idx });
+    }
+  }
+  return cands.length ? cands[(Math.random() * cands.length) | 0] : null;
+}
+// 插在目前這題之後；已經排著的連鎖題先跳過，兩條連鎖就會交錯
+function insertChain(run, item) {
+  let i = run.pos + 1;
+  while (run.queue[i]?.kind === 'chain') i++;
+  run.queue.splice(i, 0, item);
+}
+function queueLink(run, rule, link, of, exclude) {
+  const t = findChainTarget(run, rule, exclude);
+  if (!t) return false;
+  run.chainUsed.add(t.sentence);
+  const tk = run.lang.sentences[t.sentence].tokens;
+  const head = t.gap.map(i => tk[i]).find(isContent) || tk[t.gap[0]];
+  insertChain(run, { kind: 'chain', rule, link, of, sentence: t.sentence, gap: t.gap, lemma: head.lemma, attempts: 0 });
+  return true;
+}
+function startChains(run, q, active) {
+  run.chainUsed.add(q.item.sentence);
+  return active.filter(r => queueLink(run, r, 1, run.skills[r], q.item.sentence)).map(r => ({ rule: r, of: run.skills[r] }));
+}
+
+function makeChainQuestion(run, item) {
+  const { lang } = run, s = lang.sentences[item.sentence], gap = item.gap;
+  const lower = (t, i) => (i === 0 && lang.lemmas.get(t.lemma)?.forms.has(t.surface.toLocaleLowerCase()) ? t.surface.toLocaleLowerCase() : t.surface);
+  const answer = gap.map(i => lower(s.tokens[i], i));
+  const gapTokens = gap.map(i => s.tokens[i]);
+  const head = gapTokens.find(isContent) || gapTokens[0];
+  const mode = answer.length === 1 ? 'pick' : 'order';
+  // 單字的空格：干擾字卡優先用同一個詞元的其他變化形（walk／walked），練的就是這個模式
+  const cards = shuffle([...answer, ...distractors(lang, head.lemma, head.upos, new Set(answer), mode === 'pick' ? 3 : 1, true)]);
+  return {
+    item, lv: 0, mode, tokens: s.tokens, gap, answer, cards, challenge: false, timer: CHAIN.timer, neighbors: [],
+    image: null, rules: [item.rule],
+    before: joinTokens(s.tokens.slice(0, gap[0]), lang.joiner),
+    after: joinTokens(s.tokens.slice(gap.at(-1) + 1), lang.joiner),
+    full: joinTokens(s.tokens, lang.joiner),
+    answerText: joinTokens(gapTokens, lang.joiner),
+  };
+}
+
+// 連鎖題只計分、不改變單字等級；答錯就斷掉，沒有其他懲罰
+function answerChain(run, q, ok, timeLeft) {
+  const item = q.item;
+  const result = { ok, points: 0, chain: { rule: item.rule, link: item.link, of: item.of }, rules: [], path: 0 };
+  if (ok) {
+    run.combo++;
+    run.maxCombo = Math.max(run.maxCombo, run.combo);
+    run.chainLinks++;
+    run.maxChain = Math.max(run.maxChain, item.link);
+    run.ruleHits[item.rule] = (run.ruleHits[item.rule] || 0) + 1;
+    const comboMult = Math.min(3, 1 + 0.1 * (run.combo - 1));
+    result.points = Math.round(10 * (1 + CHAIN.linkBonus * item.link) * comboMult * (1 + 0.5 * timeLeft));
+    run.score += result.points;
+    if (item.link < item.of) result.next = queueLink(run, item.rule, item.link + 1, item.of, item.sentence);
+  } else {
+    // 同一條連鎖後面還排著的環一起取消
+    run.queue = run.queue.filter((x, i) => i <= run.pos || !(x.kind === 'chain' && x.rule === item.rule));
+  }
+  run.pos++;
+  save();
+  return result;
 }
 
 // ---- 結算 ----
@@ -357,7 +432,7 @@ export function settle(run) {
   const missed = [...run.missed.values()].sort((a, b) => b.steps - a.steps).slice(0, 3);
   const report = {
     score: run.score, produced, production: production.map(p => ({ chunks: p.chunks.map(c => c.lemmas), mult: p.mult, gold: p.gold })),
-    correct: run.correct, wrong: run.wrong, maxCombo: run.maxCombo,
+    correct: run.correct, wrong: run.wrong, maxCombo: run.maxCombo, maxChain: run.maxChain, chainLinks: run.chainLinks,
     levelUps: run.levelUps, levelDowns: run.levelDowns, newTiles: run.newTiles, auto,
     ruleHits: run.ruleHits, missed, progress: before, advanced, sitTitle: run.sit.title,
   };

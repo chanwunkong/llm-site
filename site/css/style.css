@@ -297,3 +297,14 @@ table.ipa td.r { border-left: 1px dotted var(--muted); }
 .vq-slot.ur { transform: translate(calc(-100% - 1px), -50%); }
 .vq-slot.rd { transform: translate(1px, -50%); }
 .vq-slot .ipa-s { margin: 0; }
+
+/* ---- 連鎖 ---- */
+.badge.chain { background: var(--yellow); border-color: var(--ink); }
+.qcard.chain { border-color: var(--yellow); border-width: 4px; border-bottom: 0; }
+.choice .ic { line-height: 1.2; text-align: center; }
+
+/* ---- 模擬模式 ---- */
+#simBar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; background: var(--red); color: var(--white); font-size: 13px; font-weight: 800; border-bottom: var(--b); }
+#simBar .btn { padding: 3px 10px; }
+body.playing #simBar { display: none; }
+.choice.sel { background: var(--yellow); }

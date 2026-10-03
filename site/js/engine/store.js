@@ -1,7 +1,21 @@
 // 存檔與單字狀態。每個學習語言各自有單字、領土、背包、金幣與進度。
 import { STAGES } from '../data/wals.js';
 
-const KEY = 'word-territory-v1';
+// 模擬模式用另一份存檔，真正的進度不會被覆蓋
+const MODE_KEY = 'word-territory-mode', SIM_REQ = 'word-territory-sim-req';
+export const SIM = (() => { try { return localStorage.getItem(MODE_KEY) === 'sim'; } catch { return false; } })();
+const KEY = SIM ? 'word-territory-sim' : 'word-territory-v1';
+export function enterSim(req) {
+  try { localStorage.setItem(MODE_KEY, 'sim'); localStorage.setItem(SIM_REQ, JSON.stringify(req)); } catch {}
+  location.reload();
+}
+export function exitSim() {
+  try { localStorage.setItem(MODE_KEY, 'real'); localStorage.removeItem(SIM_REQ); } catch {}
+  location.reload();
+}
+export function takeSimRequest() {
+  try { const r = JSON.parse(localStorage.getItem(SIM_REQ)); localStorage.removeItem(SIM_REQ); return SIM ? r : null; } catch { return null; }
+}
 const DAY = 86400000;
 
 export const RULES = {
