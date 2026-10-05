@@ -10,7 +10,9 @@ const STORE_KEY = 'word-territory-imports-v1';
 
 const SIT_SIZE = 35;                      // 每個情境約 35 句
 const MIN_WORDS = 3;
-const maxWords = lang => (lang.joiner === '' ? 32 : 22);
+const maxWords = lang => (lang.joiner === '' ? 40 : 22);
+// 長句在這些標點之後切成子句（不整句丟掉）
+const CLAUSE_END = /^(，|,|；|;|：|:|、|——|—|–)$/;
 const CONTENT = new Set(['NOUN', 'VERB', 'ADJ', 'ADV', 'INTJ']);
 
 // ---- 存取 ----
@@ -28,11 +30,11 @@ export function removeImport(langId, srcId) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(all)); } catch {}
 }
 
-// ---- 句子編碼：「寫法|UPOS|詞元|特徵|n」，n = 後面不空格 ----
+// ---- 句子編碼：「寫法|UPOS|詞元|特徵|n」，n = 後面不空格、s = 後面有空格（不空格的語言，例如中文夾英文） ----
 const clean = s => String(s).replace(/\|/g, '').replace(/ /g, ' ');
 function encode(w) {
   const surface = clean(w.form), lemma = clean(w.lemma || w.form);
-  const parts = [surface, w.upos, lemma !== surface.toLowerCase() ? lemma : '', w.feats || '', w.nsa ? 'n' : ''];
+  const parts = [surface, w.upos, lemma !== surface.toLowerCase() ? lemma : '', w.feats || '', w.nsa ? 'n' : w.sa ? 's' : ''];
   while (parts.length > 2 && !parts.at(-1)) parts.pop();
   return parts.join('|');
 }
@@ -49,7 +51,7 @@ function parseConllu(text) {
     const nsa = /SpaceAfter=No/.test(c[9] || '');
     if (c[0].includes('-')) { const [a, b] = c[0].split('-').map(Number); range = { a, b, form: c[1], nsa, words: [] }; continue; }
     if (c[0].includes('.')) continue;
-    const w = { form: c[1], lemma: c[2] === '_' ? c[1] : c[2], upos: c[3], feats: c[5] === '_' ? '' : c[5].replace(/\|/g, ';'), nsa };
+    const w = { form: c[1], lemma: c[2] === '_' ? c[1] : c[2], upos: c[3], feats: c[5] === '_' ? '' : c[5].replace(/\|/g, ';'), nsa, spaced: !nsa };
     const id = Number(c[0]);
     if (range && id >= range.a && id <= range.b) {
       range.words.push(w);
@@ -57,7 +59,7 @@ function parseConllu(text) {
         const head = range.words.find(x => CONTENT.has(x.upos)) || range.words[0];
         const feats = new Map();
         for (const x of [head, ...range.words]) for (const f of x.feats.split(';').filter(Boolean)) { const [k] = f.split('='); if (!feats.has(k)) feats.set(k, f); }
-        cur.push({ form: range.form, lemma: head.lemma, upos: head.upos, feats: [...feats.values()].join(';'), nsa: range.nsa });
+        cur.push({ form: range.form, lemma: head.lemma, upos: head.upos, feats: [...feats.values()].join(';'), nsa: range.nsa, spaced: !range.nsa });
         range = null;
       }
       continue;
@@ -148,6 +150,28 @@ function basic(lang, paras) {
   return out;
 }
 
+// 太長的句子在子句標點之後切開，每段不超過上限；太短的段併回前一段
+function splitLong(ws, max, count) {
+  if (count(ws) <= max) return [ws];
+  const clauses = [];
+  let cur = [];
+  for (const w of ws) { cur.push(w); if (w.upos === 'PUNCT' && CLAUSE_END.test(w.form)) { clauses.push(cur); cur = []; } }
+  if (cur.length) clauses.push(cur);
+  const out = [];
+  for (const c of clauses) {
+    const last = out.at(-1);
+    if (last && (count(last) + count(c) <= max || count(c) < MIN_WORDS)) last.push(...c);
+    else out.push([...c]);
+  }
+  // 沒有標點可切的超長句：照字數硬切
+  return out.flatMap(p => {
+    if (count(p) <= max) return [p];
+    const parts = [];
+    for (let i = 0; i < p.length; i += max) parts.push(p.slice(i, i + max));
+    return parts;
+  });
+}
+
 // ---- 主程式 ----
 export async function importText(lang, title, text, progress = () => {}) {
   // 段落：空行分段；段內換行接起來（有空格的語言補空格）
@@ -159,15 +183,16 @@ export async function importText(lang, title, text, progress = () => {}) {
     : lang.tagger === 'kuromoji' ? await kuromoji(lang, paras, progress)
     : basic(lang, paras);
   progress('整理句子');
-  const keep = sents.filter(ws => {
-    const n = ws.filter(w => !['PUNCT', 'SYM', 'X'].includes(w.upos)).length;
-    return n >= MIN_WORDS && n <= maxWords(lang);
-  }).map(ws => ws.map(encode).join(' '));
-  if (keep.length < 5) throw new Error(`可以出題的句子太少（${keep.length} 句）。文章可能太短，或句子都太長`);
+  // 不空格的語言：原文裡有空格的地方（中文夾英文）標成 s，顯示時保留
+  if (lang.joiner === '') for (const ws of sents) for (const w of ws) w.sa = w.nsa === false && !!w.spaced;
+  const count = ws => ws.filter(w => !['PUNCT', 'SYM', 'X'].includes(w.upos)).length;
+  const pieces = sents.flatMap(ws => splitLong(ws, maxWords(lang), count));
+  const keep = pieces.filter(ws => count(ws) >= MIN_WORDS).map(ws => ws.map(encode).join(' '));
+  if (!keep.length) throw new Error('找不到可以出題的句子（每句至少要有 3 個字）');
   const k = Math.max(1, Math.round(keep.length / SIT_SIZE)), size = Math.ceil(keep.length / k);
   const situations = Array.from({ length: k }, (_, i) => ({ title: k === 1 ? title : `${title}（${i + 1}/${k}）`, sentences: keep.slice(i * size, (i + 1) * size) }))
     .filter(s => s.sentences.length);
-  const src = { id: `imp-${Date.now().toString(36)}`, kind: '匯入', title, credit: `你匯入的內容・${keep.length} 句（略過 ${sents.length - keep.length} 句太長或太短）`, imported: true, situations };
+  const src = { id: `imp-${Date.now().toString(36)}`, kind: '匯入', title, credit: `你匯入的內容・${keep.length} 句${keep.length < 10 ? '（內容較短，一局很快就會練完）' : ''}`, imported: true, situations };
   saveImport(lang.id, src);
   return src;
 }

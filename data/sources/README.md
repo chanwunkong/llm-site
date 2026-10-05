@@ -28,4 +28,5 @@
 - 16 種語言：UDPipe 線上服務（https://lindat.mff.cuni.cz/services/udpipe/ ，UD 2.17 模型，CC BY-NC-SA，限非商業使用）。多字詞（例如西班牙文 del = de + el）合成一個字，以實詞為主。
 - 日文：kuromoji.js（Apache 2.0，從 jsDelivr 載入，字典約 17 MB），詞類對應規則與本腳本相同。
 - 孟加拉語、史瓦希里語：沒有 UD 模型，用瀏覽器內建的 Intl.Segmenter 斷詞，沒有詞性。
-- 句子格式多一個第 5 欄：`n` 表示這個字後面不空格（來自 UDPipe 的 SpaceAfter=No）。
+- 句子格式多一個第 5 欄：`n` 表示這個字後面不空格（來自 UDPipe 的 SpaceAfter=No）；`s` 表示後面有空格（不空格的語言，例如中文夾英文的 README 清單）。
+- 太長的句子不丟掉，在逗號、分號、冒號、破折號之後切成子句（英文每段最多 22 字，中文、日文、泰文 40 個詞）；最少 1 句就能匯入。
