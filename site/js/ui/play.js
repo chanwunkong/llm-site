@@ -1,6 +1,6 @@
 // 答題畫面：唯一的題型「用字卡填滿空格」
 import { buildRun, makeQuestion, answer, current, choices, choose, settle, WALS } from '../engine/run.js';
-import { L, SHOW } from '../engine/store.js';
+import { L, SHOW, RULES } from '../engine/store.js';
 import { speak, speakGap, stopSpeech, sfx, listen, canListen } from '../audio.js';
 import { openSheet, closeSheet, esc, toast, sheetOpen } from './sheet.js';
 import { iconHtml } from './icon.js';
@@ -9,6 +9,9 @@ import { G } from './glyph.js';
 
 const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
 const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
+
+// 星數：實心圓 = 拿到，空心 = 還沒拿到
+export const starRow = (n, small) => `<span class="stars3${small ? ' sm' : ''}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
 
 export function createPlay(root, { onEnd, onSound }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
@@ -37,6 +40,7 @@ export function createPlay(root, { onEnd, onSound }) {
     const item = current(run);
     if (!item) return finish();
     q = makeQuestion(run, item);
+    if (item.kind === 'boss') setTimeout(() => floatText('王關！', true), 50);
     answered = false;
     picked = [];
     showText = !audio();
@@ -55,15 +59,16 @@ export function createPlay(root, { onEnd, onSound }) {
   // ---------- 畫面 ----------
   function renderQ() {
     const lg = L(), item = q.item;
-    const chain = item.kind === 'chain';
+    const chain = item.kind === 'chain', boss = item.kind === 'boss';
     const active = chain ? [] : q.rules.filter(r => run.skills[r] && lg.unlocked.includes(r)).map(r => WALS.find(w => w.id === r));
     const ruleOf = id => WALS.find(w => w.id === id);
     $('#qcard').classList.toggle('chain', chain);
+    $('#qcard').classList.toggle('boss', boss);
     const cardMode = q.mode !== 'produce';
     const useMic = speakMode() && (cardMode ? !tapMode : !typeMode);
     $('#qcard').innerHTML = `
       <div class="badges">
-        ${chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule} ${esc(ruleOf(item.rule).name)}</span>`
+        ${boss ? '<span class="badge boss">王關</span><span class="badge">整段依序排好</span>' : chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule} ${esc(ruleOf(item.rule).name)}</span>`
           : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>${q.formula ? '<span class="badge chunk">語塊</span>' : ''}`}
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
         ${item.kind === 'spot' ? '<span class="badge spot">5 級抽查</span>' : ''}
@@ -202,7 +207,11 @@ export function createPlay(root, { onEnd, onSound }) {
     ['#mic', '#alt', '.produce', '.listen-row'].forEach(s => $(s)?.remove());
 
     const fb = $('#fb');
-    if (res.chain) {
+    if (res.boss) {
+      fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;
+      if (res.ok) { sfx('level'); fb.innerHTML = `王關通過！+${res.points}`; floatText(`+${res.points}`, true); }
+      else { sfx('bad'); fb.innerHTML = `王關沒過　正確答案<span class="ans">${esc(q.answerText)}</span>`; }
+    } else if (res.chain) {
       const c = res.chain;
       fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;
       if (res.ok) {
@@ -294,7 +303,15 @@ export function createPlay(root, { onEnd, onSound }) {
     const lg = L();
     const rulesTxt = Object.entries(rep.ruleHits).map(([r, n]) => `${r} ${esc(WALS.find(w => w.id === r).name)} ${n} 環`).join('　');
     openSheet(`
+      ${rep.sitDone ? `<div class="celebrate">
+        <div class="celebrate-mark">${starRow(rep.best.stars)}</div>
+        <b>完成：${esc(rep.sitDone.title)}</b>
+        <p>這段學會 ${rep.sitDone.words.length} 個字${rep.sitDone.chunks.length ? `、遇到 ${rep.sitDone.chunks.length} 個語塊` : ''}　解鎖下一段：${esc(rep.advanced)}</p>
+        ${rep.sitDone.chunks.length ? `<div class="chips">${rep.sitDone.chunks.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
+      </div>` : ''}
       <h2>本局結束</h2>
+      <div class="stars-line">${starRow(rep.stars)}<span>${rep.stars === 3 ? '滿分！' : rep.stars === 2 ? (rep.hadBoss ? '王關答對可拿第 3 顆' : '') : rep.stars === 1 ? '答對率 80% 以上可拿第 2 顆' : '中途結束沒有星數'}</span></div>
+      <p class="muted">這一段的最佳紀錄：${starRow(rep.best.stars, true)} ${rep.best.score} 分${rep.newBest ? '（新紀錄！）' : ''}</p>
       <div class="stats">
         <div><b>${rep.score}</b><span>得分</span></div>
         <div><b>${rep.correct}/${rep.correct + rep.wrong}</b><span>答對</span></div>
@@ -310,7 +327,7 @@ export function createPlay(root, { onEnd, onSound }) {
       ${rulesTxt ? `<h3>連鎖（共 ${rep.chainLinks} 環）</h3><p class="muted">${rulesTxt}</p>` : ''}
       ${SHOW.path && rep.missed.length ? `<h3>錯過的連結</h3><p class="muted">這些字一起出現，但在領土上離得很遠：${rep.missed.map(m => `${esc(m.a)} ↔ ${esc(m.b)}（${m.steps} 步）`).join('、')}</p>` : ''}
       <h3>${esc(rep.sitTitle)}</h3>
-      <p class="muted">${rep.advanced ? `完成了！解鎖下一段：${esc(rep.advanced)}` : `本段進度：${rep.progress.done} 個實詞達到 Lv3`}</p>
+      <p class="muted">${rep.advanced ? `完成了！解鎖下一段：${esc(rep.advanced)}` : `本段進度：${rep.progress.done} 個實詞達到 Lv3（${Math.round(RULES.completeRatio * 100)}% 的實詞達到 Lv3 就完成這段）`}</p>
       <div class="row" style="margin-top:14px">
         <button class="btn ghost big" id="home">回冒險</button>
         ${SHOW.backpack && lg.backpack.length ? `<button class="btn gold big" id="land">去擺放（${lg.backpack.length}）</button>` : ''}

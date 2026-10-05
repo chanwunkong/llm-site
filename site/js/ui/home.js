@@ -5,6 +5,7 @@ import * as T from '../engine/territory.js';
 import { canListen } from '../audio.js';
 import { esc, openSheet, closeSheet } from './sheet.js';
 import { openImport } from './import-sheet.js';
+import { starRow } from './play.js';
 import { removeImport } from '../engine/importer.js';
 import { shape } from './glyph.js';
 
@@ -47,6 +48,7 @@ export function createHome(root, { getLang, onStart, onSourcesChanged }) {
           <div style="flex:1;min-width:0">
             <b>${esc(src.title)}</b>
             <small><span class="tag">${esc(src.kind)}</span>第 ${sit.index + 1} / ${src.situations.length} 段：${esc(sit.title)}</small>
+            <small class="best">${starRow(lg.best?.[sit.key]?.stars || 0, true)}${lg.best?.[sit.key] ? ` 最佳 ${lg.best[sit.key].score} 分` : ' 還沒玩過這段'}</small>
             ${src.credit ? `<small class="credit">${esc(src.credit)}</small>` : ''}
             ${src.imported ? `<span class="linkish" data-del="${src.id}">刪除</span>` : ''}
             <div class="bar"><i style="width:${Math.min(100, (p.done / need) * 100)}%"></i></div>

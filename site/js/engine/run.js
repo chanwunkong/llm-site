@@ -1,6 +1,6 @@
 // 內層：一局的出題、作答判定、計分與結算。
 // 規則只依賴詞元、UD 詞性與單字等級，對任何語言都相同。
-import { isContent, isTarget, isWord, joinTokens } from './content.js';
+import { isContent, isTarget, isWord, isFunction, joinTokens } from './content.js';
 import { L, word, save, now, RULES, isDue, decayProgress, state, SHOW, vocabCount, stageReached } from './store.js';
 import * as T from './territory.js';
 import { FEATURES, VALUES } from '../data/wals.js';
@@ -152,6 +152,7 @@ export function buildRun(lang, sourceId, env) {
     pendingChoice: false, chainUsed: new Set(), maxChain: 0, chainLinks: 0,
     firstEncounter: {}, leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
     ruleHits: {}, pathTotal: 0, missed: new Map(), log: [],
+    boss: pickBoss(lang, sit, main), bossDone: false, bossOk: false,
   };
 }
 
@@ -206,6 +207,7 @@ function neighborCards(run, lemma, surface, n) {
 
 export function makeQuestion(run, item) {
   if (item.kind === 'chain') return makeChainQuestion(run, item);
+  if (item.kind === 'boss') return makeBossQuestion(run, item);
   const { lang } = run;
   const s = lang.sentences[item.sentence];
   const w = word(item.lemma);
@@ -244,7 +246,8 @@ export function makeQuestion(run, item) {
   };
 }
 
-export const current = run => run.queue[run.pos] || null;
+// 題目排完後，最後一題是王關（每局一次）
+export const current = run => run.queue[run.pos] || (run.boss && !run.bossDone ? run.boss : null);
 
 // ---- 作答 ----
 // response：pick 為選中的字，order 為依序選的字陣列，produce 為輸入或辨識出的文字
@@ -257,6 +260,7 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
   else ok = normalize(response) === normalize(q.answerText);
 
   if (item.kind === 'chain') return answerChain(run, q, ok, timeLeft);
+  if (item.kind === 'boss') return answerBoss(run, q, ok, timeLeft);
   const w = word(item.lemma);
   w.last = now();
   if (!w.home) w.home = item.home;
@@ -382,7 +386,12 @@ function startChains(run, q, active) {
 
 function makeChainQuestion(run, item) {
   const { lang } = run, s = lang.sentences[item.sentence], gap = item.gap;
-  const lower = (t, i) => (i === 0 && lang.lemmas.get(t.lemma)?.forms.has(t.surface.toLocaleLowerCase()) ? t.surface.toLocaleLowerCase() : t.surface);
+  // 句首的大寫會洩漏順序：功能詞一律改小寫，其他字只在文章裡出現過小寫寫法時才改（德文名詞本來就大寫）
+  const lower = (t, i) => {
+    if (i !== 0 || t.upos === 'PROPN') return t.surface;
+    const lc = t.surface.toLocaleLowerCase();
+    return isFunction(t) || lang.lemmas.get(t.lemma)?.forms.has(lc) ? lc : t.surface;
+  };
   const answer = gap.map(i => lower(s.tokens[i], i));
   const gapTokens = gap.map(i => s.tokens[i]);
   const head = gapTokens.find(isContent) || gapTokens[0];
@@ -422,6 +431,65 @@ function answerChain(run, q, ok, timeLeft) {
   return result;
 }
 
+// ---- 王關：一局的收尾 ----
+// 從目前情境挑一個包含最多「本局練過的字」的句子，空格是其中最長的語塊或規則片段（3～5 個字），整段依序排好
+const BOSS = { min: 3, max: 5, timer: 20, points: 50 };
+function pickBoss(lang, sit, main) {
+  const practiced = new Set(main), prof = profileOf(lang);
+  const ranked = sit.sentences.map(id => lang.sentences[id])
+    .map(s => ({ s, n: new Set(s.tokens.filter(t => practiced.has(t.lemma)).map(t => t.lemma)).size }))
+    .filter(x => x.n > 0).sort((a, b) => b.n - a.n);
+  for (const { s } of ranked) {
+    const tk = s.tokens, ok = idx => idx.length >= BOSS.min && idx.length <= BOSS.max && idx.every(i => isWord(tk[i])) && idx.some(i => practiced.has(tk[i].lemma));
+    const range = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => a + k);
+    const spans = [
+      ...(lang.formulaSpans?.get(s.id) || []),
+      ...WALS.flatMap(r => r.spans(tk, prof)).map(([a, b]) => range(a, b)),
+    ].filter(ok).sort((a, b) => b.length - a.length);
+    // 沒有語塊或規則片段時：以練過的字為中心取 4 個連續的字
+    if (!spans.length) {
+      const i = tk.findIndex(t => practiced.has(t.lemma));
+      for (const a of [i - 1, i - 2, i, i - 3]) { const idx = range(a, a + 3); if (a >= 0 && ok(idx)) { spans.push(idx); break; } }
+    }
+    if (spans.length) return { kind: 'boss', sentence: s.id, gap: spans[0], lemma: tk[spans[0].find(i => practiced.has(tk[i].lemma))].lemma, attempts: 0 };
+  }
+  return null;
+}
+function makeBossQuestion(run, item) {
+  const q = makeChainQuestion(run, { ...item, rule: null });
+  const head = item.gap.map(i => q.tokens[i]).find(isContent) || q.tokens[item.gap[0]];
+  // 一律排序：字卡 = 整段 + 2 張干擾
+  const cards = shuffle([...q.answer, ...distractors(run.lang, head.lemma, head.upos, new Set(q.answer), 2, true)]);
+  return { ...q, mode: 'order', cards, timer: BOSS.timer, rules: [] };
+}
+function answerBoss(run, q, ok, timeLeft) {
+  run.bossDone = true;
+  run.bossOk = ok;
+  const result = { ok, points: 0, boss: true, rules: [], path: 0 };
+  if (ok) {
+    run.combo++;
+    run.maxCombo = Math.max(run.maxCombo, run.combo);
+    const comboMult = Math.min(3, 1 + 0.1 * (run.combo - 1));
+    result.points = Math.round(BOSS.points * comboMult * (1 + 0.5 * timeLeft));
+    run.score += result.points;
+  }
+  save();
+  return result;
+}
+
+// 情境完成時的回顧：這段學會的字（Lv3 以上）、出現的語塊
+function sitSummary(lang, sit) {
+  const lg = L();
+  const words = [...sit.lemmas].filter(l => lang.lemmas.get(l).content && (lg.words[l]?.lv || 1) >= 3);
+  const seen = new Set(), chunks = [];
+  for (const id of sit.sentences)
+    for (const idx of lang.formulaSpans?.get(id) || []) {
+      const text = joinTokens(idx.map(i => lang.sentences[id].tokens[i]), lang.joiner);
+      if (!seen.has(text.toLowerCase())) { seen.add(text.toLowerCase()); chunks.push(text); }
+    }
+  return { title: sit.title, words, chunks: chunks.slice(0, 12) };
+}
+
 // ---- 規則自動開放（金幣經濟關閉時）：詞彙量每 RULES.wordsPerRule 個開放一條 ----
 // 在學習者的來源裡出現越多次的規則越先開放，連鎖才有句子可以跳
 export function syncUnlocks(lang) {
@@ -455,12 +523,23 @@ export function settle(run) {
   }
   lg.runs++;
   const newRules = syncUnlocks(lang);
+  // 星數：完成一局 1 星；答對率 80% 以上 2 星；再加上王關答對 3 星。每個情境記最高星數與最高分
+  const total = run.correct + run.wrong, accuracy = total ? run.correct / total : 0;
+  // 中途結束的局沒有星數
+  const finished = !current(run);
+  const stars = finished ? 1 + (accuracy >= 0.8 ? 1 : 0) + (accuracy >= 0.8 && run.bossOk ? 1 : 0) : 0;
+  const rec = ((lg.best ||= {})[run.sit.key] ||= { stars: 0, score: 0 });
+  const newBest = run.score > rec.score;
+  rec.stars = Math.max(rec.stars, stars);
+  rec.score = Math.max(rec.score, run.score);
   const missed = [...run.missed.values()].sort((a, b) => b.steps - a.steps).slice(0, 3);
   const report = {
     score: run.score, produced, production: production.map(p => ({ chunks: p.chunks.map(c => c.lemmas), mult: p.mult, gold: p.gold })),
     correct: run.correct, wrong: run.wrong, maxCombo: run.maxCombo, maxChain: run.maxChain, chainLinks: run.chainLinks,
     levelUps: run.levelUps, levelDowns: run.levelDowns, newTiles: run.newTiles, auto,
     ruleHits: run.ruleHits, missed, progress: before, advanced, sitTitle: run.sit.title, newRules,
+    stars, accuracy, bossOk: run.bossOk, hadBoss: !!run.boss, best: { ...rec }, newBest, sitKey: run.sit.key,
+    sitDone: advanced ? sitSummary(lang, run.sit) : null,
   };
   lg.lastReport = report;
   save();
