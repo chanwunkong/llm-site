@@ -319,3 +319,4 @@ body.playing #simBar { display: none; }
 .ex-row .ipa { font-family: "Doulos SIL", "Charis SIL", "Noto Sans", sans-serif; }
 .credit { font-size: 11px; word-break: break-all; }
 .credit a { color: var(--muted); margin-right: 4px; }
+.src-card small.credit { display: block; margin-top: 2px; }

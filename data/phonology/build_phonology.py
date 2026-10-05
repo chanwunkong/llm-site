@@ -40,13 +40,17 @@ for inv in rows.values():
 # ---- 每個字的 IPA ----
 sys.path.insert(0, os.path.join(ROOT, 'site', 'js', 'data'))
 def sample_words(lang):
-    src = open(os.path.join(ROOT, 'site', 'js', 'data', f'{lang}.js'), encoding='utf-8').read()
+    """範例資料（<語言>.js）與拆解產生的來源（sources/<語言>-*.js）裡的所有字"""
+    data = os.path.join(ROOT, 'site', 'js', 'data')
+    files = [os.path.join(data, f'{lang}.js')] + sorted(os.path.join(data, 'sources', f) for f in os.listdir(os.path.join(data, 'sources')) if f.startswith(lang + '-'))
     out = set()
-    for sent in re.findall(r"'([^'\n]*\|PUNCT)'", src):
-        for tok in sent.split(' '):
-            p = tok.split('|')
-            if p[1] in ('PUNCT', 'SYM'): continue
-            out.add(p[0]); out.add(p[2] if len(p) > 2 else p[0].lower())
+    for path in files:
+        src = open(path, encoding='utf-8').read()
+        for sent in re.findall(r"""['"]([^'"\n]*\|PUNCT[^'"\n]*)['"]""", src):
+            for tok in sent.split(' '):
+                p = tok.split('|')
+                if len(p) < 2 or p[1] in ('PUNCT', 'SYM', 'X'): continue
+                out.add(p[0]); out.add(p[2] if len(p) > 2 and p[2] else p[0].lower())
     return sorted(out)
 
 def espeak(text, voice):

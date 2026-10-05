@@ -34,6 +34,7 @@ export function createHome(root, { getLang, onStart }) {
           <div style="flex:1;min-width:0">
             <b>${esc(src.title)}</b>
             <small><span class="tag">${esc(src.kind)}</span>第 ${sit.index + 1} / ${src.situations.length} 段：${esc(sit.title)}</small>
+            ${src.credit ? `<small class="credit">${esc(src.credit)}</small>` : ''}
             <div class="bar"><i style="width:${Math.min(100, (p.done / need) * 100)}%"></i></div>
             <small>完成本段：${p.done} / ${need} 個實詞達到 Lv3</small>
           </div></button>`;

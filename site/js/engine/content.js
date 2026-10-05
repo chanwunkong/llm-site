@@ -22,13 +22,16 @@ function parseToken(raw) {
   };
 }
 
-// 句子顯示：依語言設定檔的 joiner 串接；標點前不加空白
+// 句子顯示：依語言設定檔的 joiner 串接。標點前、開引號或開括號後、以撇號開頭的附著詞（’m、's）前不加空白
+const OPENING = /^[“‘"'(\[「『（]$/u;
 export function joinTokens(tokens, joiner) {
-  let out = '';
+  let out = '', prev = null;
   tokens.forEach((t, i) => {
     const s = typeof t === 'string' ? t : t.surface;
-    const punct = typeof t !== 'string' && t.upos === 'PUNCT';
-    out += (i === 0 || punct ? '' : joiner) + s;
+    const punct = typeof t !== 'string' && t.upos === 'PUNCT' && !OPENING.test(s);
+    const glue = i === 0 || punct || OPENING.test(prev) || /^[’']/.test(s);
+    out += (glue ? '' : joiner) + s;
+    prev = s;
   });
   return out;
 }

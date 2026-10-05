@@ -1,5 +1,8 @@
 // 日本語範例資料：依《小王子》劇情自行改寫的簡易版本（非原文或現有譯本）。
 // 詞元與 UD 詞性為人工標註。
+import tebukuro from './sources/ja-tebukuro.js';
+import chumon from './sources/ja-chumon.js';
+
 export default {
   id: 'ja',
   name: '日本語',
@@ -7,6 +10,8 @@ export default {
   wals: 'jpn',
   joiner: '',
   sources: [
+    tebukuro,
+    chumon,
     {
       id: 'ja-prince', kind: '故事', title: '星の王子さま（改寫版）',
       situations: [

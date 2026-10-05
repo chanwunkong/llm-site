@@ -1,0 +1,167 @@
+# -*- coding: utf-8 -*-
+"""本機拆解腳本：把一篇長文拆成網站用的來源資料（情境 → 句子 → 每個字的 UD 詞性、詞元、詞形特徵）。
+
+用 Stanza（Apache 2.0）做斷句與詞性標註，只依賴 UD 的通用標記，任何 Stanza 支援的語言都能用。
+日文例外：Stanza 的日文詞元常出錯（あたま → 勧ま），改用 pyopenjtalk（NAIST 日本語辭書）斷詞，再把日文詞類對應到 UD。
+語言專屬的對應只放在這個前處理腳本裡；網站的邏輯仍然只認 UD。
+輸出 site/js/data/sources/<id>.js，由 site/js/data/<語言>.js 匯入。
+
+用法：.venv/bin/python data/sources/decompose.py <來源設定 id>
+設定寫在 SOURCES；新增來源只要加一筆設定（原文檔、語言、怎麼清理、怎麼分章）。
+"""
+import json, os, re, sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+RAW = os.path.join(ROOT, 'data', 'sources', 'raw')
+OUT = os.path.join(ROOT, 'site', 'js', 'data', 'sources')
+
+# 情境的大小：一局只從目前的情境出題，太大會一直練不完、太小會變成背誦
+SIT_MIN, SIT_MAX = 25, 45
+# 太長的句子在手機上不好作答，太短的（只有一兩個字的對白）沒有語境
+MIN_WORDS = 3
+# 日文切得比較細（助詞、ます、た 各算一個），上限放寬
+MAX_WORDS = {'en': 22, 'ja': 32}
+
+
+def clean_gutenberg(text):
+    text = text.split('*** START OF', 1)[1].split('\n', 1)[1]
+    return text.split('*** END OF', 1)[0]
+
+
+def clean_aozora(text):
+    # 去掉檔頭的記號說明、檔尾的底本資訊、ルビ、入力者注
+    parts = re.split(r'-{20,}', text)
+    body = parts[2] if len(parts) >= 3 else text
+    body = re.split(r'\n底本：', body)[0]
+    body = re.sub(r'《[^》]*》', '', body)
+    body = re.sub(r'［＃[^］]*］', '', body)
+    return body.replace('｜', '').replace('　', '')
+
+
+SOURCES = {
+    'en-oz': {
+        'lang': 'en', 'file': 'oz.txt', 'encoding': 'utf-8', 'clean': clean_gutenberg,
+        'title': 'The Wonderful Wizard of Oz', 'kind': '小說', 'credit': 'L. Frank Baum, 1900（公版，Project Gutenberg #55）',
+        # 目錄之後才是正文；每章以「Chapter I」開頭，下一行是章名
+        'chapters': r'\n\s*Chapter ([IVXL]+)\s*\n+\s*(.+?)\s*\n', 'skip_toc': True, 'max_chapters': 8,
+    },
+    'ja-tebukuro': {
+        'lang': 'ja', 'file': 'tebukuroo_kaini.txt', 'encoding': 'shift_jis', 'clean': clean_aozora,
+        'title': '手袋を買いに', 'kind': '童話', 'credit': '新美南吉, 1943（公版，青空文庫）', 'chapters': None,
+    },
+    'ja-chumon': {
+        'lang': 'ja', 'file': 'chumonno_oi_ryoriten.txt', 'encoding': 'shift_jis', 'clean': clean_aozora,
+        'title': '注文の多い料理店', 'kind': '童話', 'credit': '宮沢賢治, 1924（公版，青空文庫）', 'chapters': None,
+    },
+}
+
+
+def chapters_of(cfg, body):
+    """回傳 [(章名, 文字)]；沒有分章的作品整篇當一章"""
+    if not cfg.get('chapters'):
+        return [(cfg['title'], body)]
+    ms = list(re.finditer(cfg['chapters'], body))
+    if cfg.get('skip_toc'):
+        # 目錄裡的章名連在一起出現；正文的「Chapter I」是第二次出現的那個
+        first = [i for i, m in enumerate(ms) if m.group(1) == 'I']
+        ms = ms[first[1]:] if len(first) > 1 else ms
+    out = []
+    for i, m in enumerate(ms):
+        end = ms[i + 1].start() if i + 1 < len(ms) else len(body)
+        out.append((m.group(2).strip(), body[m.end():end]))
+    return out[: cfg.get('max_chapters') or None]
+
+
+# ---- 日文：pyopenjtalk 的詞類 → UD ----
+JA_CLOSED_PARTICLE = {'接続助詞': 'SCONJ', '終助詞': 'PART'}
+JA_DEM = ('この', 'その', 'あの', 'どの', 'これ', 'それ', 'あれ', 'どれ', 'ここ', 'そこ', 'あそこ', 'どこ')
+
+class JaWord:
+    def __init__(self, text, upos, lemma, feats=''):
+        self.text, self.upos, self.lemma, self.feats = text, upos, lemma, feats
+
+def ja_upos(n):
+    pos, g1 = n['pos'], n['pos_group1']
+    if pos == '名詞':
+        return {'代名詞': 'PRON', '固有名詞': 'PROPN', '数': 'NUM'}.get(g1, 'NOUN')
+    if pos == '動詞': return 'AUX' if g1 in ('非自立', '接尾') else 'VERB'
+    if pos == '形容詞': return 'AUX' if g1 == '非自立' else 'ADJ'
+    if pos == '助詞': return JA_CLOSED_PARTICLE.get(g1, 'ADP')
+    return {'副詞': 'ADV', '連体詞': 'DET', '接続詞': 'CCONJ', '感動詞': 'INTJ', '助動詞': 'AUX',
+            '記号': 'PUNCT', '接頭詞': 'PART', 'フィラー': 'INTJ'}.get(pos, 'X')
+
+def ja_feats(n, upos):
+    f = []
+    if n['pos'] == '助動詞' and n['ctype'] in ('特殊・タ',): f.append('Tense=Past')
+    if n['pos'] == '助動詞' and n['ctype'] in ('特殊・ナイ', '特殊・ヌ'): f.append('Polarity=Neg')
+    if n['string'] in JA_DEM: f.append('PronType=Dem')
+    return ';'.join(f)
+
+def ja_sentences(text):
+    import pyopenjtalk
+    # 句點、驚嘆號、問號（後面可能接 」）之後斷句
+    for sent in re.findall(r'.+?(?:[。！？]」?|$)', text):
+        sent = sent.strip()
+        if not sent: continue
+        words = []
+        for n in pyopenjtalk.run_frontend(sent):
+            up = ja_upos(n)
+            lemma = n['orig'] if n['orig'] not in ('*', '') else n['string']
+            words.append(JaWord(n['string'], up, lemma, ja_feats(n, up)))
+        yield words
+
+
+def encode(word):
+    surface = word.text.replace(' ', '').replace('|', '')
+    lemma = (word.lemma or surface).replace(' ', '').replace('|', '')
+    feats = (word.feats or '').replace('|', ';')
+    parts = [surface, word.upos]
+    if lemma != surface.lower() or feats:
+        parts.append(lemma if lemma != surface.lower() else '')
+    if feats:
+        parts.append(feats)
+    return '|'.join(parts)
+
+
+def main(sid):
+    import stanza
+    cfg = SOURCES[sid]
+    raw = open(os.path.join(RAW, cfg['file']), encoding=cfg['encoding'], errors='replace').read()
+    body = cfg['clean'](raw)
+    nlp = None if cfg['lang'] == 'ja' else stanza.Pipeline(cfg['lang'], processors='tokenize,mwt,pos,lemma',
+                                                           verbose=False, download_method=stanza.DownloadMethod.REUSE_RESOURCES)
+    situations, kept, dropped = [], 0, 0
+    for title, text in chapters_of(cfg, body):
+        # 段落內的換行接起來（古騰堡每行約 70 字就換行）
+        paras = [re.sub(r'\s*\n\s*', ' ' if cfg['lang'] == 'en' else '', p).strip() for p in re.split(r'\n\s*\n', text)]
+        paras = [p for p in paras if p]
+        if cfg['lang'] == 'ja':   # 青空文庫有時一句話跨兩行（「…しましたが、」換行），接起來交給 Stanza 斷句
+            paras = [''.join(l.strip() for l in text.split('\n'))]
+        sents = []
+        parsed = ja_sentences(paras[0]) if nlp is None else (s.words for s in nlp('\n\n'.join(paras)).sentences)
+        for words in parsed:
+            n = sum(1 for w in words if w.upos not in ('PUNCT', 'SYM', 'X'))
+            if MIN_WORDS <= n <= MAX_WORDS.get(cfg['lang'], 22):
+                sents.append(' '.join(encode(w) for w in words)); kept += 1
+            else:
+                dropped += 1
+        # 依句數切成大小相近的情境
+        k = max(1, round(len(sents) / ((SIT_MIN + SIT_MAX) / 2)))
+        size = -(-len(sents) // k)
+        for i in range(k):
+            chunk = sents[i * size:(i + 1) * size]
+            if chunk:
+                situations.append({'title': title if k == 1 else f'{title}（{i + 1}/{k}）', 'sentences': chunk})
+    src = {'id': sid, 'kind': cfg['kind'], 'title': cfg['title'], 'credit': cfg['credit'], 'situations': situations}
+    os.makedirs(OUT, exist_ok=True)
+    path = os.path.join(OUT, sid + '.js')
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(f"// 自動產生（data/sources/decompose.py {sid}），請勿手動修改。原文：{cfg['credit']}\n")
+        f.write('// 斷句與詞性標註：Stanza（UD）。句子格式同範例資料：「寫法|UPOS|詞元|特徵」。\n')
+        f.write('export default ' + json.dumps(src, ensure_ascii=False, indent=0) + ';\n')
+    print(f'{sid}: {len(situations)} 個情境，保留 {kept} 句、略過 {dropped} 句（太長或太短），{os.path.getsize(path) // 1024} KB')
+
+
+if __name__ == '__main__':
+    for sid in sys.argv[1:] or SOURCES:
+        main(sid)

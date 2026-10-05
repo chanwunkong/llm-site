@@ -345,6 +345,8 @@ function findChainTarget(run, ruleId, exclude) {
       while (b >= a && !isWord(tk[b])) b--;
       if (a > b || b - a + 1 > CHAIN.maxSpan) continue;
       const idx = Array.from({ length: b - a + 1 }, (_, k) => a + k);
+      // 只有一個字的空格，要有其他形式可以當干擾字卡（knew／know）；只有一種形式的字（日文的「た」）答案永遠一樣，不出
+      if (idx.length === 1 && lang.lemmas.get(tk[a].lemma)?.forms.size < 2) continue;
       if (idx.every(i => isWord(tk[i]))) cands.push({ sentence: id, gap: idx });
     }
   }

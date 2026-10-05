@@ -1,6 +1,8 @@
 // 英文範例資料：依《小王子》劇情自行改寫的簡易版本（非原文或現有譯本）。
 // 詞元與 UD 詞性為人工標註，模擬匯入時標記工具的輸出。
 // 句子格式：「寫法|UPOS|詞元|特徵」，詞元省略時 = 寫法轉小寫。
+import oz from './sources/en-oz.js';
+
 export default {
   id: 'en',
   name: 'English',
@@ -8,6 +10,7 @@ export default {
   wals: 'eng',
   joiner: ' ',
   sources: [
+    oz,
     {
       id: 'en-prince', kind: '故事', title: 'The Little Prince（改寫版）',
       situations: [
