@@ -245,6 +245,9 @@ export function createPlay(root, { onEnd, onSound }) {
     const L_ID = run.lang.id, hard = P.hardSounds(run.lang.wals);
     const ipaHtml = w => { const sg = P.wordSegs(L_ID, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs" data-hs="${esc(x)}">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
     const sounds = q.neighbors.filter(n => n.kind === 'sound');
+    // 第一次在回饋裡出現難音：記下來，結算時開放發音頁
+    const seesHard = sounds.some(n => n.hard?.length) || (q.mode === 'produce' && q.answer.some(w => (P.wordSegs(L_ID, w) || []).some(x => hard.has(x))));
+    if (seesHard && !L().hardSeen) { L().hardSeen = true; }
     if (sounds.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">${[q.answer[0], ...sounds.map(n => n.word)].map(w => `<span>${esc(w)} ${ipaHtml(w)}</span>`).join('<i>vs</i>')}</div>`);
     if (q.mode === 'produce') {
       const parts = q.answer.map(w => ipaHtml(w)).filter(Boolean);
@@ -317,7 +320,7 @@ export function createPlay(root, { onEnd, onSound }) {
         <div><b>${rep.correct}/${rep.correct + rep.wrong}</b><span>答對</span></div>
         <div><b>${rep.maxChain}</b><span>最長連鎖</span></div>
       </div>
-      ${SHOW.economy ? `<h3>金幣 +${rep.score + rep.produced}</h3>
+      ${SHOW.gold ? `<h3>金幣 +${rep.score + rep.produced}</h3>
       <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : ''}</p>` : ''}
       ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}

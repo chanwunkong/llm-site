@@ -20,14 +20,40 @@ const DAY = 86400000;
 
 // 收斂後的核心循環：答題 → 升級 → 連鎖 → 領土長大。以下功能的程式保留，先不顯示（true = 打開）
 export const SHOW = {
-  economy: false,     // 金幣、花金幣解鎖規則與移動格子（關閉時規則依詞彙量自動開放）
-  backpack: false,    // 背包與手動擺放（關閉時新字自動長在領土邊緣）
-  chunks: false,      // 語塊、語塊網絡與產出
-  path: false,        // 領土路徑加成、錯過的連結
-  mine: false,        // 我的理解
-  skillsTab: false,   // 文法頁
-  soundsTab: false,   // 發音頁（關閉時從答題回饋點難音進入）
+  rulePurchase: false, // 花金幣解鎖規則（不再開放：規則依詞彙量自動開放）
+  backpack: false,     // 背包介面（不再開放：新字自動放在領土邊緣）
+  skillsTab: false,    // 階段 1：文法頁
+  soundsTab: false,    // 階段 2：發音頁
+  move: false,         // 階段 3：手動移動格子
+  path: false,         // 階段 3：路徑加成、錯過的連結
+  gold: false,         // 階段 4：金幣（移動格子要付金幣）
+  chunks: false,       // 階段 4：領土語塊與產出
+  mine: false,         // 階段 5：我的理解
 };
+
+// 逐步開放：每個語言各自記錄已開放的功能（開放後不會再關閉）
+export const UNLOCKS = [
+  { id: 'grammar', flags: ['skillsTab'], test: lg => lg.unlocked.length >= 1, title: '文法頁',
+    lines: ['你的第一條規則已經開放。', '在「文法」分頁可以看到已開放的規則。', '每條規則都和「你會的語言」比較。'] },
+  { id: 'sounds', flags: ['soundsTab'], test: lg => !!lg.hardSeen, title: '發音頁',
+    lines: ['你遇到了第一個難音。', '在「發音」分頁可以看到 IPA 表。', '點一個音，可以聽錄音，也可以和相近的音比較。'] },
+  { id: 'place', flags: ['move', 'path'], test: lg => Object.keys(lg.territory).length >= 20, title: '手動擺放',
+    lines: ['你的領土到達 20 格。', '現在你可以移動格子：點一個格子，再點「移動」。', '常一起出現的字放在相鄰的位置，答題時得到路徑加成。', '結算時，系統顯示「錯過的連結」：常一起出現、但距離太遠的字。'] },
+  { id: 'economy', flags: ['gold', 'chunks'], test: lg => Object.keys(lg.territory).length >= 40, title: '領土語塊與金幣',
+    lines: ['你的領土到達 40 格。', '一個語塊的字在領土上相連時，每局結算產出金幣。', '移動格子要付金幣。'] },
+  { id: 'mine', flags: ['mine'], test: lg => Object.values(lg.words).some(w => w.lv >= 4), title: '我的理解',
+    lines: ['你的第一個字到達 Lv4。', '點領土上的格子，可以用學過的字組合出對這個字的解釋。', '這個字快要降級時，系統先顯示你寫的解釋。'] },
+];
+// 檢查有沒有新開放的功能，更新 SHOW；回傳這次新開放的項目（給畫面顯示說明卡）
+export function refreshFeatures() {
+  const lg = L(), fresh = [];
+  lg.features ||= [];
+  for (const u of UNLOCKS) if (!lg.features.includes(u.id) && u.test(lg)) { lg.features.push(u.id); fresh.push(u); }
+  for (const u of UNLOCKS) for (const f of u.flags) SHOW[f] = lg.features.includes(u.id);
+  if (fresh.length) save();
+  return fresh;
+}
+
 
 export const RULES = {
   threshold: 4,                        // 2 級以上每級的熟練度門檻

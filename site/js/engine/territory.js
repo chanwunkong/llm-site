@@ -56,12 +56,12 @@ export function pickUp(k) {
   const lg = L();
   const lemma = lg.territory[k];
   if (!lemma) return { ok: false, reason: '這裡沒有格子' };
-  if (lg.backpack.length >= RULES.backpackSize) return { ok: false, reason: '背包滿了' };
-  if (lg.gold < RULES.moveCost) return { ok: false, reason: `金幣不足（需要 ${RULES.moveCost}）` };
+  if (SHOW.backpack && lg.backpack.length >= RULES.backpackSize) return { ok: false, reason: '背包滿了' };
+  if (SHOW.gold && lg.gold < RULES.moveCost) return { ok: false, reason: `金幣不足（需要 ${RULES.moveCost}）` };
   if (!canPickUp(k)) return { ok: false, reason: '拿起後領土會斷開' };
   delete lg.territory[k];
   lg.backpack.push(lemma);
-  lg.gold -= RULES.moveCost;
+  if (SHOW.gold) lg.gold -= RULES.moveCost;
   save();
   return { ok: true, lemma };
 }

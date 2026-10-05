@@ -1,5 +1,5 @@
 // 模擬模式：用真實的遊戲引擎自動玩若干局（答對率 85%），產生測試用的進度
-import { state, save, L, SHOW } from './store.js';
+import { state, save, L, SHOW, refreshFeatures } from './store.js';
 import * as R from './run.js';
 import * as T from './territory.js';
 
@@ -24,7 +24,7 @@ export function generate(req, getLang) {
     sim: { preset: req.preset, autoSkills: !!req.autoSkills } });
   const lang = getLang();
   // 規則依詞彙量自動開放（金幣經濟打開時才照舊規則手動解鎖）
-  if (SHOW.economy) L().unlocked = rulesToUnlock(lang, { mid: 4, late: 'A1' }[req.preset] || 0);
+  if (SHOW.rulePurchase) L().unlocked = rulesToUnlock(lang, { mid: 4, late: 'A1' }[req.preset] || 0);
   for (let r = 0; r < p.runs; r++) {
     const run = R.buildRun(lang, lang.sources[0].id, 'ear');
     while (R.current(run)) {
@@ -38,5 +38,8 @@ export function generate(req, getLang) {
     const keep = r === p.runs - 1 ? 3 : 0;
     for (const l of L().backpack.slice(keep)) T.place(l, T.placeable()[(Math.random() * 3) | 0] || T.placeable()[0]);
   }
+  // 自動答題不會顯示畫面，所以「遇過難音」在剛開始以外的預設直接算已經遇過，方便測試發音頁
+  if (req.preset !== 'start') L().hardSeen = true;
+  refreshFeatures();
   save();
 }

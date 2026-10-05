@@ -1,6 +1,6 @@
 // 技能（文法）頁：依 CEFR 階段呈現 WALS 文法規則，並和「我會的語言」比較
 // 第一層：目前階段可計分的技能（可解鎖）；第二層：文法對照（參考，不計分）
-import { L, save, RULES, known, currentStage, stageReached, STAGE_ORDER } from '../engine/store.js';
+import { L, save, RULES, known, currentStage, stageReached, STAGE_ORDER, SHOW } from '../engine/store.js';
 import { WALS, profileOf } from '../engine/run.js';
 import { STAGES, FEATURES, LANGS, VALUES } from '../data/wals.js';
 import { joinTokens } from '../engine/content.js';
@@ -72,21 +72,21 @@ export function createSkills(root, { getLang, onChange }) {
         <div class="stage-sum"><span><b class="hardc">${counts.hard}</b> 難規則</span><span><b>${counts.known}</b> 已經會</span><span><b>${rules.filter(r => lg.unlocked.includes(r.id)).length}</b> 已解鎖</span></div>
       </div>
 
-      <h3>可計分的技能</h3>
-      <p class="muted">解鎖後，冒險中升級時才有機會選到。選到後，答對用到這條規則的空格會觸發連鎖：跳到同一個來源裡有相同模式的句子，越後面的環分數越高；同一局再選一次，連鎖多跳一環。和你會的語言不同的「難規則」排在前面。</p>
-      ${rules.map(r => {
+      <h3>${SHOW.rulePurchase ? '可計分的技能' : '已開放的規則'}</h3>
+      <p class="muted">${SHOW.rulePurchase ? '解鎖後，' : `規則依詞彙量自動開放（每 ${RULES.wordsPerRule} 個字一條）。`}冒險中升級時才有機會選到。選到後，答對用到這條規則的空格會觸發連鎖：跳到同一個來源裡有相同模式的句子，越後面的環分數越高；同一局再選一次，連鎖多跳一環。和你會的語言不同的「難規則」排在前面。</p>
+      ${rules.filter(r => SHOW.rulePurchase || lg.unlocked.includes(r.id)).map(r => {
         const on = lg.unlocked.includes(r.id), v = verdict(r.id), ex = examples(r, 1)[0];
         return `<div class="rule${on ? ' on' : ''}${v === 'hard' ? ' hard' : ''}" data-f="${r.id}">
           <div class="ic">${r.id}</div>
           <div><b>${esc(r.name)}</b> ${TAG[v]}${r.approx ? ' <span class="tag">近似判斷</span>' : ''}
             <small>${compareLine(r.id)}</small>
             ${ex ? `<small class="ex">例：${esc(ex.span)}</small>` : '<small class="muted">你目前的來源裡還沒有例子</small>'}</div>
-          ${on ? '<span class="own">已解鎖</span>' : `<button class="btn gold sm" data-unlock="${r.id}" ${lg.gold < RULES.walsCost ? 'disabled' : ''}>${RULES.walsCost} 金幣</button>`}
+          ${on ? (SHOW.rulePurchase ? '<span class="own">已解鎖</span>' : '') : `<button class="btn gold sm" data-unlock="${r.id}" ${lg.gold < RULES.walsCost ? 'disabled' : ''}>${RULES.walsCost} 金幣</button>`}
         </div>`;
       }).join('')}
       ${next ? `<p class="muted">下一階段 ${next} 會出現：${nextNames.map(esc).join('、')}…（詞彙達到 ${st.next.toLocaleString()} 字）</p>` : ''}
 
-      <h3>文法對照（參考，不計分）</h3>
+      ${SHOW.rulePurchase ? `<h3>文法對照（參考，不計分）</h3>
       <div class="row-between"><span class="muted">${esc(langName(target()))}和你會的語言，在各個文法特徵上的比較</span>
         <button class="btn ghost sm" id="diffBtn">${onlyDiff ? '只看差異 ●' : '顯示全部 ○'}</button></div>
       ${DOMAINS.map(dom => {
@@ -95,7 +95,7 @@ export function createSkills(root, { getLang, onChange }) {
         return `<details class="cmp"${dom === '詞序' ? ' open' : ''}><summary>${dom}（${items.length}）</summary>
           ${items.map(x => `<button class="cmp-row" data-f="${x.fid}"><span class="tag">${x.s}</span><b>${esc(FEATURES[x.fid].zh)}</b> ${TAG[verdict(x.fid)]}</button>`).join('') || '<p class="muted">沒有差異</p>'}
         </details>`;
-      }).join('')}
+      }).join('')}` : ''}
       <p class="muted">資料來源：Dryer & Haspelmath (eds.) 2013, <i>The World Atlas of Language Structures Online</i>（CC BY 4.0）。課綱分級見 docs/curriculum.md。</p>
     </div>`;
 
@@ -111,7 +111,7 @@ export function createSkills(root, { getLang, onChange }) {
       onChange?.();
     }));
     root.querySelectorAll('[data-f]').forEach(el => (el.onclick = () => detail(el.dataset.f)));
-    root.querySelector('#diffBtn').onclick = () => { onlyDiff = !onlyDiff; render(); };
+    if (root.querySelector('#diffBtn')) root.querySelector('#diffBtn').onclick = () => { onlyDiff = !onlyDiff; render(); };
     root.querySelector('[data-edit-known]').onclick = () => editKnown(target(), render);
   }
 

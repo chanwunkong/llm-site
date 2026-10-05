@@ -25,15 +25,15 @@ export function createLand(root, { getLang, onChange }) {
     <div class="land2d" id="land2d"><canvas></canvas></div>
     <div class="land-top">
       <span class="chip" id="stat"></span>
-      ${SHOW.path ? '<button class="chip" id="missedBtn">錯過的連結</button>' : ''}
-      ${SHOW.chunks ? '<button class="chip" id="chunkBtn">語塊</button>' : ''}
+      <button class="chip" id="missedBtn" hidden>錯過的連結</button>
+      <button class="chip" id="chunkBtn" hidden>語塊</button>
     </div>
     <div class="land-tools">
       <button class="icon-btn" id="zin" aria-label="放大">＋</button>
       <button class="icon-btn" id="zout" aria-label="縮小">－</button>
       <button class="icon-btn" id="home" aria-label="看全部">◎</button>
     </div>
-    <div class="bag"${SHOW.backpack ? '' : ' hidden'}>
+    <div class="bag" hidden>
       <div class="hint-line" id="hint"></div>
       <div class="bag-head"><span><b>背包</b> <span id="bagCount"></span></span><span>點字，再點虛線格</span></div>
       <div class="bag-list" id="bagList"></div>
@@ -175,6 +175,10 @@ export function createLand(root, { getLang, onChange }) {
     const done = lang.chunks.filter(T.chunkComplete).length;
     const biggest = Math.max(0, ...T.chunkNetworks(lang.chunks).map(n => n.length));
     const due = Object.values(lg.territory).filter(l => isDue(word(l))).length;
+    // 依已開放的功能顯示按鈕；背包介面只在移動格子時出現（拿起的字暫放在這裡）
+    $('#missedBtn').hidden = !SHOW.path;
+    $('#chunkBtn').hidden = !SHOW.chunks;
+    $('.bag').hidden = !SHOW.backpack && !lg.backpack.length;
     $('#stat').textContent = `${T.count()} 格${SHOW.chunks ? `・語塊 ${done}/${lang.chunks.length}${biggest > 1 ? `・網絡 ${biggest}` : ''}` : ''}${due ? `・${due} 格快降級` : ''}`;
     $('#bagCount').textContent = `${lg.backpack.length} / ${RULES.backpackSize}`;
     $('#bagList').innerHTML = lg.backpack.length
@@ -259,7 +263,7 @@ export function createLand(root, { getLang, onChange }) {
       if (T.place(selected, k)) {
         sfx('place');
         const done = getLang().chunks.filter(c => c.lemmas.includes(selected) && T.chunkComplete(c));
-        if (done.length) { sfx('coin'); toast(`完成語塊：${done.map(c => c.lemmas.join('＋')).join('、')}`); }
+        if (SHOW.chunks && done.length) { sfx('coin'); toast(`完成語塊：${done.map(c => c.lemmas.join('＋')).join('、')}`); }
         selected = null;
         focus = k;
         rebuild();
@@ -297,7 +301,7 @@ export function createLand(root, { getLang, onChange }) {
       ${SHOW.mine ? `<button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '修改我的理解' : '寫下我的理解'}</button>` : ''}
       <div class="row" style="margin-top:12px">
         <button class="btn ghost big" id="say">${G.speaker()} 發音</button>
-        ${SHOW.backpack ? `<button class="btn gold big" id="lift">拿起（${RULES.moveCost} 金幣）</button>` : ''}
+        ${SHOW.move ? `<button class="btn gold big" id="lift">移動${SHOW.gold ? `（${RULES.moveCost} 金幣）` : ''}</button>` : ''}
       </div>`, { onClose: () => { focus = null; highlight = new Set(); redraw(); } }, body => {
       body.querySelector('#say').onclick = () => speak(lemma, { rate: 0.85 });
       body.querySelector('#mineBtn')?.addEventListener('click', () => composeSheet(k));
@@ -309,7 +313,7 @@ export function createLand(root, { getLang, onChange }) {
         focus = null;
         closeSheet();
         rebuild();
-        toast(`已拿起「${lemma}」，點虛線格放下`);
+        toast(`點虛線格，把「${lemma}」放到新的位置`);
       });
     });
   }

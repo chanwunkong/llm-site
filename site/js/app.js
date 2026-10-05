@@ -5,7 +5,7 @@ import { buildLanguage } from './engine/content.js';
 import { BASE } from './data/base.js';
 import { LANG_LIST, LANG_BY_ID } from './data/langs.js';
 import { importsOf } from './engine/importer.js';
-import { state, save, L, applyDecay, skipDay, resetAll, SIM, SHOW, enterSim, exitSim, takeSimRequest } from './engine/store.js';
+import { state, save, L, applyDecay, skipDay, resetAll, SIM, SHOW, enterSim, exitSim, takeSimRequest, refreshFeatures } from './engine/store.js';
 import { PRESETS, generate } from './engine/sim.js';
 import { syncUnlocks } from './engine/run.js';
 import { LANGS } from './data/wals.js';
@@ -37,6 +37,10 @@ if (SIM) {
 }
 
 function refreshTop() {
+  // 依已開放的功能顯示分頁與金幣
+  $('#nav [data-tab="skills"]').hidden = !SHOW.skillsTab;
+  $('#nav [data-tab="sounds"]').hidden = !SHOW.soundsTab;
+  $('#gold').parentElement.hidden = !SHOW.gold;
   $('#gold').textContent = L().gold;
   $('#tileCount').textContent = T.count();
   $('#langBtn').textContent = DATA[state.lang].name;
@@ -48,12 +52,14 @@ const views = {
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
   sounds: createSounds($('#view-sounds'), { getLang }),
 };
-const play = createPlay($('#play'), { onEnd: tab => { refreshTop(); setTab(tab); }, onSound: seg => views.sounds.detail(seg) });
+const play = createPlay($('#play'), { onEnd: tab => { setTab(tab); announce(refreshFeatures()); refreshTop(); }, onSound: seg => views.sounds.detail(seg) });
 
-// 收斂後的主選單只有「領土」和「冒險」；文法頁、發音頁與金幣先不顯示
-if (!SHOW.skillsTab) $('#nav [data-tab="skills"]').remove();
-if (!SHOW.soundsTab) $('#nav [data-tab="sounds"]').remove();
-if (!SHOW.economy) $('#gold').parentElement.hidden = true;
+// 新開放的功能：顯示說明卡
+function announce(fresh) {
+  if (!fresh.length) return;
+  openSheet(`<h2>新功能開放</h2>${fresh.map(u => `<div class="unlock-card"><b>${esc(u.title)}</b><ul>${u.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul></div>`).join('')}
+    <button class="btn gold big" id="okU">知道了</button>`, {}, body => (body.querySelector('#okU').onclick = closeSheet));
+}
 
 let tab = null;
 function setTab(t) {
@@ -71,6 +77,8 @@ function enterLanguage() {
   getLang();
   T.receive([]);          // 背包關閉時，把舊存檔背包裡的字放到領土上
   syncUnlocks(getLang());
+  const fresh = refreshFeatures();
+  if (fresh.length) setTimeout(() => announce(fresh), 300);
   const dropped = applyDecay();
   if (dropped.length) toast(`${dropped.length} 個字因為太久沒練而降級`, 2600);
   refreshTop();

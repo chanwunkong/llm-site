@@ -493,7 +493,7 @@ function sitSummary(lang, sit) {
 // ---- 規則自動開放（金幣經濟關閉時）：詞彙量每 RULES.wordsPerRule 個開放一條 ----
 // 在學習者的來源裡出現越多次的規則越先開放，連鎖才有句子可以跳
 export function syncUnlocks(lang) {
-  if (SHOW.economy) return [];
+  if (SHOW.rulePurchase) return [];
   const lg = L(), prof = profileOf(lang), sents = Object.values(lang.sentences);
   const order = WALS.filter(r => stageReached(r.stage))
     .map(r => [r.id, sents.filter(s => r.test(s.tokens, prof)).length])

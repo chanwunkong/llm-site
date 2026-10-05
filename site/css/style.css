@@ -345,3 +345,8 @@ body.playing #simBar { display: none; }
 .celebrate p { margin: 0 0 8px; font-size: 13px; }
 .celebrate .stars3 i { width: 30px; height: 30px; }
 .celebrate .chips { justify-content: center; }
+
+/* ---- 新功能開放 ---- */
+.unlock-card { border: var(--b); background: var(--white); padding: 12px 14px; margin-bottom: 10px; box-shadow: inset 6px 0 0 var(--blue); }
+.unlock-card b { font-size: 17px; }
+.unlock-card ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.7; }
