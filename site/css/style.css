@@ -320,3 +320,11 @@ body.playing #simBar { display: none; }
 .credit { font-size: 11px; word-break: break-all; }
 .credit a { color: var(--muted); margin-right: 4px; }
 .src-card small.credit { display: block; margin-top: 2px; }
+
+/* ---- 匯入 ---- */
+.imp-text { min-height: 180px; resize: vertical; font-family: inherit; line-height: 1.5; }
+.imp-file { margin-top: 8px; cursor: pointer; }
+.src-card .linkish { display: inline-block; margin-top: 4px; padding: 0; }
+.lang-n { display: block; font-size: 10px; color: var(--muted); font-weight: 600; }
+.btn.gold .lang-n { color: var(--white); }
+.lang-grid .btn { flex-direction: column; gap: 0; min-width: 30%; }

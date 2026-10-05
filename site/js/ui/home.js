@@ -3,7 +3,9 @@ import { L, state, save, RULES } from '../engine/store.js';
 import { buildRun, currentSituation, situationProgress } from '../engine/run.js';
 import * as T from '../engine/territory.js';
 import { canListen } from '../audio.js';
-import { esc } from './sheet.js';
+import { esc, openSheet, closeSheet } from './sheet.js';
+import { openImport } from './import-sheet.js';
+import { removeImport } from '../engine/importer.js';
 import { shape } from './glyph.js';
 
 const ENVS = [
@@ -12,9 +14,20 @@ const ENVS = [
   { id: 'mute', icon: shape('square', 'ink'), name: '靜音', desc: '只能看' },
 ];
 
-export function createHome(root, { getLang, onStart }) {
+export function createHome(root, { getLang, onStart, onSourcesChanged }) {
+  const importBtn = '<button class="btn ghost big" id="imp">＋ 匯入文章</button>';
+  const afterImport = src => { onSourcesChanged(); L().source = src.id; save(); render(); };
   function render() {
     const lang = getLang(), lg = L();
+    // 還沒有任何來源（內建示範只有英文、日文）：只顯示匯入
+    if (!lang.sources.length) {
+      root.innerHTML = `<div class="home-body">
+        <div class="hero-num"><b>${T.count()}</b><span>領土格數（學過的實詞）</span></div>
+        <div class="panel"><b>還沒有可以學的文章</b><p class="muted">匯入一篇你想讀的內容，系統會自動拆成句子出題。</p></div>
+        ${importBtn}</div>`;
+      root.querySelector('#imp').onclick = () => openImport(state.lang, afterImport);
+      return;
+    }
     const srcId = lg.source && lang.sources.some(s => s.id === lg.source) ? lg.source : lang.sources[0].id;
     const targets = [...lang.lemmas.values()].filter(x => x.target).map(x => x.lemma);
     const counts = [1, 2, 3, 4, 5].map(n => targets.filter(l => (lg.words[l]?.lv || 1) === n).length);
@@ -35,11 +48,13 @@ export function createHome(root, { getLang, onStart }) {
             <b>${esc(src.title)}</b>
             <small><span class="tag">${esc(src.kind)}</span>第 ${sit.index + 1} / ${src.situations.length} 段：${esc(sit.title)}</small>
             ${src.credit ? `<small class="credit">${esc(src.credit)}</small>` : ''}
+            ${src.imported ? `<span class="linkish" data-del="${src.id}">刪除</span>` : ''}
             <div class="bar"><i style="width:${Math.min(100, (p.done / need) * 100)}%"></i></div>
             <small>完成本段：${p.done} / ${need} 個實詞達到 Lv3</small>
           </div></button>`;
       }).join('')}
 
+      ${importBtn}
       <h3>環境（開局後不能更換）</h3>
       <div class="env-row">${ENVS.map(e => `<button class="env${state.env === e.id ? ' sel' : ''}" data-env="${e.id}">
         <i>${e.icon}</i><b>${e.name}</b><small>${e.desc}<br>積分 ×${RULES.envPoints[e.id]}</small></button>`).join('')}</div>
@@ -49,9 +64,20 @@ export function createHome(root, { getLang, onStart }) {
       <button class="btn gold big" id="go">出發！</button>
     </div>`;
 
-    root.querySelectorAll('[data-src]').forEach(b => (b.onclick = () => { lg.source = b.dataset.src; save(); render(); }));
+    root.querySelectorAll('[data-src]').forEach(b => (b.onclick = e => {
+      if (e.target.dataset.del) return confirmDelete(lang.sources.find(s => s.id === e.target.dataset.del));
+      lg.source = b.dataset.src; save(); render();
+    }));
+    root.querySelector('#imp').onclick = () => openImport(state.lang, afterImport);
     root.querySelectorAll('[data-env]').forEach(b => (b.onclick = () => { state.env = b.dataset.env; save(); render(); }));
     root.querySelector('#go').onclick = () => onStart(srcId, state.env);
+  }
+  function confirmDelete(src) {
+    openSheet(`<h2>刪除「${esc(src.title)}」？</h2><p class="muted">文章會從這個瀏覽器移除。已經學過的字和領土不受影響。</p>
+      <div class="row"><button class="btn ghost big" id="no">取消</button><button class="btn gold big" id="yes">刪除</button></div>`, {}, body => {
+      body.querySelector('#no').onclick = closeSheet;
+      body.querySelector('#yes').onclick = () => { removeImport(state.lang, src.id); closeSheet(); onSourcesChanged(); render(); };
+    });
   }
   return { render, show: render, hide() {} };
 }

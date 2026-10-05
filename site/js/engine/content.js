@@ -12,26 +12,29 @@ export const isFunction = t => CLOSED.has(t.upos);
 // 可以出題的字：實詞與功能詞（專有名詞、數字不出題）
 export const isTarget = t => isContent(t) || isFunction(t);
 
+// 「寫法|UPOS|詞元|特徵|n」：第 5 欄 n 表示後面不空格（匯入時由標註工具提供）
 function parseToken(raw) {
-  const [surface, upos, lemma, feats] = raw.split('|');
+  const [surface, upos, lemma, feats, misc] = raw.split('|');
   return {
     surface,
     upos,
     lemma: lemma || surface.toLowerCase(),
     feats: Object.fromEntries((feats || '').split(';').filter(Boolean).map(f => f.split('='))),
+    nsa: misc === 'n',
   };
 }
 
 // 句子顯示：依語言設定檔的 joiner 串接。標點前、開引號或開括號後、以撇號開頭的附著詞（’m、's）前不加空白
-const OPENING = /^[“‘"'(\[「『（]$/u;
+const OPENING = /^[“‘"'(\[「『（¿¡«„]$/u;
 export function joinTokens(tokens, joiner) {
-  let out = '', prev = null;
+  let out = '', prev = null, prevNsa = false;
   tokens.forEach((t, i) => {
     const s = typeof t === 'string' ? t : t.surface;
     const punct = typeof t !== 'string' && t.upos === 'PUNCT' && !OPENING.test(s);
-    const glue = i === 0 || punct || OPENING.test(prev) || /^[’']/.test(s);
+    const glue = i === 0 || punct || OPENING.test(prev) || /^[’']/.test(s) || prevNsa;
     out += (glue ? '' : joiner) + s;
     prev = s;
+    prevNsa = typeof t !== 'string' && t.nsa;
   });
   return out;
 }

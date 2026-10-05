@@ -20,3 +20,12 @@
 | en-oz | L. Frank Baum, *The Wonderful Wizard of Oz*（1900），前 8 章 | Project Gutenberg #55（`raw/oz.txt`） |
 | ja-tebukuro | 新美南吉〈手袋を買いに〉 | 青空文庫（`raw/tebukuroo_kaini.txt`，Shift_JIS） |
 | ja-chumon | 宮沢賢治〈注文の多い料理店〉 | 青空文庫（`raw/chumonno_oi_ryoriten.txt`，Shift_JIS） |
+
+## 網頁匯入
+
+使用者也可以直接在網頁上匯入（首頁「＋ 匯入文章」），邏輯在 `site/js/engine/importer.js`，輸出格式與本腳本相同，存在瀏覽器的 localStorage：
+
+- 16 種語言：UDPipe 線上服務（https://lindat.mff.cuni.cz/services/udpipe/ ，UD 2.17 模型，CC BY-NC-SA，限非商業使用）。多字詞（例如西班牙文 del = de + el）合成一個字，以實詞為主。
+- 日文：kuromoji.js（Apache 2.0，從 jsDelivr 載入，字典約 17 MB），詞類對應規則與本腳本相同。
+- 孟加拉語、史瓦希里語：沒有 UD 模型，用瀏覽器內建的 Intl.Segmenter 斷詞，沒有詞性。
+- 句子格式多一個第 5 欄：`n` 表示這個字後面不空格（來自 UDPipe 的 SpaceAfter=No）。

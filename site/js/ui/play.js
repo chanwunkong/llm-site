@@ -73,7 +73,7 @@ export function createPlay(root, { onEnd, onSound }) {
       </div>
       <div class="qmain">
       ${q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
-      <div class="sentence${showText ? '' : ' hidden-text'}" id="sent">${sentenceHtml()}</div>
+      <div class="sentence${showText ? '' : ' hidden-text'}" id="sent" dir="${run.lang.dir || 'ltr'}">${sentenceHtml()}</div>
       ${audio() ? `<div class="listen-row">
         <button class="btn sm" id="replay">${G.speaker()} 再聽一次</button>
         <button class="btn sm" id="eye">${G.eye()} ${showText ? '隱藏文字' : '顯示文字'}</button></div>` : ''}
@@ -81,7 +81,7 @@ export function createPlay(root, { onEnd, onSound }) {
       <div id="fb" class="feedback"></div>
       </div>
       ${cardMode ? `<div class="cards">${q.cards.map((c, i) => `
-        <button class="wcard" data-i="${i}">${esc(c)}${audio() ? `<span class="say" data-say="${i}">${G.speaker(14)}</span>` : ''}</button>`).join('')}</div>` : ''}
+        <button class="wcard" data-i="${i}" dir="auto">${esc(c)}${audio() ? `<span class="say" data-say="${i}">${G.speaker(14)}</span>` : ''}</button>`).join('')}</div>` : ''}
       ${useMic ? `<button class="btn gold mic" id="mic">${G.mic()} 說出${q.mode === 'pick' ? '答案' : '整段'}</button>
         <button class="linkish" id="alt">${cardMode ? '改用點選作答（積分以耳機計）' : '改用打字作答（積分以耳機計）'}</button>` : ''}
       ${!cardMode && !useMic ? `<div class="produce"><input id="inp" placeholder="輸入空格裡的內容" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn gold" id="send">送出</button></div>` : ''}`;

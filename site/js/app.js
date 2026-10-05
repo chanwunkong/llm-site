@@ -3,6 +3,8 @@ import en from './data/en.js';
 import ja from './data/ja.js';
 import { buildLanguage } from './engine/content.js';
 import { BASE } from './data/base.js';
+import { LANG_LIST, LANG_BY_ID } from './data/langs.js';
+import { importsOf } from './engine/importer.js';
 import { state, save, L, applyDecay, skipDay, resetAll, SIM, SHOW, enterSim, exitSim, takeSimRequest } from './engine/store.js';
 import { PRESETS, generate } from './engine/sim.js';
 import { syncUnlocks } from './engine/run.js';
@@ -17,9 +19,13 @@ import { createSkills } from './ui/skills.js';
 import { createSounds } from './ui/sounds.js';
 import { openSheet, closeSheet, toast } from './ui/sheet.js';
 
-const DATA = { en, ja };
+// 內建示範來源的語言（英文、日文）；20 種語言都可以匯入自己的文章
+const BUILTIN = { en, ja };
+const dataOf = id => ({ ...LANG_BY_ID[id], ...(BUILTIN[id] || {}), id, sources: [...(BUILTIN[id]?.sources || []), ...importsOf(id)] });
+const DATA = Object.fromEntries(LANG_LIST.map(l => [l.id, l]));
 const built = {};
-const getLang = () => (built[state.lang] ||= buildLanguage(DATA[state.lang], BASE[state.lang]));
+const getLang = () => (built[state.lang] ||= buildLanguage(dataOf(state.lang), BASE[state.lang] || {}));
+const rebuildLang = () => { delete built[state.lang]; };
 const $ = s => document.querySelector(s);
 
 // 模擬模式：進入時依選的預設產生進度；頂部顯示「模擬中」與退出
@@ -37,7 +43,7 @@ function refreshTop() {
 }
 
 const views = {
-  home: createHome($('#view-home'), { getLang, onStart: (src, env) => play.start(getLang(), src, env) }),
+  home: createHome($('#view-home'), { getLang, onStart: (src, env) => play.start(getLang(), src, env), onSourcesChanged: () => { rebuildLang(); refreshTop(); } }),
   land: createLand($('#view-land'), { getLang, onChange: refreshTop }),
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
   sounds: createSounds($('#view-sounds'), { getLang }),
@@ -70,9 +76,12 @@ function enterLanguage() {
   refreshTop();
 }
 
-$('#langBtn').onclick = () => openSheet(`<h2>學習語言</h2><div class="stack">${Object.values(DATA).map(d =>
-  `<button class="btn ${d.id === state.lang ? 'gold' : 'ghost'} big" data-lang="${d.id}">${d.name}</button>`).join('')}</div>
-  <p class="muted">每個語言有各自的領土、背包、金幣與進度。</p>`, {}, body =>
+$('#langBtn').onclick = () => openSheet(`<h2>學習語言</h2>
+  <p class="muted">每個語言有各自的領土與進度。英語、日語有內建的示範文章；其他語言請在「冒險」匯入自己的文章。</p>
+  <div class="lang-grid">${LANG_LIST.map(d => {
+    const n = dataOf(d.id).sources.length;
+    return `<button class="btn ${d.id === state.lang ? 'gold' : 'ghost'} sm" data-lang="${d.id}">${esc(d.name)}<small class="lang-n">${esc(d.zh)}${n ? `・${n} 篇` : ''}</small></button>`;
+  }).join('')}</div>`, {}, body =>
   body.querySelectorAll('[data-lang]').forEach(b => (b.onclick = () => {
     state.lang = b.dataset.lang;
     save();
@@ -101,7 +110,7 @@ $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
 enterLanguage();
 const h = location.hash.slice(1);
 setTab(views[h] ? h : 'home');
-if (h === 'play') play.start(getLang(), L().source || getLang().sources[0].id, state.env);
+if (h === 'play' && getLang().sources.length) play.start(getLang(), L().source || getLang().sources[0].id, state.env);
 $('#loading').remove();
 
 // 模擬模式設定：預設進度、目標語言、我會的語言、開局自帶規則
@@ -112,7 +121,7 @@ function simSheet() {
       <p class="muted">用遊戲引擎自動玩若干局（答對率 85%），產生測試用的進度。使用另一份存檔，真正的進度不會被覆蓋；頂部的「退出」回到真正的進度。</p>
       <h3>預設進度</h3><div class="stack">${Object.entries(PRESETS).map(([k, p]) =>
         `<button class="choice${req.preset === k ? ' sel' : ''}" data-p="${k}"><span class="ic">${p.runs}局</span><b>${p.name}</b><small>${p.desc}</small></button>`).join('')}</div>
-      <h3>目標語言</h3><div class="row">${Object.values(DATA).map(d => `<button class="btn ${req.lang === d.id ? 'gold' : 'ghost'} sm" data-l="${d.id}">${d.name}</button>`).join('')}</div>
+      <h3>目標語言</h3><div class="row">${Object.values(BUILTIN).map(d => `<button class="btn ${req.lang === d.id ? 'gold' : 'ghost'} sm" data-l="${d.id}">${d.name}</button>`).join('')}</div>
       <h3>我會的語言</h3><div class="lang-grid">${LANGS.map(l => `<button class="btn ${req.known.includes(l.id) ? 'gold' : 'ghost'} sm" data-k="${l.id}">${esc(l.zh)}</button>`).join('')}</div>
       <h3>測試連鎖</h3><button class="btn ${req.autoSkills ? 'gold' : 'ghost'} sm" id="auto">${req.autoSkills ? '開' : '關'}：開局自帶所有已解鎖的規則（Lv1）</button>
       <button class="btn gold big" id="simGo" style="margin-top:16px">開始模擬</button>`;
