@@ -23,6 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # 每次發布在所有程式與樣式的引用加上版本號，手機瀏覽器才不會混用新舊快取的檔案
+      - name: Stamp version on file references
+        run: |
+          V=${GITHUB_SHA::7}
+          find site -name '*.js' -print0 | xargs -0 perl -pi -e "s#(['\"])(\.{1,2}/[^'\"\s]+\.js)\1#\$1\$2?v=$V\$1#g"
+          perl -pi -e "s#(src|href)=\"((?:js|css)/[^\"]+\.(?:js|css))\"#\$1=\"\$2?v=$V\"#g" site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./site
