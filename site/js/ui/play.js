@@ -64,7 +64,7 @@ export function createPlay(root, { onEnd, onSound }) {
     $('#qcard').innerHTML = `
       <div class="badges">
         ${chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule} ${esc(ruleOf(item.rule).name)}</span>`
-          : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>`}
+          : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>${q.formula ? '<span class="badge chunk">語塊</span>' : ''}`}
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
         ${item.kind === 'spot' ? '<span class="badge spot">5 級抽查</span>' : ''}
         ${q.challenge ? '<span class="badge challenge">升級挑戰</span>' : ''}

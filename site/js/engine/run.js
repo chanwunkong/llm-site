@@ -156,6 +156,11 @@ export function buildRun(lang, sourceId, env) {
 }
 
 // ---- 題目 ----
+// 句子裡包含目標字的語塊（mineFormulas 找出的固定說法），取最長的
+function formulaGap(lang, s, ti) {
+  const spans = (lang.formulaSpans?.get(s.id) || []).filter(idx => idx.includes(ti));
+  return spans.sort((a, b) => b.length - a.length)[0] || null;
+}
 function gapIndices(tokens, ti, lv, prof) {
   const ok = idx => idx.every(i => tokens[i] && isWord(tokens[i]));
   // 優先：能對上規則 > 實詞多 > 不以附著性功能詞開頭、不以限定詞結尾
@@ -207,7 +212,9 @@ export function makeQuestion(run, item) {
   const lv = item.kind === 'spot' ? 5 : w.lv;
   let ti = s.tokens.findIndex(t => t.lemma === item.lemma && isTarget(t));
   if (ti < 0) ti = s.tokens.findIndex(t => t.lemma === item.lemma);
-  const gap = gapIndices(s.tokens, ti, Math.min(lv, 4), profileOf(lang));
+  // Lv3 排序、Lv4 產出：目標字在語塊裡時，整個語塊挖空
+  const formula = lv >= 3 ? formulaGap(lang, s, ti) : null;
+  const gap = formula || gapIndices(s.tokens, ti, Math.min(lv, 4), profileOf(lang));
   const gapTokens = gap.map(i => s.tokens[i]);
   // 句首的字在字卡上用句中的寫法（例如 The → the），避免大小寫洩漏答案
   const display = (t, i) => i === 0 && t.surface.toLocaleLowerCase() !== t.surface && lang.lemmas.get(t.lemma)?.forms.has(t.surface.toLocaleLowerCase()) || (i === 0 && t.surface.toLocaleLowerCase() === t.lemma)
@@ -224,9 +231,10 @@ export function makeQuestion(run, item) {
   // 這題答對就會達到門檻時，這題就是升級挑戰
   const challenge = item.kind !== 'spot' && lv >= 2 && lv < 5 && !run.leveled.has(item.lemma) &&
     w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
-  const timer = lv <= 2 ? 0 : lv === 3 ? 15 : 12;
+  // 計時依空格長度加長：每多一個字多 3 秒
+  const timer = lv <= 2 ? 0 : (lv === 3 ? 15 : 12) + 3 * Math.max(0, gap.length - (lv === 3 ? 2 : 3));
   return {
-    item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors,
+    item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors, formula: !!formula,
     image: lv === 1 ? lang.base[item.lemma] : null,
     rules: rulesIn(gapTokens, profileOf(lang)),
     before: joinTokens(s.tokens.slice(0, gap[0]), lang.joiner),

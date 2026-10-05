@@ -328,3 +328,4 @@ body.playing #simBar { display: none; }
 .lang-n { display: block; font-size: 10px; color: var(--muted); font-weight: 600; }
 .btn.gold .lang-n { color: var(--white); }
 .lang-grid .btn { flex-direction: column; gap: 0; min-width: 30%; }
+.badge.chunk { background: var(--yellow); }

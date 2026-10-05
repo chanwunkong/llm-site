@@ -75,6 +75,7 @@ export function buildLanguage(data, base = {}) {
   }
   const lang = { ...data, base, sentences, situations, lemmas };
   lang.chunks = mineChunks(lang);
+  mineFormulas(lang);
   return lang;
 }
 
@@ -105,4 +106,72 @@ export function mineChunks(lang) {
     }
   }
   return [...counts.values()].filter(c => c.count >= 2);
+}
+
+// ---- 語塊（固定說法）：2～5 個字的高頻組合，包含功能詞，例如 at the end of the day、could you please ----
+// 只用統計，不分語言：以字典形計數（made a wish = make a wish），不跨標點；
+// 出現次數夠多、而且一起出現的機率遠高於偶然（每個切分點的 PMI 都夠高）；至少含一個實詞；
+// 不含專有名詞（人名、地名不是可以套用的說法）；「冠詞／助詞＋單一名詞」是文法規則的範圍，不算語塊；
+// 邊界要完整：後面緊接助動詞或專有名詞時不算（ありまし｜た、you have｜been、the Cowardly｜Lion），不以冠詞結尾；
+// 字與字不空格的語言（中文、日文、泰文），附著的字（助詞、助動詞、て）不能放在開頭，也不能被切在後面；
+// 長語塊和裡面的短語塊次數差不多時只留長的。結果：lang.formulas、lang.formulaSpans（句子 → 出現位置）
+export const FORMULA = { minLen: 2, maxLen: 5, minPmi: 3, keepRatio: 0.8 };
+export function mineFormulas(lang) {
+  const key = t => t.lemma.toLocaleLowerCase();
+  const bound = lang.joiner === '', BOUND = new Set(['ADP', 'AUX', 'PART', 'SCONJ']);
+  const counts = new Map(), first = new Map();
+  let N = 0;
+  const segments = s => {   // 不跨標點的連續字
+    const out = [];
+    let cur = [];
+    s.tokens.forEach((t, i) => { if (isWord(t)) cur.push(i); else { if (cur.length) out.push(cur); cur = []; } });
+    if (cur.length) out.push(cur);
+    return out;
+  };
+  for (const s of lang.sentences)
+    for (const seg of segments(s)) {
+      N += seg.length;
+      for (let i = 0; i < seg.length; i++)
+        for (let n = 1; n <= FORMULA.maxLen && i + n <= seg.length; n++) {
+          const idx = seg.slice(i, i + n), k = idx.map(j => key(s.tokens[j])).join(' ');
+          const next = s.tokens[idx.at(-1) + 1]?.upos;
+          if (n > 1 && (next === 'AUX' || next === 'PROPN' || (bound && BOUND.has(next)))) continue;
+          counts.set(k, (counts.get(k) || 0) + 1);
+          if (n > 1 && !first.has(k)) first.set(k, idx.map(j => s.tokens[j]));
+        }
+    }
+  const minCount = lang.sentences.length >= 300 ? 3 : 2;
+  const pmi = k => {
+    const w = k.split(' '), c = counts.get(k);
+    let min = Infinity;
+    for (let cut = 1; cut < w.length; cut++) {
+      const l = counts.get(w.slice(0, cut).join(' ')), r = counts.get(w.slice(cut).join(' '));
+      min = Math.min(min, Math.log2((c * N) / (l * r)));
+    }
+    return min;
+  };
+  const shapeOk = ts => {
+    if (ts.some(t => t.upos === 'PROPN') || ts.at(-1).upos === 'DET' || (bound && BOUND.has(ts[0].upos))) return false;
+    const content = ts.filter(isContent);
+    return content.length > 0 && !(content.length === 1 && content[0].upos === 'NOUN');
+  };
+  let cands = [...first.keys()].filter(k => counts.get(k) >= minCount && shapeOk(first.get(k)) && pmi(k) >= FORMULA.minPmi);
+  // 只留最長的：被更長的語塊包含、而且次數差不多的短語塊拿掉
+  cands = cands.filter(k => !cands.some(o => o !== k && o.length > k.length && (' ' + o + ' ').includes(' ' + k + ' ') && counts.get(o) >= FORMULA.keepRatio * counts.get(k)));
+  const set = new Set(cands);
+  lang.formulas = cands.map(k => ({ key: k, count: counts.get(k), tokens: first.get(k).map(t => t.surface) })).sort((a, b) => b.count - a.count);
+  // 每句裡的出現位置：長的優先，不重疊
+  lang.formulaSpans = new Map();
+  for (const s of lang.sentences) {
+    const found = [];
+    for (const seg of segments(s))
+      for (let n = FORMULA.maxLen; n >= FORMULA.minLen; n--)
+        for (let i = 0; i + n <= seg.length; i++) {
+          const idx = seg.slice(i, i + n);
+          if (!set.has(idx.map(j => key(s.tokens[j])).join(' '))) continue;
+          if (found.some(f => !(idx.at(-1) < f[0] || idx[0] > f.at(-1)))) continue;
+          found.push(idx);
+        }
+    if (found.length) lang.formulaSpans.set(s.id, found);
+  }
 }
