@@ -14,6 +14,7 @@ export function openSheet(html, opts = {}, mount) {
   body.parentElement.scrollTop = 0;
   mount?.(body);
 }
+export const sheetOpen = () => sheet.classList.contains('open');
 export function closeSheet() {
   if (sheet.hidden) return;
   sheet.classList.remove('open');

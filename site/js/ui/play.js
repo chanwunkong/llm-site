@@ -1,8 +1,8 @@
 // 答題畫面：唯一的題型「用字卡填滿空格」
 import { buildRun, makeQuestion, answer, current, choices, choose, settle, WALS } from '../engine/run.js';
-import { L } from '../engine/store.js';
+import { L, SHOW } from '../engine/store.js';
 import { speak, speakGap, stopSpeech, sfx, listen, canListen } from '../audio.js';
-import { openSheet, closeSheet, esc, toast } from './sheet.js';
+import { openSheet, closeSheet, esc, toast, sheetOpen } from './sheet.js';
 import { iconHtml } from './icon.js';
 import * as P from '../engine/phono.js';
 import { G } from './glyph.js';
@@ -10,7 +10,7 @@ import { G } from './glyph.js';
 const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
 const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
 
-export function createPlay(root, { onEnd }) {
+export function createPlay(root, { onEnd, onSound }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
   const $ = s => root.querySelector(s);
   const audio = () => run.env !== 'mute';
@@ -234,14 +234,16 @@ export function createPlay(root, { onEnd }) {
     }
     // 發音回饋：只差一個音的字並列比較；4 → 5 級顯示答案的發音並標出難音
     const L_ID = run.lang.id, hard = P.hardSounds(run.lang.wals);
-    const ipaHtml = w => { const sg = P.wordSegs(L_ID, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
+    const ipaHtml = w => { const sg = P.wordSegs(L_ID, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs" data-hs="${esc(x)}">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
     const sounds = q.neighbors.filter(n => n.kind === 'sound');
     if (sounds.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">${[q.answer[0], ...sounds.map(n => n.word)].map(w => `<span>${esc(w)} ${ipaHtml(w)}</span>`).join('<i>vs</i>')}</div>`);
     if (q.mode === 'produce') {
       const parts = q.answer.map(w => ipaHtml(w)).filter(Boolean);
       const hs = [...new Set(q.answer.flatMap(w => (P.wordSegs(L_ID, w) || []).filter(x => hard.has(x))))];
-      if (parts.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">${parts.join(' ')}${hs.length ? `<small>難音：${hs.map(esc).join('、')}</small>` : ''}</div>`);
+      if (parts.length) fb.insertAdjacentHTML('beforeend', `<div class="ipa-cmp">${parts.join(' ')}${hs.length ? `<small>難音：${hs.map(esc).join('、')}（點紅色的音可以聽、可以和相近的音比較）</small>` : ''}</div>`);
     }
+    // 點難音：打開發音面板（單音錄音、和相近的音比較）
+    fb.querySelectorAll('[data-hs]').forEach(b => (b.onclick = () => { stopTimer(); onSound?.(b.dataset.hs); }));
     if (res.levelUp) { sfx('level'); setTimeout(() => floatText(`${q.item.lemma} 升到 Lv${res.levelUp}`, true), 250); }
     if (res.levelDown) floatText(`${q.item.lemma} 降到 Lv${res.levelDown}`, true);
     hud();
@@ -252,7 +254,7 @@ export function createPlay(root, { onEnd }) {
     cont.onclick = next;
     $('#qcard').appendChild(cont);
     const token = qToken;
-    if (res.ok) (audio() ? speak(q.full) : new Promise(r => setTimeout(r, 900))).then(() => setTimeout(() => token === qToken && next(), 350));
+    if (res.ok) (audio() ? speak(q.full) : new Promise(r => setTimeout(r, 900))).then(() => setTimeout(() => token === qToken && !sheetOpen() && next(), 350));
     else if (audio()) speak(q.full);
   }
 
@@ -298,19 +300,21 @@ export function createPlay(root, { onEnd }) {
         <div><b>${rep.correct}/${rep.correct + rep.wrong}</b><span>答對</span></div>
         <div><b>${rep.maxChain}</b><span>最長連鎖</span></div>
       </div>
-      <h3>金幣 +${rep.score + rep.produced}</h3>
-      <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : (rep.correct < 5 ? '　（本局答對不到 5 題，語塊沒有產出）' : '　（在領土上完成語塊，每局結算都會產出金幣）')}</p>
+      ${SHOW.economy ? `<h3>金幣 +${rep.score + rep.produced}</h3>
+      <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : ''}</p>` : ''}
       ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
-      ${rep.newTiles.length ? `<h3>新詞元進背包</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>
-        ${rep.auto.length ? `<p class="muted">背包滿了，${rep.auto.map(esc).join('、')} 已自動放在領土邊緣。</p>` : ''}` : ''}
+      ${rep.newTiles.length ? `<h3>${SHOW.backpack ? '新詞元進背包' : '新字加入領土'}</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>
+        ${SHOW.backpack && rep.auto.length ? `<p class="muted">背包滿了，${rep.auto.map(esc).join('、')} 已自動放在領土邊緣。</p>` : ''}` : ''}
+      ${rep.newRules?.length ? `<h3>開放新規則</h3><p class="muted">${rep.newRules.map(r => `${r} ${esc(WALS.find(w => w.id === r).name)}`).join('、')}：之後升級時可以選到，答對用到它的空格會觸發連鎖。</p>` : ''}
       ${rulesTxt ? `<h3>連鎖（共 ${rep.chainLinks} 環）</h3><p class="muted">${rulesTxt}</p>` : ''}
-      ${rep.missed.length ? `<h3>錯過的連結</h3><p class="muted">這些字一起出現，但在領土上離得很遠：${rep.missed.map(m => `${esc(m.a)} ↔ ${esc(m.b)}（${m.steps} 步）`).join('、')}</p>` : ''}
+      ${SHOW.path && rep.missed.length ? `<h3>錯過的連結</h3><p class="muted">這些字一起出現，但在領土上離得很遠：${rep.missed.map(m => `${esc(m.a)} ↔ ${esc(m.b)}（${m.steps} 步）`).join('、')}</p>` : ''}
       <h3>${esc(rep.sitTitle)}</h3>
       <p class="muted">${rep.advanced ? `完成了！解鎖下一段：${esc(rep.advanced)}` : `本段進度：${rep.progress.done} 個實詞達到 Lv3`}</p>
       <div class="row" style="margin-top:14px">
         <button class="btn ghost big" id="home">回冒險</button>
-        ${lg.backpack.length ? `<button class="btn gold big" id="land">去擺放（${lg.backpack.length}）</button>` : ''}
+        ${SHOW.backpack && lg.backpack.length ? `<button class="btn gold big" id="land">去擺放（${lg.backpack.length}）</button>` : ''}
+        ${!SHOW.backpack && rep.newTiles.length ? `<button class="btn gold big" id="land">看領土</button>` : ''}
       </div>`, { locked: true }, body => {
       const exit = tab => { closeSheet(); root.hidden = true; document.body.classList.remove('playing'); onEnd(tab); };
       body.querySelector('#home').onclick = () => exit('home');

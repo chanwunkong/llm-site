@@ -18,6 +18,17 @@ export function takeSimRequest() {
 }
 const DAY = 86400000;
 
+// 收斂後的核心循環：答題 → 升級 → 連鎖 → 領土長大。以下功能的程式保留，先不顯示（true = 打開）
+export const SHOW = {
+  economy: false,     // 金幣、花金幣解鎖規則與移動格子（關閉時規則依詞彙量自動開放）
+  backpack: false,    // 背包與手動擺放（關閉時新字自動長在領土邊緣）
+  chunks: false,      // 語塊、語塊網絡與產出
+  path: false,        // 領土路徑加成、錯過的連結
+  mine: false,        // 我的理解
+  skillsTab: false,   // 文法頁
+  soundsTab: false,   // 發音頁（關閉時從答題回饋點難音進入）
+};
+
 export const RULES = {
   threshold: 4,                        // 2 級以上每級的熟練度門檻
   firstEncounterCorrect: 2,            // 1 → 2：同一局答對 2 次
@@ -28,6 +39,7 @@ export const RULES = {
   moveCost: 20,
   walsCost: 100,
   completeRatio: 0.6,                  // 情境完成：60% 實詞達 3 級
+  wordsPerRule: 8,                     // 規則自動開放：詞彙量每 8 個開放一條
 };
 
 function freshLang() {

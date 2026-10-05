@@ -1,6 +1,6 @@
 // 單字領土：平面的六角形等高線地圖（簡約設計）
 // 依等級由淺到深上色；等級不同的相鄰格之間畫等高線，高等級的字聚在一起就像山丘。
-import { L, word, RULES, isDue, decayProgress, save, now } from '../engine/store.js';
+import { L, word, RULES, isDue, decayProgress, save, now, SHOW } from '../engine/store.js';
 import { joinTokens } from '../engine/content.js';
 import * as T from '../engine/territory.js';
 import { speak, sfx } from '../audio.js';
@@ -25,15 +25,15 @@ export function createLand(root, { getLang, onChange }) {
     <div class="land2d" id="land2d"><canvas></canvas></div>
     <div class="land-top">
       <span class="chip" id="stat"></span>
-      <button class="chip" id="missedBtn">錯過的連結</button>
-      <button class="chip" id="chunkBtn">語塊</button>
+      ${SHOW.path ? '<button class="chip" id="missedBtn">錯過的連結</button>' : ''}
+      ${SHOW.chunks ? '<button class="chip" id="chunkBtn">語塊</button>' : ''}
     </div>
     <div class="land-tools">
       <button class="icon-btn" id="zin" aria-label="放大">＋</button>
       <button class="icon-btn" id="zout" aria-label="縮小">－</button>
       <button class="icon-btn" id="home" aria-label="看全部">◎</button>
     </div>
-    <div class="bag">
+    <div class="bag"${SHOW.backpack ? '' : ' hidden'}>
       <div class="hint-line" id="hint"></div>
       <div class="bag-head"><span><b>背包</b> <span id="bagCount"></span></span><span>點字，再點虛線格</span></div>
       <div class="bag-list" id="bagList"></div>
@@ -115,7 +115,8 @@ export function createLand(root, { getLang, onChange }) {
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       });
     }
-    // 3. 完成的語塊：相鄰兩格共用的那條邊畫成金色
+    // 3. 完成的語塊：相鄰兩格共用的那條邊畫成紅色
+    if (SHOW.chunks) {
     ctx.strokeStyle = RED;
     ctx.lineWidth = Math.max(3, s / 6);
     for (const ch of lang.chunks.filter(T.chunkComplete)) {
@@ -127,6 +128,7 @@ export function createLand(root, { getLang, onChange }) {
         const [x1, y1] = corner(x, y, s, i), [x2, y2] = corner(x, y, s, (i + 1) % 6);
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       }
+    }
     }
     // 4. 可以放下的位置（虛線）
     if (selected) {
@@ -173,7 +175,7 @@ export function createLand(root, { getLang, onChange }) {
     const done = lang.chunks.filter(T.chunkComplete).length;
     const biggest = Math.max(0, ...T.chunkNetworks(lang.chunks).map(n => n.length));
     const due = Object.values(lg.territory).filter(l => isDue(word(l))).length;
-    $('#stat').textContent = `${T.count()} 格・語塊 ${done}/${lang.chunks.length}${biggest > 1 ? `・網絡 ${biggest}` : ''}${due ? `・${due} 格快降級` : ''}`;
+    $('#stat').textContent = `${T.count()} 格${SHOW.chunks ? `・語塊 ${done}/${lang.chunks.length}${biggest > 1 ? `・網絡 ${biggest}` : ''}` : ''}${due ? `・${due} 格快降級` : ''}`;
     $('#bagCount').textContent = `${lg.backpack.length} / ${RULES.backpackSize}`;
     $('#bagList').innerHTML = lg.backpack.length
       ? lg.backpack.map(l => `<button class="bag-item${selected === l ? ' sel' : ''}" data-l="${esc(l)}">${esc(l)}<small>Lv${word(l).lv}</small></button>`).join('')
@@ -280,7 +282,7 @@ export function createLand(root, { getLang, onChange }) {
     const status = w.lv === 5 ? '5 級：不會因時間降級，但會被隨機抽查'
       : days ? `${isDue(w) ? '快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
     const chunks = lang.chunks.filter(c => c.lemmas.includes(lemma));
-    const mine = w.mine?.at(-1);
+    const mine = SHOW.mine ? w.mine?.at(-1) : null;
     const mineBlock = mine ? `<h3>${isDue(w) ? '你當時的理解' : '我的理解'}</h3>${mineHtml(lang, mine.parts)}
       <p class="muted">${new Date(mine.t).toLocaleDateString('zh-TW')}${w.mine.length > 1 ? `・修改過 ${w.mine.length - 1} 次` : ''}</p>` : '';
     // 看解釋時，領土上用到的那幾格一起亮起來
@@ -291,15 +293,15 @@ export function createLand(root, { getLang, onChange }) {
       ${isDue(w) ? mineBlock : ''}
       <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>寫法：${[...info.forms].map(esc).join('、')}</p>
       ${isDue(w) ? '' : mineBlock}
-      ${chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
-      <button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '修改我的理解' : '寫下我的理解'}</button>
+      ${SHOW.chunks && chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
+      ${SHOW.mine ? `<button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '修改我的理解' : '寫下我的理解'}</button>` : ''}
       <div class="row" style="margin-top:12px">
         <button class="btn ghost big" id="say">${G.speaker()} 發音</button>
-        <button class="btn gold big" id="lift">拿起（${RULES.moveCost} 金幣）</button>
+        ${SHOW.backpack ? `<button class="btn gold big" id="lift">拿起（${RULES.moveCost} 金幣）</button>` : ''}
       </div>`, { onClose: () => { focus = null; highlight = new Set(); redraw(); } }, body => {
       body.querySelector('#say').onclick = () => speak(lemma, { rate: 0.85 });
-      body.querySelector('#mineBtn').onclick = () => composeSheet(k);
-      body.querySelector('#lift').onclick = () => {
+      body.querySelector('#mineBtn')?.addEventListener('click', () => composeSheet(k));
+      body.querySelector('#lift')?.addEventListener('click', () => {
         const r = T.pickUp(k);
         if (!r.ok) return toast(r.reason);
         sfx('coin');
@@ -308,7 +310,7 @@ export function createLand(root, { getLang, onChange }) {
         closeSheet();
         rebuild();
         toast(`已拿起「${lemma}」，點虛線格放下`);
-      };
+      });
     });
   }
 
@@ -351,7 +353,7 @@ export function createLand(root, { getLang, onChange }) {
       });
   }
 
-  $('#missedBtn').onclick = () => {
+  if ($('#missedBtn')) $('#missedBtn').onclick = () => {
     const m = L().lastReport?.missed || [];
     openSheet(`<h2>錯過的連結</h2>
       <p class="muted">上一局一起出現、但在領土上離得很遠的字。把它們放近一點，下一局的路徑加成會更高。</p>
@@ -364,7 +366,7 @@ export function createLand(root, { getLang, onChange }) {
         redraw();
       })));
   };
-  $('#chunkBtn').onclick = () => {
+  if ($('#chunkBtn')) $('#chunkBtn').onclick = () => {
     const lang = getLang(), lg = L();
     const known = l => T.cellOf(l) || lg.backpack.includes(l);
     const list = lang.chunks.filter(c => c.lemmas.every(known));

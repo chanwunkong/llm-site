@@ -220,7 +220,7 @@ export function createSounds(root, { getLang }) {
       return 99;
     };
     const seen = new Set([disp(seg)]);
-    return lastAll.filter(x => rec(x.seg) && !seen.has(disp(x.seg)) && seen.add(disp(x.seg)))
+    return items().filter(x => rec(x.seg) && !seen.has(disp(x.seg)) && seen.add(disp(x.seg)))
       .map(x => ({ ...x, d: dist(x.pos) })).filter(x => x.d <= 2).sort((x, y) => x.d - y.d).slice(0, 4);
   }
 
@@ -264,5 +264,5 @@ export function createSounds(root, { getLang }) {
     });
   }
 
-  return { show: render, hide() {}, render };
+  return { show: render, hide() {}, render, detail };
 }

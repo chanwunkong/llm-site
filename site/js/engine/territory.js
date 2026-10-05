@@ -1,5 +1,5 @@
 // 領土：六角形軸座標 "q,r" -> 詞元。必須相連、不限大小。
-import { L, save, RULES, level } from './store.js';
+import { L, save, RULES, level, SHOW } from './store.js';
 
 // 六角形（尖頂）軸座標的 6 個鄰居，順序對應畫面上的 6 條邊：東、東南、西南、西、西北、東北
 export const DIRS = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
@@ -67,11 +67,13 @@ export function pickUp(k) {
 }
 
 // 新詞元進背包；背包滿了就自動放在領土邊緣（離原點最近的可放位置）
+// 背包關閉時，所有新字（含背包裡剩下的）都自動長在領土邊緣
 export function receive(lemmas) {
   const lg = L(), auto = [];
+  if (!SHOW.backpack) lemmas = [...lg.backpack.splice(0), ...lemmas];
   for (const lemma of lemmas) {
     if (cellOf(lemma) || lg.backpack.includes(lemma)) continue;
-    if (lg.backpack.length < RULES.backpackSize) { lg.backpack.push(lemma); continue; }
+    if (SHOW.backpack && lg.backpack.length < RULES.backpackSize) { lg.backpack.push(lemma); continue; }
     const k = placeable().sort((a, b) => dist0(a) - dist0(b))[0];
     lg.territory[k] = lemma;
     auto.push(lemma);

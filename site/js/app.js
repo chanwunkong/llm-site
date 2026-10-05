@@ -3,8 +3,9 @@ import en from './data/en.js';
 import ja from './data/ja.js';
 import { buildLanguage } from './engine/content.js';
 import { BASE } from './data/base.js';
-import { state, save, L, applyDecay, skipDay, resetAll, SIM, enterSim, exitSim, takeSimRequest } from './engine/store.js';
+import { state, save, L, applyDecay, skipDay, resetAll, SIM, SHOW, enterSim, exitSim, takeSimRequest } from './engine/store.js';
 import { PRESETS, generate } from './engine/sim.js';
+import { syncUnlocks } from './engine/run.js';
 import { LANGS } from './data/wals.js';
 import { esc } from './ui/sheet.js';
 import * as T from './engine/territory.js';
@@ -41,7 +42,12 @@ const views = {
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
   sounds: createSounds($('#view-sounds'), { getLang }),
 };
-const play = createPlay($('#play'), { onEnd: tab => { refreshTop(); setTab(tab); } });
+const play = createPlay($('#play'), { onEnd: tab => { refreshTop(); setTab(tab); }, onSound: seg => views.sounds.detail(seg) });
+
+// 收斂後的主選單只有「領土」和「冒險」；文法頁、發音頁與金幣先不顯示
+if (!SHOW.skillsTab) $('#nav [data-tab="skills"]').remove();
+if (!SHOW.soundsTab) $('#nav [data-tab="sounds"]').remove();
+if (!SHOW.economy) $('#gold').parentElement.hidden = true;
 
 let tab = null;
 function setTab(t) {
@@ -57,6 +63,8 @@ document.querySelectorAll('#nav button').forEach(b => (b.onclick = () => setTab(
 function enterLanguage() {
   setVoiceLang(DATA[state.lang].bcp47);
   getLang();
+  T.receive([]);          // 背包關閉時，把舊存檔背包裡的字放到領土上
+  syncUnlocks(getLang());
   const dropped = applyDecay();
   if (dropped.length) toast(`${dropped.length} 個字因為太久沒練而降級`, 2600);
   refreshTop();

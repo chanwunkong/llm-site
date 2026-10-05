@@ -1,12 +1,12 @@
 // 模擬模式：用真實的遊戲引擎自動玩若干局（答對率 85%），產生測試用的進度
-import { state, save, L } from './store.js';
+import { state, save, L, SHOW } from './store.js';
 import * as R from './run.js';
 import * as T from './territory.js';
 
 export const PRESETS = {
-  start: { name: '剛開始', runs: 2, unlock: 0, desc: '玩過 2 局，還沒有解鎖規則' },
-  mid: { name: 'A1 中段', runs: 8, unlock: 4, desc: '玩過 8 局，解鎖 4 條規則' },
-  late: { name: 'A1 後段', runs: 20, unlock: 'A1', desc: '玩過 20 局，解鎖全部 A1 規則' },
+  start: { name: '剛開始', runs: 2, desc: '玩過 2 局' },
+  mid: { name: 'A1 中段', runs: 8, desc: '玩過 8 局' },
+  late: { name: 'A1 後段', runs: 20, desc: '玩過 20 局' },
 };
 
 // 來源裡出現最多次的規則優先解鎖，連鎖才有句子可以跳
@@ -23,7 +23,8 @@ export function generate(req, getLang) {
   Object.assign(state, { lang: req.lang, env: 'ear', sound: true, timeOffset: 0, langs: {}, known: req.known?.length ? req.known : ['mnd'],
     sim: { preset: req.preset, autoSkills: !!req.autoSkills } });
   const lang = getLang();
-  L().unlocked = rulesToUnlock(lang, p.unlock);
+  // 規則依詞彙量自動開放（金幣經濟打開時才照舊規則手動解鎖）
+  if (SHOW.economy) L().unlocked = rulesToUnlock(lang, { mid: 4, late: 'A1' }[req.preset] || 0);
   for (let r = 0; r < p.runs; r++) {
     const run = R.buildRun(lang, lang.sources[0].id, 'ear');
     while (R.current(run)) {

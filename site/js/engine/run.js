@@ -1,7 +1,7 @@
 // 內層：一局的出題、作答判定、計分與結算。
 // 規則只依賴詞元、UD 詞性與單字等級，對任何語言都相同。
 import { isContent, isTarget, isWord, joinTokens } from './content.js';
-import { L, word, save, now, RULES, isDue, decayProgress, state } from './store.js';
+import { L, word, save, now, RULES, isDue, decayProgress, state, SHOW, vocabCount, stageReached } from './store.js';
 import * as T from './territory.js';
 import { FEATURES, VALUES } from '../data/wals.js';
 import * as P from './phono.js';
@@ -263,7 +263,7 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
     const speed = q.timer ? 0.5 * timeLeft : 0;
     const active = activeRules(run, q);
     const contentLemmas = q.tokens.filter(isContent).map(t => t.lemma);
-    const path = T.pathBonus(contentLemmas);
+    const path = SHOW.path ? T.pathBonus(contentLemmas) : { bonus: 0, pairs: [] };
     for (const [a, b, st] of path.pairs) if (st >= 3) run.missed.set(`${a}|${b}`, { a, b, steps: st });
     const attemptFactor = [1, 0.5, 0.25][item.attempts] ?? 0.25;
     const points = Math.round(10 * comboMult * (1 + speed) * (1 + path.bonus) * attemptFactor);
@@ -412,11 +412,26 @@ function answerChain(run, q, ok, timeLeft) {
   return result;
 }
 
+// ---- 規則自動開放（金幣經濟關閉時）：詞彙量每 RULES.wordsPerRule 個開放一條 ----
+// 在學習者的來源裡出現越多次的規則越先開放，連鎖才有句子可以跳
+export function syncUnlocks(lang) {
+  if (SHOW.economy) return [];
+  const lg = L(), prof = profileOf(lang), sents = Object.values(lang.sentences);
+  const order = WALS.filter(r => stageReached(r.stage))
+    .map(r => [r.id, sents.filter(s => r.test(s.tokens, prof)).length])
+    .filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+  const n = Math.floor(vocabCount() / RULES.wordsPerRule);
+  const fresh = order.slice(0, n).filter(id => !lg.unlocked.includes(id));
+  lg.unlocked.push(...fresh);
+  save();
+  return fresh;
+}
+
 // ---- 結算 ----
 export function settle(run) {
   const lg = L(), { lang } = run;
   // 語塊產出要本局至少答對 5 題，避免開局就結束來刷金幣
-  const production = run.correct >= 5 ? T.chunkProduction(lang.chunks) : [];
+  const production = SHOW.chunks && run.correct >= 5 ? T.chunkProduction(lang.chunks) : [];
   const produced = production.reduce((s, p) => s + p.gold, 0);
   lg.gold += run.score + produced;
   const auto = T.receive(run.newTiles);
@@ -429,12 +444,13 @@ export function settle(run) {
     advanced = src.situations[idx + 1].title;
   }
   lg.runs++;
+  const newRules = syncUnlocks(lang);
   const missed = [...run.missed.values()].sort((a, b) => b.steps - a.steps).slice(0, 3);
   const report = {
     score: run.score, produced, production: production.map(p => ({ chunks: p.chunks.map(c => c.lemmas), mult: p.mult, gold: p.gold })),
     correct: run.correct, wrong: run.wrong, maxCombo: run.maxCombo, maxChain: run.maxChain, chainLinks: run.chainLinks,
     levelUps: run.levelUps, levelDowns: run.levelDowns, newTiles: run.newTiles, auto,
-    ruleHits: run.ruleHits, missed, progress: before, advanced, sitTitle: run.sit.title,
+    ruleHits: run.ruleHits, missed, progress: before, advanced, sitTitle: run.sit.title, newRules,
   };
   lg.lastReport = report;
   save();
