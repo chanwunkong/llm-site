@@ -23,7 +23,7 @@ export const SHOW = {
   rulePurchase: false, // 花金幣解鎖規則（不再開放：規則依詞彙量自動開放）
   backpack: false,     // 背包介面（不再開放：新字自動放在領土邊緣）
   skillsTab: false,    // 階段 1：文法頁
-  soundsTab: false,    // 階段 2：發音頁
+  soundsTab: true,     // 發音頁（IPA 表）：從一開始就開放
   move: false,         // 階段 3：手動移動格子
   path: false,         // 階段 3：路徑加成、錯過的連結
   gold: false,         // 階段 4：金幣（移動格子要付金幣）
@@ -35,8 +35,6 @@ export const SHOW = {
 export const UNLOCKS = [
   { id: 'grammar', flags: ['skillsTab'], test: lg => lg.unlocked.length >= 1, title: '文法頁',
     lines: ['你的第一條規則已經開放。', '在「文法」分頁可以看到已開放的規則。', '每條規則都和「你會的語言」比較。'] },
-  { id: 'sounds', flags: ['soundsTab'], test: lg => !!lg.hardSeen, title: '發音頁',
-    lines: ['你遇到了第一個難音。', '在「發音」分頁可以看到 IPA 表。', '點一個音，可以聽錄音，也可以和相近的音比較。'] },
   { id: 'place', flags: ['move', 'path'], test: lg => Object.keys(lg.territory).length >= 20, title: '手動擺放',
     lines: ['你的領土到達 20 格。', '現在你可以移動格子：點一個格子，再點「移動」。', '常一起出現的字放在相鄰的位置，答題時得到路徑加成。', '結算時，系統顯示「錯過的連結」：常一起出現、但距離太遠的字。'] },
   { id: 'economy', flags: ['gold', 'chunks'], test: lg => Object.keys(lg.territory).length >= 40, title: '領土語塊與金幣',
@@ -49,6 +47,7 @@ export function refreshFeatures() {
   for (const u of UNLOCKS) if (!lg.features.includes(u.id) && u.test(lg)) { lg.features.push(u.id); fresh.push(u); }
   for (const u of UNLOCKS) for (const f of u.flags) SHOW[f] = lg.features.includes(u.id);
   SHOW.mine = true;
+  SHOW.soundsTab = true;
   if (fresh.length) save();
   return fresh;
 }
