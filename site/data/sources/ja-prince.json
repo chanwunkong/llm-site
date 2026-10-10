@@ -1,0 +1,43 @@
+{
+"id": "ja-prince",
+"kind": "故事",
+"title": "星の王子さま（改作）",
+"credit": "依《小王子》劇情自行改寫（本專案）",
+"situations": [
+{
+"title": "砂漠のパイロット",
+"sentences": [
+"パイロット|NOUN||||9,nsubj が|ADP||||0,case 砂漠|NOUN||||4,nmod の|ADP||||2,case 上|NOUN||||9,obl で|ADP||||4,case 小さい|ADJ||||7,acl 飛行機|NOUN||||9,obj を|ADP||||7,case 飛ばす|VERB||||-1,root 。|PUNCT||||9,punct",
+"飛行機|NOUN||||2,nsubj が|ADP||||0,case 壊れ|VERB|壊れる|||11,advcl て|SCONJ||||2,mark 、|PUNCT||||2,punct パイロット|NOUN||||11,nsubj は|ADP||||5,case 砂|NOUN||||9,nmod の|ADP||||7,case 上|NOUN||||11,obl に|ADP||||9,case 落ちる|VERB||||-1,root 。|PUNCT||||11,punct",
+"水|NOUN||||4,nsubj が|ADP||||0,case 少し|ADV||||4,advmod しか|ADP||||2,case ない|ADJ||||-1,root 。|PUNCT||||4,punct",
+"朝|NOUN||||7,advmod 、|PUNCT||||0,punct 小さい|ADJ||||3,acl 声|NOUN||||7,nsubj が|ADP||||3,case パイロット|NOUN||||7,obj を|ADP||||5,case 起こす|VERB||||-1,root 。|PUNCT||||7,punct",
+"砂|NOUN||||2,nmod の|ADP||||0,case 上|NOUN||||7,obl に|ADP||||2,case 小さい|ADJ||||5,acl 王子|NOUN||||7,nsubj が|ADP||||5,case 立っ|VERB|立つ|||-1,root て|SCONJ||||7,mark いる|AUX||||8,fixed 。|PUNCT||||7,punct",
+"王子|NOUN||||6,nsubj は|ADP||||0,case 羊|NOUN||||4,nmod の|ADP||||2,case 絵|NOUN||||6,obj を|ADP||||4,case 頼む|VERB||||-1,root 。|PUNCT||||6,punct",
+"パイロット|NOUN||||6,nsubj は|ADP||||0,case 羊|NOUN||||4,nmod の|ADP||||2,case 絵|NOUN||||6,obj を|ADP||||4,case 描く|VERB||||-1,root 。|PUNCT||||6,punct",
+"王子|NOUN||||5,nsubj:outer は|ADP||||0,case その|DET||PronType=Dem||3,det 絵|NOUN||||5,nsubj が|ADP||||3,case 嫌い|NOUN||||-1,root だ|AUX||||5,aux 。|PUNCT||||5,punct",
+"パイロット|NOUN||||6,nsubj は|ADP||||0,case 箱|NOUN||||4,nmod の|ADP||||2,case 絵|NOUN||||6,obj を|ADP||||4,case 描く|VERB||||-1,root 。|PUNCT||||6,punct",
+"羊|NOUN||||6,nsubj は|ADP||||0,case 箱|NOUN||||4,nmod の|ADP||||2,case 中|NOUN||||6,obl で|ADP||||4,case 寝る|VERB||||-1,root 。|PUNCT||||6,punct",
+"王子|NOUN||||6,nsubj は|ADP||||0,case 箱|NOUN||||4,obj を|ADP||||2,case 見|VERB|見る|||6,advcl て|SCONJ||||4,mark 笑う|VERB||||-1,root 。|PUNCT||||6,punct",
+"王子|NOUN||||6,nsubj は|ADP||||0,case とても|ADV||||3,advmod 小さい|ADJ||||4,acl 星|NOUN||||6,obl から|ADP||||4,case 来る|VERB||||-1,root 。|PUNCT||||6,punct"
+]
+},
+{
+"title": "星とバラ",
+"sentences": [
+"王子|NOUN||||6,nsubj は|ADP||||0,case 毎朝|NOUN||||6,advmod 小さい|ADJ||||4,acl 星|NOUN||||6,obj を|ADP||||4,case 掃除|NOUN||||-1,root する|VERB||||6,aux 。|PUNCT||||6,punct",
+"王子|NOUN||||5,nsubj は|ADP||||0,case 小さい|ADJ||||3,acl 火山|NOUN||||5,obj を|ADP||||3,case 掃除|NOUN||||-1,root する|VERB||||5,aux 。|PUNCT||||5,punct",
+"バオバブ|NOUN||||3,nsubj は|ADP||||0,case 大きい|ADJ||||3,acl 木|NOUN||||-1,root だ|AUX||||3,cop 。|PUNCT||||3,punct",
+"羊|NOUN||||5,nsubj は|ADP||||0,case 小さい|ADJ||||3,acl 木|NOUN||||5,obj を|ADP||||3,case 食べる|VERB||||-1,root 。|PUNCT||||5,punct",
+"王子|NOUN||||4,nsubj:outer は|ADP||||0,case 夕日|NOUN||||4,nsubj が|ADP||||2,case 好き|NOUN||||-1,root だ|AUX||||4,aux 。|PUNCT||||4,punct",
+"悲しい|ADJ||||1,acl 時|NOUN||||7,obl 、|PUNCT||||1,punct 王子|NOUN||||7,nsubj は|ADP||||3,case 夕日|NOUN||||7,obj を|ADP||||5,case 見る|VERB||||-1,root 。|PUNCT||||7,punct",
+"ある|DET||||1,det 日|NOUN||||8,obl 、|PUNCT||||1,punct 星|NOUN||||8,obl に|ADP||||3,case 赤い|ADJ||||6,acl バラ|NOUN||||8,nsubj が|ADP||||6,case 咲く|VERB||||-1,root 。|PUNCT||||8,punct",
+"バラ|NOUN||||3,nsubj は|ADP||||0,case とても|ADV||||3,advmod きれい|NOUN||||-1,root だ|AUX||||3,aux 。|PUNCT||||3,punct",
+"王子|NOUN||||7,nsubj は|ADP||||0,case 毎朝|NOUN||||7,advmod バラ|NOUN||||7,obl に|ADP||||3,case 水|NOUN||||7,obj を|ADP||||5,case あげる|VERB||||-1,root 。|PUNCT||||7,punct",
+"夜|NOUN||||10,advmod 、|PUNCT||||0,punct 王子|NOUN||||10,nsubj は|ADP||||2,case バラ|NOUN||||10,obl に|ADP||||4,case ガラス|NOUN||||8,nmod の|ADP||||6,case 覆い|NOUN||||10,obj を|ADP||||8,case かける|VERB||||-1,root 。|PUNCT||||10,punct",
+"王子|NOUN||||4,nsubj:outer は|ADP||||0,case バラ|NOUN||||4,nsubj が|ADP||||2,case 好き|NOUN||||-1,root だ|AUX||||4,aux 。|PUNCT||||4,punct",
+"でも|CCONJ||||6,cc 、|PUNCT||||0,punct 王子|NOUN||||6,nsubj は|ADP||||2,case 星|NOUN||||6,obj を|ADP||||4,case 出る|VERB||||-1,root 。|PUNCT||||6,punct"
+]
+}
+],
+"generated": "data/sources/decompose.py ja-prince；斷句與詞性：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）；句子格式：寫法|UPOS|詞元|特徵|空格|依附"
+}

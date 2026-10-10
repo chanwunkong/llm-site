@@ -1,6 +1,8 @@
 # 來源拆解（本機腳本）
 
-`decompose.py` 把一篇長文拆成網站用的來源資料：情境 → 句子 → 每個字的 UD 詞性、詞元、詞形特徵，輸出到 `site/js/data/sources/<id>.js`，再由 `site/js/data/<語言>.js` 匯入。
+`decompose.py` 把一篇長文拆成網站用的來源資料：情境 → 句子 → 每個字的 UD 詞性、詞元、詞形特徵與依存關係，輸出資料檔 `site/data/sources/<id>.json`，並更新清單 `site/data/sources/index.json`。網站啟動時依清單載入（`site/js/engine/demo.js`）。
+
+**示範資料不寫進程式碼**：所有示範來源都是原文檔（`raw/`）經過同一個拆解流程產生的資料檔，和使用者匯入的文章一樣。
 
 ```
 .venv/bin/python data/sources/decompose.py            # 全部來源
@@ -18,6 +20,7 @@
 
 | id | 作品 | 原文 |
 |---|---|---|
+| en-prince、ja-prince | 依《小王子》劇情自行改寫的簡易版本（本專案撰寫） | `raw/prince-en.txt`、`raw/prince-ja.txt`（以「# 段落標題」分段） |
 | en-oz | L. Frank Baum, *The Wonderful Wizard of Oz*（1900），前 8 章 | Project Gutenberg #55（`raw/oz.txt`） |
 | ja-tebukuro | 新美南吉〈手袋を買いに〉 | 青空文庫（`raw/tebukuroo_kaini.txt`，Shift_JIS） |
 | ja-chumon | 宮沢賢治〈注文の多い料理店〉 | 青空文庫（`raw/chumonno_oi_ryoriten.txt`，Shift_JIS） |

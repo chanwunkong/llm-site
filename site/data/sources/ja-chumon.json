@@ -1,6 +1,4 @@
-// 自動產生（data/sources/decompose.py ja-chumon），請勿手動修改。原文：宮沢賢治, 1924（公版，青空文庫）
-// 斷句與詞性標註：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）。句子格式：「寫法|UPOS|詞元|特徵|空格|依附」。
-export default {
+{
 "id": "ja-chumon",
 "kind": "童話",
 "title": "注文の多い料理店",
@@ -217,5 +215,6 @@ export default {
 "そして|CCONJ||||22,cc 猟師|NOUN||||3,nmod の|ADP||||1,case もっ|VERB|もつ|||7,acl て|SCONJ||||3,mark き|AUX|くる|||4,fixed た|AUX||Tense=Past||3,aux 団子|NOUN||||9,obj を|ADP||||7,case たべ|VERB|たべる|||18,advcl 、|PUNCT||||9,punct 途中|NOUN||||18,obl で|ADP||||11,case 十|NUM||||14,nummod 円|NOUN||||18,obl だけ|ADP||||14,case 山鳥|NOUN||||18,obj を|ADP||||16,case 買っ|VERB|買う|||22,advcl て|SCONJ||||18,mark 東京|PROPN||||22,obl に|ADP||||20,case 帰り|VERB|帰る|||-1,root まし|AUX|ます|||22,aux た|AUX||Tense=Past||22,aux 。|PUNCT||||22,punct"
 ]
 }
-]
-};
+],
+"generated": "data/sources/decompose.py ja-chumon；斷句與詞性：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）；句子格式：寫法|UPOS|詞元|特徵|空格|依附"
+}

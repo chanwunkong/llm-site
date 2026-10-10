@@ -4,7 +4,8 @@
 用 Stanza（Apache 2.0）做斷句與詞性標註，只依賴 UD 的通用標記，任何 Stanza 支援的語言都能用。
 日文例外：Stanza 的日文詞元常出錯（あたま → 勧ま），改用 pyopenjtalk（NAIST 日本語辭書）斷詞，再把日文詞類對應到 UD。
 語言專屬的對應只放在這個前處理腳本裡；網站的邏輯仍然只認 UD。
-輸出 site/js/data/sources/<id>.js，由 site/js/data/<語言>.js 匯入。
+輸出資料檔 site/data/sources/<id>.json，並更新清單 site/data/sources/index.json；網站啟動時讀取清單載入。
+示範資料只放在資料檔，不寫進程式碼。
 
 用法：.venv/bin/python data/sources/decompose.py <來源設定 id>
 設定寫在 SOURCES；新增來源只要加一筆設定（原文檔、語言、怎麼清理、怎麼分章）。
@@ -13,7 +14,7 @@ import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RAW = os.path.join(ROOT, 'data', 'sources', 'raw')
-OUT = os.path.join(ROOT, 'site', 'js', 'data', 'sources')
+OUT = os.path.join(ROOT, 'site', 'data', 'sources')
 
 # 情境的大小：一局只從目前的情境出題，太大會一直練不完、太小會變成背誦
 SIT_MIN, SIT_MAX = 25, 45
@@ -38,6 +39,10 @@ def clean_aozora(text):
     return body.replace('｜', '').replace('　', '')
 
 
+def read_plain(text):
+    return text
+
+
 SOURCES = {
     'en-oz': {
         'lang': 'en', 'file': 'oz.txt', 'encoding': 'utf-8', 'clean': clean_gutenberg,
@@ -52,6 +57,17 @@ SOURCES = {
     'ja-chumon': {
         'lang': 'ja', 'file': 'chumonno_oi_ryoriten.txt', 'encoding': 'shift_jis', 'clean': clean_aozora,
         'title': '注文の多い料理店', 'kind': '童話', 'credit': '宮沢賢治, 1924（公版，青空文庫）', 'chapters': None,
+    },
+    # 依《小王子》劇情自行改寫的簡易版本（本專案撰寫）；原文檔以「# 段落標題」分段
+    'en-prince': {
+        'lang': 'en', 'file': 'prince-en.txt', 'encoding': 'utf-8', 'clean': read_plain,
+        'title': 'The Little Prince（改寫版）', 'kind': '故事', 'credit': '依《小王子》劇情自行改寫（本專案）',
+        'chapters': r'(?m)^#\s*(.+?)\s*$', 'title_group': 1,
+    },
+    'ja-prince': {
+        'lang': 'ja', 'file': 'prince-ja.txt', 'encoding': 'utf-8', 'clean': read_plain,
+        'title': '星の王子さま（改作）', 'kind': '故事', 'credit': '依《小王子》劇情自行改寫（本專案）',
+        'chapters': r'(?m)^#\s*(.+?)\s*$', 'title_group': 1,
     },
 }
 
@@ -68,7 +84,7 @@ def chapters_of(cfg, body):
     out = []
     for i, m in enumerate(ms):
         end = ms[i + 1].start() if i + 1 < len(ms) else len(body)
-        out.append((m.group(2).strip(), body[m.end():end]))
+        out.append((m.group(cfg.get('title_group', 2)).strip(), body[m.end():end]))
     return out[: cfg.get('max_chapters') or None]
 
 
@@ -200,12 +216,22 @@ def main(sid):
                 situations.append({'title': title if k == 1 else f'{title}（{i + 1}/{k}）', 'sentences': chunk})
     src = {'id': sid, 'kind': cfg['kind'], 'title': cfg['title'], 'credit': cfg['credit'], 'situations': situations}
     os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, sid + '.js')
+    src['generated'] = f'data/sources/decompose.py {sid}；斷句與詞性：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）；句子格式：寫法|UPOS|詞元|特徵|空格|依附'
+    path = os.path.join(OUT, sid + '.json')
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(f"// 自動產生（data/sources/decompose.py {sid}），請勿手動修改。原文：{cfg['credit']}\n")
-        f.write('// 斷句與詞性標註：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）。句子格式：「寫法|UPOS|詞元|特徵|空格|依附」。\n')
-        f.write('export default ' + json.dumps(src, ensure_ascii=False, indent=0) + ';\n')
+        json.dump(src, f, ensure_ascii=False, indent=0)
+    write_index()
     print(f'{sid}: {len(situations)} 個情境，保留 {kept} 句、略過 {dropped} 句（太長或太短），{os.path.getsize(path) // 1024} KB')
+
+
+def write_index():
+    """清單：每個語言有哪些示範來源（依 SOURCES 的順序）"""
+    idx = {}
+    for sid, cfg in SOURCES.items():
+        if os.path.exists(os.path.join(OUT, sid + '.json')):
+            idx.setdefault(cfg['lang'], []).append(sid + '.json')
+    with open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8') as f:
+        json.dump(idx, f, ensure_ascii=False, indent=1)
 
 
 if __name__ == '__main__':

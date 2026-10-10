@@ -1,6 +1,4 @@
-// 自動產生（data/sources/decompose.py ja-tebukuro），請勿手動修改。原文：新美南吉, 1943（公版，青空文庫）
-// 斷句與詞性標註：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）。句子格式：「寫法|UPOS|詞元|特徵|空格|依附」。
-export default {
+{
 "id": "ja-tebukuro",
 "kind": "童話",
 "title": "手袋を買いに",
@@ -72,5 +70,6 @@ export default {
 "ほんとうに|ADV||||3,advmod 人間|NOUN||||3,nsubj は|ADP||||1,case いい|ADJ||||5,acl もの|NOUN||||5,compound かしら|PART||||8,obl 」|PUNCT||||5,punct と|ADP||||5,case つぶやき|VERB|つぶやく|||-1,root まし|AUX|ます|||8,aux た|AUX||Tense=Past||8,aux 。|PUNCT||||8,punct"
 ]
 }
-]
-};
+],
+"generated": "data/sources/decompose.py ja-tebukuro；斷句與詞性：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）；句子格式：寫法|UPOS|詞元|特徵|空格|依附"
+}

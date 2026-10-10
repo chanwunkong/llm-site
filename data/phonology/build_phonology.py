@@ -40,9 +40,9 @@ for inv in rows.values():
 # ---- 每個字的 IPA ----
 sys.path.insert(0, os.path.join(ROOT, 'site', 'js', 'data'))
 def sample_words(lang):
-    """範例資料（<語言>.js）與拆解產生的來源（sources/<語言>-*.js）裡的所有字"""
-    data = os.path.join(ROOT, 'site', 'js', 'data')
-    files = [os.path.join(data, f'{lang}.js')] + sorted(os.path.join(data, 'sources', f) for f in os.listdir(os.path.join(data, 'sources')) if f.startswith(lang + '-'))
+    """示範來源（site/data/sources/ 的資料檔，見清單 index.json）裡的所有字"""
+    data = os.path.join(ROOT, 'site', 'data', 'sources')
+    files = [os.path.join(data, f) for f in json.load(open(os.path.join(data, 'index.json'))).get(lang, [])]
     out = set()
     for path in files:
         src = open(path, encoding='utf-8').read()
