@@ -44,20 +44,54 @@ function adpSpans(tk, prof = {}) {
   });
   return out;
 }
-function argVerbSpans(tk) {
-  const out = [];
-  for (let i = 0; i + 1 < tk.length; i++) {
-    const a = tk[i].upos, b = tk[i + 1].upos, c = tk[i + 2]?.upos;
-    if ((NOMINAL.includes(a) && b === 'VERB') || (a === 'VERB' && NOMINAL.includes(b))) out.push([i, i + 1]);
-    else if (NOMINAL.includes(a) && b === 'ADP' && c === 'VERB') out.push([i, i + 2]);
-  }
-  return out;
-}
 const featSpans = (tk, key, val, uposes) => tk.flatMap((t, i) => (t.feats[key] === val && (!uposes || uposes.includes(t.upos)) ? [[i, i]] : []));
 const featNounSpans = (tk, key, val) => modSpans(tk, t => t.feats[key] === val);
 
+// ---- 用句法分析（UD 依存關係：每個字依附哪個字、是什麼角色）判斷的規則 ----
+const kids = (tk, i) => tk.map((t, j) => (t.head === i ? j : -1)).filter(j => j >= 0);
+const range = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => a + k);
+const isQuestionMark = t => t && t.upos === 'PUNCT' && /[?？]/.test(t.surface);
+// 81A：同一個動詞的主詞、動詞、受詞（各取核心字）；畫面上分別標 S、V、O
+function svoParts(tk) {
+  const out = [];
+  tk.forEach((v, i) => {
+    if (v.upos !== 'VERB') return;
+    const k = kids(tk, i);
+    const sub = k.find(j => /^nsubj/.test(tk[j].deprel) && NOMINAL.includes(tk[j].upos));
+    const obj = k.find(j => tk[j].deprel === 'obj' && NOMINAL.includes(tk[j].upos));
+    if (sub === undefined || obj === undefined) return;
+    out.push({ idx: [sub, i, obj].sort((a, b) => a - b), labels: { [sub]: 'S', [i]: 'V', [obj]: 'O' } });
+  });
+  return out;
+}
+// 116A：是非問句。先排除有疑問詞的問句（what、where、何…），再依這個語言問是非問句的方式（WALS 116A）標出問句標記
+function polarParts(tk, prof) {
+  if (tk.some(t => t.feats.PronType === 'Int')) return [];
+  const words = tk.map((t, i) => [t, i]).filter(([t]) => isWord(t));
+  const [lastW, lastI] = words.at(-1) || [];
+  const v = prof['116A'];
+  // 句尾的疑問小品詞（日文か、中文嗎）：功能詞，依附在句子核心上
+  const particle = lastW && isFunction(lastW) && (lastW.upos === 'PART' || /^(mark|discourse)/.test(lastW.deprel || '')) ? lastI : -1;
+  // 一定要有問號：沒有問號時，不分語言的方法分不出疑問的か和一般的よ、ね，寧可不標也不標錯
+  if (!tk.some(isQuestionMark)) return [];
+  if ((v === '1' || v === '3') && particle >= 0) return [{ idx: [particle], labels: { [particle]: '?' } }];
+  const root = tk.findIndex(t => t.head === -1);
+  if ((v === '2' || v === '3') && root >= 0) return [{ idx: [root], labels: { [root]: '?' } }];
+  if (v === '4') {   // 改變語序：助動詞（或動詞）放到主詞前面，例如 Will you…
+    const sub = tk.findIndex(t => /^nsubj/.test(t.deprel || ''));
+    if (sub < 0) return [];
+    const h = tk[sub].head, front = [h, ...kids(tk, h).filter(j => /^(aux|cop)/.test(tk[j].deprel))].filter(j => j >= 0 && j < sub);
+    if (!front.length) return [];
+    const a = Math.min(...front);
+    if (sub - a > 3) return [];
+    return [{ idx: range(a, sub), labels: { [a]: 'V', [sub]: 'S' } }];
+  }
+  return [];
+}
+
+// applies：這條規則在目標語言裡有沒有可以練的形式（依該語言的 WALS 值）；parts：畫面上要標示的字與角色
 export const WALS = [
-  { id: '81A', stage: 'A1', icon: '🔀', spans: argVerbSpans, approx: true },
+  { id: '81A', stage: 'A1', icon: '🔀', parts: svoParts },
   { id: '87A', stage: 'A1', icon: '🎨', spans: tk => pairSpans(tk, t => t.upos === 'ADJ', isNoun) },
   // 指示詞只算限定詞、代名詞（英文模型把副詞 then、there 也標成 PronType=Dem）
   { id: '88A', stage: 'A1', icon: '👉', spans: tk => modSpans(tk, t => t.feats.PronType === 'Dem' && ['DET', 'PRON'].includes(t.upos)) },
@@ -66,14 +100,19 @@ export const WALS = [
   { id: '37A', stage: 'A1', icon: '🅃', spans: tk => featNounSpans(tk, 'Definite', 'Def') },
   { id: '38A', stage: 'A1', icon: '🄰', spans: tk => featNounSpans(tk, 'Definite', 'Ind') },
   { id: '66A', stage: 'A1', icon: '⏪', spans: tk => featSpans(tk, 'Tense', 'Past') },
-  { id: '67A', stage: 'A1', icon: '⏩', spans: tk => featSpans(tk, 'Tense', 'Fut'), approx: true },
+  // 67A 問的是「動詞有沒有未來式的變化」：只有 WALS 值 1 的語言（西班牙文 hablaré 等）才有形式可以練
+  { id: '67A', stage: 'A1', icon: '⏩', spans: tk => featSpans(tk, 'Tense', 'Fut'), applies: prof => prof['67A'] === '1' },
   { id: '112A', stage: 'A1', icon: '🚫', spans: tk => featSpans(tk, 'Polarity', 'Neg') },
-  { id: '116A', stage: 'A1', icon: '❓', spans: tk => (/[?？]/.test(tk.at(-1)?.surface || '') ? [[0, tk.length - 1]] : []), approx: true },
+  // 只靠語調（義大利文）或和陳述句沒有區別的語言，沒有可以練的形式
+  { id: '116A', stage: 'A1', icon: '❓', parts: polarParts, applies: prof => ['1', '2', '3', '4'].includes(prof['116A']) },
   { id: '85A', stage: 'A2', icon: '📍', spans: adpSpans },
 ];
 // prof：該語言的 WALS 值（VALUES[語言代碼]），讓規則判斷能依語言的類型調整方向
 export const profileOf = lang => VALUES[lang.wals] || {};
+export const applicable = (r, lang) => !r.applies || r.applies(profileOf(lang));
 WALS.forEach(r => {
+  // 有 parts 的規則：連續片段 = 從第一個標示的字到最後一個
+  if (r.parts) r.spans = (tk, prof) => r.parts(tk, prof).map(p => [p.idx[0], p.idx.at(-1)]);
   r.test = (tk, prof) => r.spans(tk, prof).length > 0;
   r.name = FEATURES[r.id].zh;
   r.desc = '答對用到這條規則的空格時，觸發連鎖：跳到同一個來源裡、有相同模式的句子';
@@ -149,7 +188,7 @@ export function buildRun(lang, sourceId, env) {
   return {
     lang, sourceId, sit, env, queue, pos: 0,
     score: 0, combo: 0, maxCombo: 0, correct: 0, wrong: 0,
-    skills: state.sim?.autoSkills ? Object.fromEntries(lg.unlocked.filter(id => WALS.some(r => r.id === id && !r.approx)).map(id => [id, 1])) : {},
+    skills: state.sim?.autoSkills ? Object.fromEntries(lg.unlocked.filter(id => WALS.some(r => r.id === id && applicable(r, lang))).map(id => [id, 1])) : {},
     pendingChoice: false, chainUsed: new Set(), maxChain: 0, chainLinks: 0,
     firstEncounter: {}, leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
     ruleHits: {}, pathTotal: 0, missed: new Map(), log: [],
@@ -331,8 +370,8 @@ function levelUp(run, lemma, w, result) {
 // ---- 局中升級：三選一（只有已解鎖的規則；再選一次同一條規則 = 連鎖多跳一環） ----
 export function choices(run) {
   const lg = L();
-  // 判斷方式只是近似的規則（81A、67A、116A）不出現：規則透視會把片段標在畫面上，判斷錯誤會讓學習者學錯
-  const pool = WALS.filter(r => !r.approx && lg.unlocked.includes(r.id) && (run.skills[r.id] || 0) < CHAIN.maxLevel).map(r => {
+  // 在目標語言裡沒有可以練的形式的規則不出現（例如英文沒有未來式變化）
+  const pool = WALS.filter(r => applicable(r, run.lang) && lg.unlocked.includes(r.id) && (run.skills[r.id] || 0) < CHAIN.maxLevel).map(r => {
     const next = (run.skills[r.id] || 0) + 1;
     return { ...r, type: 'wals', next, desc: next === 1 ? `開啟連鎖：答對用到這條規則的空格，跳到另一個有相同模式的句子（1 環）` : `升到 Lv${next}：連鎖跳 ${next} 環` };
   });
@@ -349,6 +388,7 @@ export function ruleMarks(run, tokens) {
   const prof = profileOf(run.lang), out = [];
   for (const r of WALS) {
     if (!run.skills[r.id] || !L().unlocked.includes(r.id)) continue;
+    if (r.parts) { for (const p of r.parts(tokens, prof)) out.push({ rule: r.id, ...p }); continue; }
     for (const [a, b] of r.spans(tokens, prof)) {
       let x = a, y = b;
       while (x <= y && !isWord(tokens[x])) x++;
@@ -512,7 +552,7 @@ function sitSummary(lang, sit) {
 export function syncUnlocks(lang) {
   if (SHOW.rulePurchase) return [];
   const lg = L(), prof = profileOf(lang), sents = Object.values(lang.sentences);
-  const order = WALS.filter(r => !r.approx && stageReached(r.stage))
+  const order = WALS.filter(r => applicable(r, lang) && stageReached(r.stage))
     .map(r => [r.id, sents.filter(s => r.test(s.tokens, prof)).length])
     .filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([id]) => id);
   const n = Math.floor(vocabCount() / RULES.wordsPerRule);

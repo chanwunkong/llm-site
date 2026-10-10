@@ -12,10 +12,14 @@ export const isFunction = t => CLOSED.has(t.upos);
 // 可以出題的字：實詞與功能詞（專有名詞、數字不出題）
 export const isTarget = t => isContent(t) || isFunction(t);
 
-// 「寫法|UPOS|詞元|特徵|n」：第 5 欄 n 表示後面不空格（匯入時由標註工具提供）
+// 「寫法|UPOS|詞元|特徵|n|依附」：第 5 欄 n = 後面不空格、s = 後面有空格；
+// 第 6 欄是句法分析（UD 依存關係）：「依附的字的位置,關係」，例如 2,nsubj；句子的核心是 -1,root
 function parseToken(raw) {
-  const [surface, upos, lemma, feats, misc] = raw.split('|');
+  const [surface, upos, lemma, feats, misc, dep] = raw.split('|');
+  const [head, deprel] = dep ? dep.split(',') : [null, null];
   return {
+    head: head === null ? null : Number(head),
+    deprel: deprel || null,
     surface,
     upos,
     lemma: lemma || surface.toLowerCase(),

@@ -74,7 +74,9 @@ def chapters_of(cfg, body):
 
 # ---- 日文：pyopenjtalk 的詞類 → UD ----
 JA_CLOSED_PARTICLE = {'接続助詞': 'SCONJ', '終助詞': 'PART'}
-JA_DEM = ('この', 'その', 'あの', 'どの', 'これ', 'それ', 'あれ', 'どれ', 'ここ', 'そこ', 'あそこ', 'どこ')
+JA_DEM = ('この', 'その', 'あの', 'これ', 'それ', 'あれ', 'ここ', 'そこ', 'あそこ')
+# 疑問詞（日文斷詞工具不標）：用來排除「何、どこ…」開頭的問句，它們不是是非問句
+JA_INT = ('何', 'なに', 'なん', '誰', 'だれ', 'どこ', 'いつ', 'どれ', 'どう', 'なぜ', 'どうして', 'どちら', 'どっち', 'いくつ', 'いくら', 'どんな', 'どの')
 
 class JaWord:
     def __init__(self, text, upos, lemma, feats=''):
@@ -95,6 +97,7 @@ def ja_feats(n, upos):
     if n['pos'] == '助動詞' and n['ctype'] in ('特殊・タ',): f.append('Tense=Past')
     if n['pos'] == '助動詞' and n['ctype'] in ('特殊・ナイ', '特殊・ヌ'): f.append('Polarity=Neg')
     if n['string'] in JA_DEM: f.append('PronType=Dem')
+    if n['string'] in JA_INT: f.append('PronType=Int')
     return ';'.join(f)
 
 def ja_sentences(text):
@@ -111,16 +114,48 @@ def ja_sentences(text):
         yield words
 
 
-def encode(word):
-    surface = word.text.replace(' ', '').replace('|', '')
-    lemma = (word.lemma or surface).replace(' ', '').replace('|', '')
+def clean_form(t):
+    return t.replace(' ', '').replace('|', '')
+
+
+def encode(word, dep=None):
+    """「寫法|UPOS|詞元|特徵|空格|依附」，後面空的欄位省略"""
+    surface = clean_form(word.text)
+    lemma = clean_form(word.lemma or surface)
     feats = (word.feats or '').replace('|', ';')
-    parts = [surface, word.upos]
-    if lemma != surface.lower() or feats:
-        parts.append(lemma if lemma != surface.lower() else '')
-    if feats:
-        parts.append(feats)
+    parts = [surface, word.upos, lemma if lemma != surface.lower() else '', feats, '', f'{dep[0]},{dep[1]}' if dep else '']
+    while len(parts) > 2 and not parts[-1]:
+        parts.pop()
     return '|'.join(parts)
+
+
+# ---- 句法分析：把已經切好的字送到 UDPipe（輸入格式 horizontal = 一行一句、字以空格分開），只取依存關係 ----
+UDPIPE = 'https://lindat.mff.cuni.cz/services/udpipe/api/process'
+UDPIPE_MODEL = {'en': 'english', 'ja': 'japanese-gsd'}
+
+def parse_deps(lang, sents, batch=80):
+    """sents：每句是字的清單。回傳每句每個字的 (依附的位置, 關係)；依附的位置從 0 算，句子核心是 -1"""
+    import urllib.request, urllib.parse
+    out = []
+    for i in range(0, len(sents), batch):
+        part = sents[i:i + batch]
+        data = '\n'.join(' '.join(clean_form(w.text) for w in ws) for ws in part)
+        body = urllib.parse.urlencode({'model': UDPIPE_MODEL[lang], 'input': 'horizontal', 'tagger': '', 'parser': '', 'data': data}).encode()
+        res = json.load(urllib.request.urlopen(UDPIPE, body, timeout=120))['result']
+        parsed, cur = [], []
+        for line in res.split('\n'):
+            if not line.strip():
+                if cur: parsed.append(cur); cur = []
+                continue
+            if line.startswith('#'): continue
+            c = line.split('\t')
+            if '-' in c[0] or '.' in c[0]: continue
+            cur.append((int(c[6]) - 1, c[7]))
+        if cur: parsed.append(cur)
+        for ws, deps in zip(part, parsed):
+            out.append(deps if len(deps) == len(ws) else None)   # 字數對不上就不用
+        print(f'  句法分析 {min(i + batch, len(sents))} / {len(sents)}')
+    return out
 
 
 def main(sid):
@@ -130,7 +165,7 @@ def main(sid):
     body = cfg['clean'](raw)
     nlp = None if cfg['lang'] == 'ja' else stanza.Pipeline(cfg['lang'], processors='tokenize,mwt,pos,lemma',
                                                            verbose=False, download_method=stanza.DownloadMethod.REUSE_RESOURCES)
-    situations, kept, dropped = [], 0, 0
+    chapters, kept, dropped = [], 0, 0
     for title, text in chapters_of(cfg, body):
         # 段落內的換行接起來（古騰堡每行約 70 字就換行）
         paras = [re.sub(r'\s*\n\s*', ' ' if cfg['lang'] == 'en' else '', p).strip() for p in re.split(r'\n\s*\n', text)]
@@ -142,9 +177,20 @@ def main(sid):
         for words in parsed:
             n = sum(1 for w in words if w.upos not in ('PUNCT', 'SYM', 'X'))
             if MIN_WORDS <= n <= MAX_WORDS.get(cfg['lang'], 22):
-                sents.append(' '.join(encode(w) for w in words)); kept += 1
+                sents.append(list(words)); kept += 1
             else:
                 dropped += 1
+        chapters.append((title, sents))
+    # 句法分析（全部的句子一起送），再編碼
+    flat = [ws for _, ss in chapters for ws in ss]
+    deps = parse_deps(cfg['lang'], flat)
+    k_ = 0
+    situations = []
+    for title, ss in chapters:
+        sents = []
+        for ws in ss:
+            d = deps[k_]; k_ += 1
+            sents.append(' '.join(encode(w, d[j] if d else None) for j, w in enumerate(ws)))
         # 依句數切成大小相近的情境
         k = max(1, round(len(sents) / ((SIT_MIN + SIT_MAX) / 2)))
         size = -(-len(sents) // k)
@@ -157,7 +203,7 @@ def main(sid):
     path = os.path.join(OUT, sid + '.js')
     with open(path, 'w', encoding='utf-8') as f:
         f.write(f"// 自動產生（data/sources/decompose.py {sid}），請勿手動修改。原文：{cfg['credit']}\n")
-        f.write('// 斷句與詞性標註：Stanza（UD）。句子格式同範例資料：「寫法|UPOS|詞元|特徵」。\n')
+        f.write('// 斷句與詞性標註：Stanza（日文 pyopenjtalk）；句法分析：UDPipe（UD 2.17，CC BY-NC-SA）。句子格式：「寫法|UPOS|詞元|特徵|空格|依附」。\n')
         f.write('export default ' + json.dumps(src, ensure_ascii=False, indent=0) + ';\n')
     print(f'{sid}: {len(situations)} 個情境，保留 {kept} 句、略過 {dropped} 句（太長或太短），{os.path.getsize(path) // 1024} KB')
 

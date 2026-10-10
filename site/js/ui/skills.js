@@ -78,7 +78,7 @@ export function createSkills(root, { getLang, onChange }) {
         const on = lg.unlocked.includes(r.id), v = verdict(r.id), ex = examples(r, 1)[0];
         return `<div class="rule${on ? ' on' : ''}${v === 'hard' ? ' hard' : ''}" data-f="${r.id}">
           <div class="ic">${r.id}</div>
-          <div><b>${esc(r.name)}</b> ${TAG[v]}${r.approx ? ' <span class="tag">近似判斷</span>' : ''}
+          <div><b>${esc(r.name)}</b> ${TAG[v]}
             <small>${compareLine(r.id)}</small>
             ${ex ? `<small class="ex">例：${esc(ex.span)}</small>` : '<small class="muted">你目前的來源裡還沒有例子</small>'}</div>
           ${on ? (SHOW.rulePurchase ? '<span class="own">已解鎖</span>' : '') : `<button class="btn gold sm" data-unlock="${r.id}" ${lg.gold < RULES.walsCost ? 'disabled' : ''}>${RULES.walsCost} 金幣</button>`}

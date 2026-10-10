@@ -34,7 +34,7 @@ export function removeImport(langId, srcId) {
 const clean = s => String(s).replace(/\|/g, '').replace(/ /g, ' ');
 function encode(w) {
   const surface = clean(w.form), lemma = clean(w.lemma || w.form);
-  const parts = [surface, w.upos, lemma !== surface.toLowerCase() ? lemma : '', w.feats || '', w.nsa ? 'n' : w.sa ? 's' : ''];
+  const parts = [surface, w.upos, lemma !== surface.toLowerCase() ? lemma : '', w.feats || '', w.nsa ? 'n' : w.sa ? 's' : '', w.dep ? `${w.dep[0]},${w.dep[1]}` : ''];
   while (parts.length > 2 && !parts.at(-1)) parts.pop();
   return parts.join('|');
 }
@@ -42,8 +42,15 @@ function encode(w) {
 // ---- UDPipe：把 CoNLL-U 轉成句子（多字詞，例如西班牙文 del = de + el，合成一個字，以實詞為主） ----
 function parseConllu(text) {
   const sents = [];
-  let cur = [], range = null;
-  const flush = () => { if (cur.length) sents.push(cur); cur = []; };
+  let cur = [], range = null, idMap = {};
+  // 依存關係：UD 的 head 是字的編號（從 1 算）；多字詞合成一個字後，要換成合併後的位置（從 0 算，核心 = -1）
+  const flush = () => {
+    if (cur.length) {
+      for (const w of cur) if (w.headId !== undefined) w.dep = [w.headId === 0 ? -1 : idMap[w.headId] ?? -1, w.deprel];
+      sents.push(cur);
+    }
+    cur = []; idMap = {};
+  };
   for (const line of text.split('\n')) {
     if (!line.trim()) { flush(); continue; }
     if (line.startsWith('#')) continue;
@@ -52,18 +59,25 @@ function parseConllu(text) {
     if (c[0].includes('-')) { const [a, b] = c[0].split('-').map(Number); range = { a, b, form: c[1], nsa, words: [] }; continue; }
     if (c[0].includes('.')) continue;
     const w = { form: c[1], lemma: c[2] === '_' ? c[1] : c[2], upos: c[3], feats: c[5] === '_' ? '' : c[5].replace(/\|/g, ';'), nsa, spaced: !nsa };
+    if (c[6] && c[6] !== '_') { w.headId = Number(c[6]); w.deprel = c[7]; }
     const id = Number(c[0]);
+    w.id = id;
     if (range && id >= range.a && id <= range.b) {
       range.words.push(w);
       if (id === range.b) {
         const head = range.words.find(x => CONTENT.has(x.upos)) || range.words[0];
         const feats = new Map();
         for (const x of [head, ...range.words]) for (const f of x.feats.split(';').filter(Boolean)) { const [k] = f.split('='); if (!feats.has(k)) feats.set(k, f); }
-        cur.push({ form: range.form, lemma: head.lemma, upos: head.upos, feats: [...feats.values()].join(';'), nsa: range.nsa, spaced: !range.nsa });
+        // 合併後的字：依附關係用實詞那個字的（依附到多字詞內部的，視為依附自己）
+        const inner = new Set(range.words.map(x => x.id));
+        const headId = inner.has(head.headId) ? range.words[0].headId : head.headId;
+        for (const x of range.words) idMap[x.id] = cur.length;
+        cur.push({ form: range.form, lemma: head.lemma, upos: head.upos, feats: [...feats.values()].join(';'), nsa: range.nsa, spaced: !range.nsa, headId, deprel: head.deprel });
         range = null;
       }
       continue;
     }
+    idMap[id] = cur.length;
     cur.push(w);
   }
   flush();
@@ -86,7 +100,7 @@ async function udpipe(lang, paras, progress) {
   const parts = chunks(paras), out = [];
   for (const [i, data] of parts.entries()) {
     progress(`標註中（${i + 1} / ${parts.length}）`);
-    const body = new URLSearchParams({ model: lang.model, tokenizer: '', tagger: '', data });
+    const body = new URLSearchParams({ model: lang.model, tokenizer: '', tagger: '', parser: '', data });
     const r = await fetch(UDPIPE, { method: 'POST', body });
     if (!r.ok) throw new Error(`UDPipe 服務回應錯誤（${r.status}）`);
     out.push(...parseConllu((await r.json()).result));
@@ -109,7 +123,9 @@ function kuromojiTokenizer(progress) {
   kuroP.catch(() => (kuroP = null));
   return kuroP;
 }
-const JA_DEM = new Set(['この', 'その', 'あの', 'どの', 'これ', 'それ', 'あれ', 'どれ', 'ここ', 'そこ', 'あそこ', 'どこ']);
+const JA_DEM = new Set(['この', 'その', 'あの', 'これ', 'それ', 'あれ', 'ここ', 'そこ', 'あそこ']);
+// 疑問詞（日文斷詞工具不標）：用來排除「何、どこ…」開頭的問句，它們不是是非問句
+const JA_INT = new Set(['何', 'なに', 'なん', '誰', 'だれ', 'どこ', 'いつ', 'どれ', 'どう', 'なぜ', 'どうして', 'どちら', 'どっち', 'いくつ', 'いくら', 'どんな', 'どの']);
 function jaUpos(t) {
   const pos = t.pos, g1 = t.pos_detail_1;
   if (pos === '名詞') return { 代名詞: 'PRON', 固有名詞: 'PROPN', 数: 'NUM' }[g1] || 'NOUN';
@@ -119,7 +135,21 @@ function jaUpos(t) {
   return { 副詞: 'ADV', 連体詞: 'DET', 接続詞: 'CCONJ', 感動詞: 'INTJ', 助動詞: 'AUX', 記号: 'PUNCT', 接頭詞: 'PART', フィラー: 'INTJ' }[pos] || 'X';
 }
 async function kuromoji(lang, paras, progress) {
-  const tk = await kuromojiTokenizer(progress);
+  const sents = kuromojiSplit(await kuromojiTokenizer(progress), paras, progress);
+  // 句法分析：把 kuromoji 切好的字送到 UDPipe（一行一句、字以空格分開），只取依存關係；失敗就不加
+  try {
+    for (let i = 0; i < sents.length; i += 80) {
+      progress(`句法分析（${Math.min(i + 80, sents.length)} / ${sents.length}）`);
+      const part = sents.slice(i, i + 80);
+      const data = part.map(ws => ws.map(w => clean(w.form).replace(/\u00a0/g, '')).join(' ')).join('\n');
+      const r = await fetch(UDPIPE, { method: 'POST', body: new URLSearchParams({ model: 'japanese-gsd', input: 'horizontal', tagger: '', parser: '', data }) });
+      const parsed = parseConllu((await r.json()).result);
+      part.forEach((ws, k) => { const p = parsed[k]; if (p && p.length === ws.length) ws.forEach((w, j) => (w.dep = p[j].dep)); });
+    }
+  } catch { /* 沒有網路：只有斷詞，沒有句法分析 */ }
+  return sents;
+}
+function kuromojiSplit(tk, paras, progress) {
   progress('斷詞中');
   const text = paras.join('');
   return (text.match(/.+?(?:[。！？]」?|$)/gu) || []).map(s => s.trim()).filter(Boolean).map(sent =>
@@ -128,6 +158,7 @@ async function kuromoji(lang, paras, progress) {
       if (t.pos === '助動詞' && t.conjugated_type === '特殊・タ') f.push('Tense=Past');
       if (t.pos === '助動詞' && ['特殊・ナイ', '特殊・ヌ'].includes(t.conjugated_type)) f.push('Polarity=Neg');
       if (JA_DEM.has(t.surface_form)) f.push('PronType=Dem');
+      if (JA_INT.has(t.surface_form)) f.push('PronType=Int');
       return { form: t.surface_form, lemma: t.basic_form && t.basic_form !== '*' ? t.basic_form : t.surface_form, upos, feats: f.join(';') };
     }));
 }
@@ -186,7 +217,13 @@ export async function importText(lang, title, text, progress = () => {}) {
   // 不空格的語言：原文裡有空格的地方（中文夾英文）標成 s，顯示時保留
   if (lang.joiner === '') for (const ws of sents) for (const w of ws) w.sa = w.nsa === false && !!w.spaced;
   const count = ws => ws.filter(w => !['PUNCT', 'SYM', 'X'].includes(w.upos)).length;
+  // 切開長句後，依存關係的位置要重新編號；依附到別段的字，視為該段的核心（-1）
+  for (const ws of sents) ws.forEach((w, i) => (w._i = i));
   const pieces = sents.flatMap(ws => splitLong(ws, maxWords(lang), count));
+  for (const p of pieces) {
+    const at = new Map(p.map((w, k) => [w._i, k]));
+    for (const w of p) if (w.dep) w.dep = [w.dep[0] === -1 ? -1 : at.get(w.dep[0]) ?? -1, w.dep[1]];
+  }
   const keep = pieces.filter(ws => count(ws) >= MIN_WORDS).map(ws => ws.map(encode).join(' '));
   if (!keep.length) throw new Error('找不到可以出題的句子（每句至少要有 3 個字）');
   const k = Math.max(1, Math.round(keep.length / SIT_SIZE)), size = Math.ceil(keep.length / k);

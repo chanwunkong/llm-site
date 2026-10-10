@@ -149,7 +149,9 @@ export function createPlay(root, { onEnd, onSound }) {
         return;
       }
       const tags = lastOf(i);
-      out += `<span class="ctx${marked(i).length ? ' rmk' : ''}">${esc(t.surface)}</span>${tags.length ? `<sup class="rtag">${tags.join(' ')}</sup>` : ''}`;
+      // 角色標記：81A 的 S、V、O，116A 的問句標記
+      const roles = [...new Set(marked(i).map(m => m.labels?.[i]).filter(Boolean))];
+      out += `<span class="ctx${marked(i).length ? ' rmk' : ''}">${esc(t.surface)}</span>${roles.length ? `<sub class="role">${roles.join('')}</sub>` : ''}${tags.length ? `<sup class="rtag">${tags.join(' ')}</sup>` : ''}`;
     });
     return out;
   }

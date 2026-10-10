@@ -360,3 +360,5 @@ body.playing #simBar { display: none; }
 .sentence.fire .rmk, .sentence.fire .rslot { animation: fire .6s ease-out 2; }
 @keyframes fire { 50% { background: var(--yellow); } }
 .choice .choice-ex { grid-column: 2; display: block; margin-top: 6px; font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.8; }
+.role { font-size: 10px; font-weight: 800; color: var(--ink); background: var(--yellow); border: 1.5px solid var(--ink); padding: 0 3px; margin-left: 2px; vertical-align: sub; line-height: 1.2; font-family: "Helvetica Neue", Arial, sans-serif; }
+.sentence.hidden-text .role { visibility: hidden; }
