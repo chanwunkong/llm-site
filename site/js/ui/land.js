@@ -385,5 +385,7 @@ export function createLand(root, { getLang, onChange }) {
     show() { running = true; resize(); fitAll(); rebuild(); },
     hide() { running = false; cancelAnimationFrame(raf); selected = null; focus = null; highlight = new Set(); },
     rebuild,
+    // 從結算畫面直接寫「我的理解」
+    compose(lemma) { const k = T.cellOf(lemma); if (k) composeSheet(k); },
   };
 }

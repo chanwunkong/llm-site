@@ -51,7 +51,7 @@ const views = {
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
   sounds: createSounds($('#view-sounds'), { getLang }),
 };
-const play = createPlay($('#play'), { onEnd: tab => { setTab(tab); announce(refreshFeatures()); refreshTop(); }, onSound: seg => views.sounds.detail(seg) });
+const play = createPlay($('#play'), { onEnd: tab => { setTab(tab); announce(refreshFeatures()); refreshTop(); }, onSound: seg => views.sounds.detail(seg), onCompose: lemma => views.land.compose(lemma) });
 
 // 新開放的功能：顯示說明卡
 function announce(fresh) {

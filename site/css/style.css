@@ -362,3 +362,9 @@ body.playing #simBar { display: none; }
 .choice .choice-ex { grid-column: 2; display: block; margin-top: 6px; font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.8; }
 .role { font-size: 10px; font-weight: 800; color: var(--ink); background: var(--yellow); border: 1.5px solid var(--ink); padding: 0 3px; margin-left: 2px; vertical-align: sub; line-height: 1.2; font-family: "Helvetica Neue", Arial, sans-serif; }
 .sentence.hidden-text .role { visibility: hidden; }
+
+/* ---- 我的理解：結算時寫、題目上當提示 ---- */
+.chip-btn { border: 1.5px solid var(--ink); background: var(--white); padding: 4px 9px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; }
+.chip-btn:active { background: var(--yellow); }
+.mine-cue { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mine-cue .mine { justify-content: center; }

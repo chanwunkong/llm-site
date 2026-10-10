@@ -2232,3 +2232,26 @@ vie,Vietnamese,144H,NegSVO Order,4,No NegSVO,Vuong-Gia-Thuy-1975[110?]
 vie,Vietnamese,144I,SNegVO Order,1,Word&NoDoubleNeg,Vuong-Gia-Thuy-1975[110?]
 vie,Vietnamese,144J,SVNegO Order,7,No SVNegO,Vuong-Gia-Thuy-1975[110?]
 vie,Vietnamese,144K,SVONeg Order,4,No SVONeg,Vuong-Gia-Thuy-1975[110?]
+kgz,Kirghiz,26A,Prefixing vs. Suffixing in Inflectional Morphology,2,Strongly suffixing,Hebert-and-Poppe-1963[passim]
+kgz,Kirghiz,30A,Number of Genders,1,None,Hebert-and-Poppe-1963[9]
+kgz,Kirghiz,31A,Sex-based and Non-sex-based Gender Systems,1,No gender,Hebert-and-Poppe-1963[9]
+kgz,Kirghiz,32A,Systems of Gender Assignment,1,No gender,Hebert-and-Poppe-1963[9]
+kgz,Kirghiz,33A,Coding of Nominal Plurality,2,Plural suffix,Hebert-and-Poppe-1963[18]
+kgz,Kirghiz,38A,Indefinite Articles,2,Indefinite word same as 'one',Hebert-and-Poppe-1963[27]
+kgz,Kirghiz,46A,Indefinite Pronouns,1,Interrogative-based,Junusaliev-1966[494]
+kgz,Kirghiz,51A,Position of Case Affixes,1,Case suffixes,Hebert-and-Poppe-1963[10]
+kgz,Kirghiz,53A,Ordinal Numerals,4,"One-th, two-th, three-th",Herbert-and-Poppe-1963[29-30]
+kgz,Kirghiz,54A,Distributive Numerals,4,Marked by suffix,Junusaliev-1966[492]
+kgz,Kirghiz,57A,Position of Pronominal Possessive Affixes,2,Possessive suffixes,Hebert-and-Poppe-1963[16]
+kgz,Kirghiz,69A,Position of Tense-Aspect Affixes,2,Tense-aspect suffixes,"Hebert-and-Poppe-1963[14, 17, 18, 21, 22]"
+kgz,Kirghiz,85A,Order of Adposition and Noun Phrase,1,Postpositions,Hebert-and-Poppe-1963[39]
+kgz,Kirghiz,87A,Order of Adjective and Noun,1,Adjective-Noun,Hebert-and-Poppe-1963[27]
+kgz,Kirghiz,89A,Order of Numeral and Noun,1,Numeral-Noun,Hebert-and-Poppe-1963[27]
+kgz,Kirghiz,92A,Position of Polar Question Particles,2,Final,"Hebert-and-Poppe-1963[14, passim]"
+kgz,Kirghiz,101A,Expression of Pronominal Subjects,2,Subject affixes on verb,Hebert-and-Poppe-1963[15]
+kgz,Kirghiz,106A,Reciprocal Constructions,2,Distinct from reflexive,Nedjalkov-2007b
+kgz,Kirghiz,108A,Antipassive Constructions,3,No antipassive,Hebert-and-Poppe-1963;Kirchner-1998b
+kgz,Kirghiz,108B,Productivity of the Antipassive Construction,4,no antipassive,Kirchner-1998b;Hebert-and-Poppe-1963
+kgz,Kirghiz,109A,Applicative Constructions,8,No applicative construction,Hebert-and-Poppe-1963;Kirchner-1998b
+kgz,Kirghiz,109B,Other Roles of Applied Objects,5,No applicative construction,
+kgz,Kirghiz,116A,Polar Questions,1,Question particle,"Hebert-and-Poppe-1963[14, passim]"

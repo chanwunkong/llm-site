@@ -1,0 +1,66 @@
+prime,en,ja,de,es,pt,fr,it,ru,bn,hi,fa,ar,ta,zh,tr,ko,vi,id,th,sw,ky
+I,I;me,私;僕;わたし,ich,yo,eu,je;moi,io,я,আমি,मैं,من,أنا,நான்,我,ben,나;저,tôi,aku;saya,ฉัน;ผม,mimi,мен
+YOU,you,あなた;君,du,tú,você;tu,tu;toi,tu,ты,তুমি,तुम;आप,تو,أنت,நீ,你,sen,너;당신,bạn,kamu;anda,คุณ,wewe,сен
+SOMEONE,someone;who,誰か;誰,jemand;wer,alguien;quién,alguém;quem,qui,qualcuno;chi,кто-то;кто,কেউ;কে,कोई;कौन,کسی;کی,أحد;من,யாரோ;யார்,誰;谁;有人,biri;kim,누구,ai,seseorang;siapa,ใคร,mtu;nani,бирөө;ким
+SOMETHING,something;thing;what,何か;もの;何,etwas;Ding;was,algo;cosa;qué,algo;coisa;que,chose;quoi,qualcosa;cosa;che,что-то;вещь;что,কিছু;জিনিস,कुछ;चीज़;क्या,چیز;چه,شيء;ما,ஏதோ;பொருள்;என்ன,東西;东西;什麼;什么,şey;ne,무엇;것;뭐,gì;vật,sesuatu;apa;barang,อะไร;สิ่ง,kitu;nini,нерсе;эмне
+PEOPLE,people,人;人々,Leute;Mensch,gente,gente;pessoa,gens,gente,люди;человек,মানুষ;লোক,लोग,مردم,ناس;شخص,மக்கள்,人;人們;人们,insan,사람,người,orang,คน,watu,эл;адам
+BODY,body,体,Körper,cuerpo,corpo,corps,corpo,тело,শরীর,शरीर,بدن,جسم,உடல்,身體;身体,vücut;beden,몸,cơ thể,tubuh;badan,ร่างกาย,mwili,дене
+KIND,kind,種類,Art,tipo;clase,tipo,sorte;genre,tipo,вид,রকম;ধরন,प्रकार,نوع,نوع,வகை,種;种,tür,종류,loại,jenis;macam,ชนิด;แบบ,aina,түр
+PART,part,部分,Teil,parte,parte,partie,parte,часть,অংশ,हिस्सा;भाग,بخش;قسمت,جزء,பகுதி,部分,parça;kısım,부분,phần,bagian,ส่วน,sehemu,бөлүк
+THIS,this,この;これ,dieser;dies,este;esto,este;isto,ce;ceci,questo,этот,এই,यह,این,هذا,இது;இந்த,這;这,bu,이,này,ini,นี้,hii;huyu,бул
+THE_SAME,same,同じ,gleich;derselbe,mismo,mesmo,même,stesso,одинаковый,একই,वही;समान,همان,نفس,அதே,一樣;一样,aynı,같다,giống,sama,เดียวกัน,sawa,бирдей
+OTHER,other;else,他;別,ander,otro,outro,autre,altro,другой,অন্য,दूसरा;अन्य,دیگر,آخر,மற்ற;வேறு,別;别;其他,başka;diğer,다른,khác,lain,อื่น,nyingine;mwingine,башка
+ONE,one,一つ,ein;eins,uno,um,un,uno,один,এক,एक,یک,واحد,ஒன்று;ஒரு,一,bir,하나;한,một,satu,หนึ่ง,moja,бир
+TWO,two,二つ,zwei,dos,dois,deux,due,два,দুই,दो,دو,اثنان,இரண்டு,二;兩;两,iki,둘;두,hai,dua,สอง,mbili,эки
+SOME,some,いくつか,einige;manch,alguno,algum,quelque,qualche;alcuno,несколько;некоторый,কিছু,कुछ,چند;بعضی,بعض,சில,一些;有些,bazı,몇,vài,beberapa,บาง,baadhi,айрым
+ALL,all,全部;みんな,all,todo,todo,tout,tutto,весь,সব,सब,همه,كل,எல்லாம்,所有;都,bütün;tüm;hep,모든;모두,tất cả,semua,ทั้งหมด;ทุก,yote;wote,баары;бардык
+MUCH_MANY,much;many,たくさん,viel,mucho,muito,beaucoup,molto,много,অনেক,बहुत,زیاد,كثير,நிறைய;பல,多,çok,많다,nhiều,banyak,มาก,sana;wengi,көп
+LITTLE_FEW,little;few,少し,wenig,poco,pouco,peu,poco,мало,অল্প;কম,थोड़ा;कम,کم,قليل,கொஞ்சம்,少,az,적다;조금,ít,sedikit,น้อย,kidogo,аз
+GOOD,good,いい;良い,gut,bueno,bom,bon,buono,хороший,ভালো,अच्छा,خوب,جيد,நல்ல,好,iyi,좋다,tốt,baik,ดี,nzuri;mzuri,жакшы
+BAD,bad,悪い,schlecht,malo,mau,mauvais,cattivo,плохой,খারাপ,बुरा,بد,سيء,கெட்ட,壞;坏,kötü,나쁘다,xấu,buruk,เลว,mbaya,жаман
+BIG,big,大きい,groß,grande,grande,grand,grande,большой,বড়,बड़ा,بزرگ,كبير,பெரிய,大,büyük,크다,lớn,besar,ใหญ่,kubwa,чоң
+SMALL,small,小さい,klein,pequeño,pequeno,petit,piccolo,маленький,ছোট,छोटा,کوچک,صغير,சிறிய,小,küçük,작다,nhỏ,kecil,เล็ก,ndogo,кичине
+THINK,think,思う,denken,pensar,pensar,penser,pensare,думать,ভাবা,सोचना;सोच,فکر,فكر,நினை,想,düşünmek;düşün,생각하다,nghĩ,pikir;berpikir,คิด,fikiri;kufikiri,ойлоо;ойло
+KNOW,know,知る;分かる,wissen,saber,saber,savoir,sapere,знать,জানা,जानना;जान,دانستن,عرف,தெரி,知道,bilmek;bil,알다,biết,tahu,รู้,jua;kujua,билүү;бил
+WANT,want,ほしい;たい,wollen,querer,querer,vouloir,volere,хотеть,চাওয়া,चाहना;चाह,خواستن,أراد,வேண்டு,要;想要,istemek;iste,원하다,muốn,mau;ingin,อยาก;ต้องการ,taka;kutaka,каалоо;каала
+DONT_WANT,,いらない,,,,,,,,,,,,,,,,,,,
+FEEL,feel,感じる,fühlen,sentir,sentir,sentir,sentire,чувствовать,অনুভব,महसूस,احساس,شعر,உணர்,感覺;感觉;覺得;觉得,hissetmek;hisset,느끼다,cảm thấy,merasa;rasa,รู้สึก,hisi;kuhisi,сезүү;сез
+SEE,see,見る,sehen,ver,ver,voir,vedere,видеть,দেখা,देखना;देख,دیدن,رأى,பார்,看;看見;看见,görmek;gör,보다,thấy;xem,lihat;melihat,เห็น;ดู,ona;kuona,көрүү;көр
+HEAR,hear,聞く,hören,oír,ouvir,entendre,udire;sentire,слышать,শোনা,सुनना;सुन,شنیدن,سمع,கேள்,聽;听;聽見;听见,duymak;duy,듣다,nghe,dengar;mendengar,ได้ยิน,sikia;kusikia,угуу;ук
+SAY,say,言う,sagen,decir,dizer,dire,dire,сказать;говорить,বলা,कहना;कह,گفتن,قال,சொல்,說;说,demek;de,말하다,nói,berkata,พูด,sema;kusema,айтуу;айт
+WORDS,words,言葉,Wort,palabra,palavra,mot,parola,слово,শব্দ;কথা,शब्द,کلمه;حرف,كلمة,வார்த்தை,話;话;詞;词,söz;kelime,말;단어,lời;từ,kata,คำ,neno;maneno,сөз
+TRUE,true,本当,wahr,verdad;verdadero,verdade;verdadeiro,vrai,vero,правда,সত্য;সত্যি,सच,راست;درست,صحيح;حق,உண்மை,真;真的,doğru;gerçek,사실;진짜,thật;đúng,benar,จริง,kweli,чын;туура
+DO,do,する,tun;machen,hacer,fazer,faire,fare,делать,করা,करना;कर,کردن,فعل,செய்,做,yapmak;yap;etmek,하다,làm,berbuat;buat,ทำ,fanya;kufanya,кылуу;кыл
+HAPPEN,happen,起こる,geschehen;passieren,pasar;ocurrir,acontecer,arriver;passer,succedere,случиться;происходить,ঘটা,घटना,اتفاق,حدث,நட,發生;发生,olmak;ol,일어나다,xảy ra,terjadi,เกิด,tokea;kutokea,болуу;бол
+MOVE,move,動く,bewegen,mover,mover,bouger,muovere,двигаться,নড়া,हिलना,حرکت,تحرك,நகர்,動;动,hareket,움직이다,di chuyển,bergerak;gerak,เคลื่อน,sogea;kusogea,кыймылдоо
+BE_SOMEWHERE,be,いる;ある,sein,estar,estar,être,stare;essere,быть,থাকা,होना,بودن,كان,இரு,在,bulunmak,있다,ở,berada;ada,อยู่,kuwa,болуу
+THERE_IS,,ある;いる,geben,haber;hay,haver;ter,avoir,esserci,есть,আছে,है,هست,يوجد;هناك,உண்டு,有,var,있다,có,ada,มี,kuna,бар
+BE_SOMEONE,be,だ;である,sein,ser,ser,être,essere,быть,হওয়া,होना,بودن,كان,ஆ,是,olmak,이다,là,adalah,เป็น,ni;kuwa,болуу
+MINE,mine,私の,mein,mío,meu,mien,mio,мой,আমার,मेरा,,لي,என்னுடைய,我的,benim,내;나의,,milikku;punyaku,ของฉัน,yangu,меники
+LIVE,live,生きる,leben,vivir,viver,vivre,vivere,жить,বাঁচা,जीना;जी,زیستن;زندگی,عاش,வாழ்,活,yaşamak;yaşa,살다,sống,hidup,มีชีวิต,ishi;kuishi,жашоо;жаша
+DIE,die,死ぬ,sterben,morir,morrer,mourir,morire,умереть,মরা,मरना;मर,مردن,مات,இற,死,ölmek;öl,죽다,chết,mati,ตาย,kufa;fa,өлүү;өл
+WHEN_TIME,when;time,時;いつ,wann;Zeit,cuando;tiempo,quando;tempo,quand;temps,quando;tempo,когда;время,কখন;সময়,कब;समय,کی;زمان,متى;وقت,எப்போது;நேரம்,時候;时候;時間;时间,zaman,때;언제,khi;lúc,kapan;waktu,เมื่อ;เวลา,lini;wakati,качан;убакыт
+NOW,now,今,jetzt,ahora,agora,maintenant,ora;adesso,сейчас,এখন,अब,حالا;اکنون,الآن,இப்போது,現在;现在,şimdi,지금,bây giờ,sekarang,ตอนนี้,sasa,азыр
+BEFORE,before,前,vorher;vor,antes,antes,avant,prima,раньше;до,আগে,पहले,قبل,قبل,முன்,以前;之前,önce,전,trước,sebelum,ก่อน,kabla,мурун
+AFTER,after,後,nachher;nach,después,depois,après,dopo,после,পরে,बाद,بعد,بعد,பின்,以後;以后;之後;之后,sonra,후,sau,sesudah;setelah,หลัง,baada,кийин
+LONG_TIME,long,長い間,lange,,,longtemps,,долго,অনেকক্ষণ,देर,مدت,طويلا,நீண்ட,很久;久,uzun,오래,lâu,lama,นาน,,көпкө
+SHORT_TIME,,短い間,kurz,,,,,недолго,,,,,,一會兒;一会儿,kısa,잠깐,,sebentar,ครู่,,
+FOR_SOME_TIME,,しばらく,,,,,,,,,,,,一陣子;一阵子,,한동안,,sementara,,,
+MOMENT,moment,瞬間;一瞬,Moment;Augenblick,momento,momento,moment,momento,момент;миг,মুহূর্ত,पल;क्षण,لحظه,لحظة,கணம்,瞬間;瞬间,an,순간,khoảnh khắc,saat,ขณะ,dakika,учур
+WHERE_PLACE,where;place,所;どこ,wo;Ort,donde;lugar,onde;lugar,où;endroit,dove;posto,где;место,কোথায়;জায়গা,कहाँ;जगह,کجا;جا,أين;مكان,எங்கே;இடம்,哪裡;哪里;地方,nere;yer,어디;곳,đâu;chỗ;nơi,mana;tempat,ที่ไหน;ที่,wapi;mahali,кайда;жер
+HERE,here,ここ,hier,aquí,aqui,ici,qui,здесь,এখানে,यहाँ,اینجا,هنا,இங்கே,這裡;这里,bura;burada,여기,đây,sini,ที่นี่,hapa,мында
+ABOVE,above,上,oben;über,arriba;encima,cima;acima,haut;dessus,sopra,наверху;над,উপরে,ऊपर,بالا,فوق,மேல்,上,üst;yukarı,위,trên,atas,บน,juu,үстү;жогору
+BELOW,below,下,unten;unter,abajo;debajo,baixo;abaixo,bas;dessous,sotto,внизу;под,নিচে,नीचे,پایین;زیر,تحت,கீழ்,下,alt;aşağı,아래;밑,dưới,bawah,ใต้;ล่าง,chini,астын;төмөн
+FAR,far,遠い,weit;fern,lejos,longe,loin,lontano,далеко;далёкий,দূরে,दूर,دور,بعيد,தூரம்,遠;远,uzak,멀다,xa,jauh,ไกล,mbali,алыс
+NEAR,near,近い,nah,cerca,perto,près,vicino,близко;близкий,কাছে,पास,نزدیک,قريب,அருகில்,近,yakın,가깝다,gần,dekat,ใกล้,karibu,жакын
+SIDE,side,横;側,Seite,lado,lado,côté,lato,сторона,পাশ;দিক,तरफ़;ओर,طرف;کنار,جانب,பக்கம்,邊;边;旁邊;旁边,yan,옆;쪽,bên;phía,sisi;samping,ข้าง,upande,жак
+INSIDE,inside,中,innen;in,dentro,dentro,dedans;dans,dentro,внутри;в,ভিতরে,अंदर,داخل;درون,داخل;في,உள்ளே,裡;里;裡面;里面,iç;içinde,안;속,trong,dalam,ใน,ndani,ичи;ичинде
+TOUCH,touch,触る,berühren,tocar,tocar,toucher,toccare,трогать;касаться,ছোঁয়া,छूना;छू,لمس,لمس,தொடு,碰;摸,dokunmak;dokun,만지다,chạm,sentuh;menyentuh,แตะ;สัมผัส,gusa;kugusa,тийүү;тий
+NOT,not;no,ない,nicht;nein,no,não,ne;pas;non,non,не;нет,না,नहीं;न,نه,لا;ليس;لم,இல்லை,不;沒;没,değil;hayır,안;않다,không,tidak;bukan,ไม่,si;hapana,эмес;жок
+MAYBE,maybe,かもしれない,vielleicht,quizás;quizá,talvez,peut-être,forse,возможно,হয়তো,शायद,شاید,ربما,ஒருவேளை,也許;也许;可能,belki,아마,có lẽ,mungkin,อาจ,labda,балким
+CAN,can,できる,können,poder,poder,pouvoir,potere,мочь,পারা,सकना;सक,توانستن,استطاع;يمكن,முடி,能;會;会;可以,,,có thể,bisa;dapat,ได้,weza;kuweza,
+BECAUSE,because,から;ので,weil,porque,porque,car,perché,,কারণ,क्योंकि,چون;زیرا,لأن,ஏனென்றால்,因為;因为,çünkü,왜냐하면,vì,karena,เพราะ,,анткени
+IF,if,もし,wenn;falls,si,se,si,se,если,যদি,अगर;यदि,اگر,إذا;لو,,如果,eğer,만약,nếu,jika;kalau,ถ้า,kama,эгер
+VERY,very,とても,sehr,muy,muito,très,molto,очень,খুব,बहुत,خیلی,جدا,மிகவும்,很;非常,çok,아주;매우,rất,sangat,มาก,sana,абдан;өтө
+MORE,more,もっと,mehr,más,mais,plus,più,больше;более,আরও;বেশি,और;ज़्यादा,بیشتر,أكثر,அதிகம்,更;更多,daha,더,hơn;thêm,lebih,อีก;กว่า,zaidi,дагы;көбүрөөк
+LIKE_AS,like;as;way,よう;みたい,wie,como,como,comme,come,как,মতো,जैसा,مثل,مثل,போல,像,gibi,처럼;같이,như,seperti,เหมือน,kama,сыяктуу;окшош

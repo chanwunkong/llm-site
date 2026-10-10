@@ -146,11 +146,13 @@ export function buildRun(lang, sourceId, env) {
   const sit = currentSituation(lang, sourceId);
   const lv = l => lg.words[l]?.lv || 1;
   const prof = l => lg.words[l]?.prof || 0;
+  // 最一開始的學習資料是 NSM 65 個語意基元：同一級裡，基元先出
+  const prime = l => (lang.base[l]?.tier === 1 ? 1 : 0);
 
   // 當前情境：依等級分組，同級從最不熟的開始；5 級只靠抽查
   const cands = [...sit.lemmas].filter(l => lang.lemmas.get(l).target && lv(l) < 5);
   const byLevel = [1, 2, 3, 4].map(n => cands.filter(l => lv(l) === n).sort((a, b) =>
-    prof(a) - prof(b) || (lang.base[b] ? 1 : 0) - (lang.base[a] ? 1 : 0) || lang.lemmas.get(b).freq - lang.lemmas.get(a).freq));
+    prime(b) - prime(a) || prof(a) - prof(b) || (lang.base[b] ? 1 : 0) - (lang.base[a] ? 1 : 0) || lang.lemmas.get(b).freq - lang.lemmas.get(a).freq));
   const mainCount = lg.runs === 0 ? 7 : 9;
   const main = [];
   for (let round = 0; round < 5 && main.length < mainCount; round++)
@@ -278,6 +280,8 @@ export function makeQuestion(run, item) {
   return {
     item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors, formula: !!formula,
     image: lv === 1 ? lang.base[item.lemma] : null,
+    // 沒有圖示的字：Lv1、Lv2 用學習者自己寫的「我的理解」當提示
+    mineCue: lv <= 2 && !lang.base[item.lemma] ? w.mine?.at(-1)?.parts || null : null,
     rules: rulesIn(gapTokens, profileOf(lang)),
     before: joinTokens(s.tokens.slice(0, gap[0]), lang.joiner),
     after: joinTokens(s.tokens.slice(gap.at(-1) + 1), lang.joiner),

@@ -14,7 +14,7 @@ const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
 // 星數：實心圓 = 拿到，空心 = 還沒拿到
 export const starRow = (n, small) => `<span class="stars3${small ? ' sm' : ''}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
 
-export function createPlay(root, { onEnd, onSound }) {
+export function createPlay(root, { onEnd, onSound, onCompose }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
   const $ = s => root.querySelector(s);
   const audio = () => run.env !== 'mute';
@@ -77,6 +77,7 @@ export function createPlay(root, { onEnd, onSound }) {
       </div>
       <div class="qmain">
       ${q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
+      ${q.mineCue ? `<div class="mine-cue"><span class="muted">你的理解</span><div class="mine">${q.mineCue.map(p => `<span class="mchip">${run.lang.base[p] ? iconHtml(run.lang.base[p]) + ' ' : ''}${esc(p)}</span>`).join('<i>＋</i>')}</div></div>` : ''}
       <div class="sentence${showText ? '' : ' hidden-text'}" id="sent" dir="${run.lang.dir || 'ltr'}">${sentenceHtml()}</div>
       ${audio() ? `<div class="listen-row">
         <button class="btn sm" id="replay">${G.speaker()} 再聽一次</button>
@@ -363,7 +364,9 @@ export function createPlay(root, { onEnd, onSound }) {
       <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : ''}</p>` : ''}
       ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
-      ${rep.newTiles.length ? `<h3>${SHOW.backpack ? '新詞元進背包' : '新字加入領土'}</h3><div class="chips">${rep.newTiles.map(l => `<span>${esc(l)}</span>`).join('')}</div>
+      ${rep.newTiles.length ? `<h3>${SHOW.backpack ? '新詞元進背包' : '新字加入領土'}</h3>
+        <p class="muted">點一個字，用學過的字寫下你對它的理解（可以略過）。</p>
+        <div class="chips">${rep.newTiles.map(l => `<button class="chip-btn" data-mine="${esc(l)}">${run.lang.base[l] ? iconHtml(run.lang.base[l]) + ' ' : ''}${esc(l)}${L().words[l]?.mine?.length ? ' ✓' : ''}</button>`).join('')}</div>
         ${SHOW.backpack && rep.auto.length ? `<p class="muted">背包滿了，${rep.auto.map(esc).join('、')} 已自動放在領土邊緣。</p>` : ''}` : ''}
       ${rep.newRules?.length ? `<h3>開放新規則</h3><p class="muted">${rep.newRules.map(r => `${r} ${esc(WALS.find(w => w.id === r).name)}`).join('、')}：之後升級時可以選到，答對用到它的空格會觸發連鎖。</p>` : ''}
       ${rulesTxt ? `<h3>連鎖（共 ${rep.chainLinks} 環）</h3><p class="muted">${rulesTxt}</p>` : ''}
@@ -378,6 +381,7 @@ export function createPlay(root, { onEnd, onSound }) {
       const exit = tab => { closeSheet(); root.hidden = true; document.body.classList.remove('playing'); onEnd(tab); };
       body.querySelector('#home').onclick = () => exit('home');
       body.querySelector('#land')?.addEventListener('click', () => exit('land'));
+      body.querySelectorAll('[data-mine]').forEach(b => (b.onclick = () => { exit('land'); onCompose?.(b.dataset.mine); }));
     });
   }
 

@@ -28,7 +28,7 @@ export const SHOW = {
   path: false,         // 階段 3：路徑加成、錯過的連結
   gold: false,         // 階段 4：金幣（移動格子要付金幣）
   chunks: false,       // 階段 4：領土語塊與產出
-  mine: false,         // 階段 5：我的理解
+  mine: true,          // 我的理解（合成詞註解）：從一開始就開放
 };
 
 // 逐步開放：每個語言各自記錄已開放的功能（開放後不會再關閉）
@@ -41,8 +41,6 @@ export const UNLOCKS = [
     lines: ['你的領土到達 20 格。', '現在你可以移動格子：點一個格子，再點「移動」。', '常一起出現的字放在相鄰的位置，答題時得到路徑加成。', '結算時，系統顯示「錯過的連結」：常一起出現、但距離太遠的字。'] },
   { id: 'economy', flags: ['gold', 'chunks'], test: lg => Object.keys(lg.territory).length >= 40, title: '領土語塊與金幣',
     lines: ['你的領土到達 40 格。', '一個語塊的字在領土上相連時，每局結算產出金幣。', '移動格子要付金幣。'] },
-  { id: 'mine', flags: ['mine'], test: lg => Object.values(lg.words).some(w => w.lv >= 4), title: '我的理解',
-    lines: ['你的第一個字到達 Lv4。', '點領土上的格子，可以用學過的字組合出對這個字的解釋。', '這個字快要降級時，系統先顯示你寫的解釋。'] },
 ];
 // 檢查有沒有新開放的功能，更新 SHOW；回傳這次新開放的項目（給畫面顯示說明卡）
 export function refreshFeatures() {
@@ -50,6 +48,7 @@ export function refreshFeatures() {
   lg.features ||= [];
   for (const u of UNLOCKS) if (!lg.features.includes(u.id) && u.test(lg)) { lg.features.push(u.id); fresh.push(u); }
   for (const u of UNLOCKS) for (const f of u.flags) SHOW[f] = lg.features.includes(u.id);
+  SHOW.mine = true;
   if (fresh.length) save();
   return fresh;
 }

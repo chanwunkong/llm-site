@@ -11,7 +11,7 @@ PHOIBLE = sys.argv[1]
 
 # WALS 語言代碼 → ISO 639-3（PHOIBLE 以 ISO 對應）
 ISO = {'eng': 'eng', 'ger': 'deu', 'spa': 'spa', 'por': 'por', 'fre': 'fra', 'ita': 'ita', 'rus': 'rus', 'ben': 'ben', 'hin': 'hin',
-       'prs': 'pes', 'ams': 'arb', 'tml': 'tam', 'mnd': 'cmn', 'tur': 'tur', 'jpn': 'jpn', 'kor': 'kor', 'vie': 'vie', 'ind': 'ind', 'tha': 'tha', 'swa': 'swh'}
+       'prs': 'pes', 'ams': 'arb', 'tml': 'tam', 'mnd': 'cmn', 'tur': 'tur', 'jpn': 'jpn', 'kor': 'kor', 'vie': 'vie', 'ind': 'ind', 'tha': 'tha', 'swa': 'swh', 'kgz': 'kir'}
 # 同一語言有多份清單時：學習目標語言指定與所用語音一致的清單；其他依來源優先順序（寬式標音優先）
 PREFER = {'eng': '2175',   # 美國西部／中西部，對應 eSpeak 的 en-us 語音
           'jpn': '384',    # UPSID 日語（寬式）

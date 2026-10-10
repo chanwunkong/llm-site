@@ -1,4 +1,4 @@
-// 可學習的 20 種語言：介面名稱、WALS 代碼、語音代碼、書寫方式與匯入時用的斷句標註工具。
+// 可學習的 21 種語言：介面名稱、WALS 代碼、語音代碼、書寫方式與匯入時用的斷句標註工具。
 // tagger：udpipe = UDPipe 線上服務（UD 模型，CC BY-NC-SA，限非商業使用）；kuromoji = 瀏覽器內的日文斷詞；
 //         basic = 沒有 UD 模型，只用瀏覽器內建的斷詞（沒有詞性，規則不啟動）
 // joiner：字與字之間的分隔（中文、日文、泰文不空格）；dir：書寫方向
@@ -23,5 +23,6 @@ export const LANG_LIST = [
   { id: 'id', name: 'Bahasa Indonesia', zh: '印尼語', wals: 'ind', bcp47: 'id-ID', joiner: ' ', tagger: 'udpipe', model: 'indonesian' },
   { id: 'th', name: 'ไทย', zh: '泰語', wals: 'tha', bcp47: 'th-TH', joiner: '', tagger: 'udpipe', model: 'thai', weak: true },
   { id: 'sw', name: 'Kiswahili', zh: '史瓦希里語', wals: 'swa', bcp47: 'sw-KE', joiner: ' ', tagger: 'basic' },
+  { id: 'ky', name: 'Кыргызча', zh: '吉爾吉斯語', wals: 'kgz', bcp47: 'ky-KG', joiner: ' ', tagger: 'udpipe', model: 'kyrgyz' },
 ];
 export const LANG_BY_ID = Object.fromEntries(LANG_LIST.map(l => [l.id, l]));
