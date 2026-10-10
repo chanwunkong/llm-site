@@ -1,0 +1,934 @@
+{
+"lang": "fa",
+"primes": [
+{
+"id": "I",
+"key": "من",
+"words": [
+"من"
+],
+"group": "實體",
+"opposite": "YOU",
+"icon": {
+"id": "I",
+"tier": 1,
+"template": "single",
+"icon": "🙋"
+}
+},
+{
+"id": "YOU",
+"key": "تو",
+"words": [
+"تو"
+],
+"group": "實體",
+"opposite": "I",
+"icon": {
+"id": "YOU",
+"tier": 1,
+"template": "single",
+"icon": "🫵"
+}
+},
+{
+"id": "SOMEONE",
+"key": "کسی",
+"words": [
+"کسی",
+"کی"
+],
+"group": "實體",
+"opposite": "SOMETHING",
+"icon": {
+"id": "SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "👤❓"
+}
+},
+{
+"id": "SOMETHING",
+"key": "چیز",
+"words": [
+"چیز",
+"چه"
+],
+"group": "實體",
+"opposite": "SOMEONE",
+"icon": {
+"id": "SOMETHING",
+"tier": 1,
+"template": "single",
+"icon": "📦❓"
+}
+},
+{
+"id": "PEOPLE",
+"key": "مردم",
+"words": [
+"مردم"
+],
+"group": "實體",
+"opposite": "BODY",
+"icon": {
+"id": "PEOPLE",
+"tier": 1,
+"template": "single",
+"icon": "👥"
+}
+},
+{
+"id": "BODY",
+"key": "بدن",
+"words": [
+"بدن"
+],
+"group": "實體",
+"opposite": "PEOPLE",
+"icon": {
+"id": "BODY",
+"tier": 1,
+"template": "single",
+"icon": "🧍"
+}
+},
+{
+"id": "KIND",
+"key": "نوع",
+"words": [
+"نوع"
+],
+"group": "關係",
+"opposite": "PART",
+"icon": {
+"id": "KIND",
+"tier": 1,
+"template": "single",
+"icon": "🍎🍌"
+}
+},
+{
+"id": "PART",
+"key": "بخش",
+"words": [
+"بخش",
+"قسمت"
+],
+"group": "關係",
+"opposite": "KIND",
+"icon": {
+"id": "PART",
+"tier": 1,
+"template": "single",
+"icon": "🍰"
+}
+},
+{
+"id": "THIS",
+"key": "این",
+"words": [
+"این"
+],
+"group": "限定",
+"opposite": null,
+"icon": {
+"id": "THIS",
+"tier": 1,
+"template": "single",
+"icon": "👇"
+}
+},
+{
+"id": "THE_SAME",
+"key": "همان",
+"words": [
+"همان"
+],
+"group": "限定",
+"opposite": "OTHER",
+"icon": {
+"id": "THE_SAME",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍏"
+}
+},
+{
+"id": "OTHER",
+"key": "دیگر",
+"words": [
+"دیگر"
+],
+"group": "限定",
+"opposite": "THE_SAME",
+"icon": {
+"id": "OTHER",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍎"
+}
+},
+{
+"id": "ONE",
+"key": "یک",
+"words": [
+"یک"
+],
+"group": "數量",
+"opposite": "TWO",
+"icon": {
+"id": "ONE",
+"tier": 1,
+"template": "single",
+"icon": "1️⃣"
+}
+},
+{
+"id": "TWO",
+"key": "دو",
+"words": [
+"دو"
+],
+"group": "數量",
+"opposite": "ONE",
+"icon": {
+"id": "TWO",
+"tier": 1,
+"template": "single",
+"icon": "2️⃣"
+}
+},
+{
+"id": "SOME",
+"key": "چند",
+"words": [
+"چند",
+"بعضی"
+],
+"group": "數量",
+"opposite": "ALL",
+"icon": {
+"id": "SOME",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎🍎|*🍎🍎"
+}
+},
+{
+"id": "ALL",
+"key": "همه",
+"words": [
+"همه"
+],
+"group": "數量",
+"opposite": "SOME",
+"icon": {
+"id": "ALL",
+"tier": 1,
+"template": "single",
+"icon": "💯"
+}
+},
+{
+"id": "MUCH_MANY",
+"key": "زیاد",
+"words": [
+"زیاد"
+],
+"group": "數量",
+"opposite": "LITTLE_FEW",
+"icon": {
+"id": "MUCH_MANY",
+"tier": 1,
+"template": "contrast",
+"icon": "*🍎🍎🍎|🍎"
+}
+},
+{
+"id": "LITTLE_FEW",
+"key": "کم",
+"words": [
+"کم"
+],
+"group": "數量",
+"opposite": "MUCH_MANY",
+"icon": {
+"id": "LITTLE_FEW",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎|*🍎"
+}
+},
+{
+"id": "GOOD",
+"key": "خوب",
+"words": [
+"خوب"
+],
+"group": "評價",
+"opposite": "BAD",
+"icon": {
+"id": "GOOD",
+"tier": 1,
+"template": "single",
+"icon": "👍"
+}
+},
+{
+"id": "BAD",
+"key": "بد",
+"words": [
+"بد"
+],
+"group": "評價",
+"opposite": "GOOD",
+"icon": {
+"id": "BAD",
+"tier": 1,
+"template": "single",
+"icon": "👎"
+}
+},
+{
+"id": "BIG",
+"key": "بزرگ",
+"words": [
+"بزرگ"
+],
+"group": "描述",
+"opposite": "SMALL",
+"icon": {
+"id": "BIG",
+"tier": 1,
+"template": "contrast",
+"icon": "*🐘|🐭"
+}
+},
+{
+"id": "SMALL",
+"key": "کوچک",
+"words": [
+"کوچک"
+],
+"group": "描述",
+"opposite": "BIG",
+"icon": {
+"id": "SMALL",
+"tier": 1,
+"template": "contrast",
+"icon": "🐘|*🐭"
+}
+},
+{
+"id": "THINK",
+"key": "فکر",
+"words": [
+"فکر"
+],
+"group": "心智",
+"opposite": "KNOW",
+"icon": {
+"id": "THINK",
+"tier": 1,
+"template": "single",
+"icon": "🤔"
+}
+},
+{
+"id": "KNOW",
+"key": "دانستن",
+"words": [
+"دانستن"
+],
+"group": "心智",
+"opposite": "THINK",
+"icon": {
+"id": "KNOW",
+"tier": 1,
+"template": "single",
+"icon": "💡"
+}
+},
+{
+"id": "WANT",
+"key": "خواستن",
+"words": [
+"خواستن"
+],
+"group": "心智",
+"opposite": "DONT_WANT",
+"icon": {
+"id": "WANT",
+"tier": 1,
+"template": "single",
+"icon": "🫴🍎"
+}
+},
+{
+"id": "FEEL",
+"key": "احساس",
+"words": [
+"احساس"
+],
+"group": "心智",
+"opposite": null,
+"icon": {
+"id": "FEEL",
+"tier": 1,
+"template": "single",
+"icon": "😊😢"
+}
+},
+{
+"id": "SEE",
+"key": "دیدن",
+"words": [
+"دیدن"
+],
+"group": "心智",
+"opposite": "HEAR",
+"icon": {
+"id": "SEE",
+"tier": 1,
+"template": "single",
+"icon": "👀"
+}
+},
+{
+"id": "HEAR",
+"key": "شنیدن",
+"words": [
+"شنیدن"
+],
+"group": "心智",
+"opposite": "SEE",
+"icon": {
+"id": "HEAR",
+"tier": 1,
+"template": "single",
+"icon": "👂"
+}
+},
+{
+"id": "SAY",
+"key": "گفتن",
+"words": [
+"گفتن"
+],
+"group": "言語",
+"opposite": "WORDS",
+"icon": {
+"id": "SAY",
+"tier": 1,
+"template": "single",
+"icon": "🗣️"
+}
+},
+{
+"id": "WORDS",
+"key": "کلمه",
+"words": [
+"کلمه",
+"حرف"
+],
+"group": "言語",
+"opposite": "SAY",
+"icon": {
+"id": "WORDS",
+"tier": 1,
+"template": "single",
+"icon": "💬"
+}
+},
+{
+"id": "TRUE",
+"key": "راست",
+"words": [
+"راست",
+"درست"
+],
+"group": "言語",
+"opposite": "MAYBE",
+"icon": {
+"id": "TRUE",
+"tier": 1,
+"template": "single",
+"icon": "🎯"
+}
+},
+{
+"id": "DO",
+"key": "کردن",
+"words": [
+"کردن"
+],
+"group": "動作",
+"opposite": "HAPPEN",
+"icon": {
+"id": "DO",
+"tier": 1,
+"template": "single",
+"icon": "🛠️"
+}
+},
+{
+"id": "HAPPEN",
+"key": "اتفاق",
+"words": [
+"اتفاق"
+],
+"group": "動作",
+"opposite": "DO",
+"icon": {
+"id": "HAPPEN",
+"tier": 1,
+"template": "single",
+"icon": "💥"
+}
+},
+{
+"id": "MOVE",
+"key": "حرکت",
+"words": [
+"حرکت"
+],
+"group": "動作",
+"opposite": "TOUCH",
+"icon": {
+"id": "MOVE",
+"tier": 1,
+"template": "single",
+"icon": "🏃"
+}
+},
+{
+"id": "BE_SOMEWHERE",
+"key": "بودن",
+"words": [
+"بودن"
+],
+"group": "存在",
+"opposite": "THERE_IS",
+"icon": {
+"id": "BE_SOMEWHERE",
+"tier": 1,
+"template": "single",
+"icon": "🧍📍"
+}
+},
+{
+"id": "THERE_IS",
+"key": "هست",
+"words": [
+"هست"
+],
+"group": "存在",
+"opposite": "BE_SOMEWHERE",
+"icon": {
+"id": "THERE_IS",
+"tier": 1,
+"template": "single",
+"icon": "👀📦"
+}
+},
+{
+"id": "BE_SOMEONE",
+"key": "بودن",
+"words": [
+"بودن"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "BE_SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "🧑🪪"
+}
+},
+{
+"id": "LIVE",
+"key": "زیستن",
+"words": [
+"زیستن",
+"زندگی"
+],
+"group": "生命",
+"opposite": "DIE",
+"icon": {
+"id": "LIVE",
+"tier": 1,
+"template": "single",
+"icon": "💓"
+}
+},
+{
+"id": "DIE",
+"key": "مردن",
+"words": [
+"مردن"
+],
+"group": "生命",
+"opposite": "LIVE",
+"icon": {
+"id": "DIE",
+"tier": 1,
+"template": "single",
+"icon": "🥀"
+}
+},
+{
+"id": "WHEN_TIME",
+"key": "کی",
+"words": [
+"کی",
+"زمان"
+],
+"group": "時間",
+"opposite": "WHERE_PLACE",
+"icon": {
+"id": "WHEN_TIME",
+"tier": 1,
+"template": "single",
+"icon": "🕰️"
+}
+},
+{
+"id": "NOW",
+"key": "حالا",
+"words": [
+"حالا",
+"اکنون"
+],
+"group": "時間",
+"opposite": "HERE",
+"icon": {
+"id": "NOW",
+"tier": 1,
+"template": "single",
+"icon": "👉🕰️"
+}
+},
+{
+"id": "BEFORE",
+"key": "قبل",
+"words": [
+"قبل"
+],
+"group": "時間",
+"opposite": "AFTER",
+"icon": {
+"id": "BEFORE",
+"tier": 1,
+"template": "single",
+"icon": "🕰️⬅️"
+}
+},
+{
+"id": "AFTER",
+"key": "بعد",
+"words": [
+"بعد"
+],
+"group": "時間",
+"opposite": "BEFORE",
+"icon": {
+"id": "AFTER",
+"tier": 1,
+"template": "single",
+"icon": "🕰️➡️"
+}
+},
+{
+"id": "LONG_TIME",
+"key": "مدت",
+"words": [
+"مدت"
+],
+"group": "時間",
+"opposite": "SHORT_TIME",
+"icon": {
+"id": "LONG_TIME",
+"tier": 1,
+"template": "contrast",
+"icon": "*⏳⏳⏳|⏳"
+}
+},
+{
+"id": "MOMENT",
+"key": "لحظه",
+"words": [
+"لحظه"
+],
+"group": "時間",
+"opposite": "FOR_SOME_TIME",
+"icon": {
+"id": "MOMENT",
+"tier": 1,
+"template": "single",
+"icon": "⚡"
+}
+},
+{
+"id": "WHERE_PLACE",
+"key": "کجا",
+"words": [
+"کجا",
+"جا"
+],
+"group": "空間",
+"opposite": "WHEN_TIME",
+"icon": {
+"id": "WHERE_PLACE",
+"tier": 1,
+"template": "single",
+"icon": "📍"
+}
+},
+{
+"id": "HERE",
+"key": "اینجا",
+"words": [
+"اینجا"
+],
+"group": "空間",
+"opposite": "NOW",
+"icon": {
+"id": "HERE",
+"tier": 1,
+"template": "single",
+"icon": "👇📍"
+}
+},
+{
+"id": "ABOVE",
+"key": "بالا",
+"words": [
+"بالا"
+],
+"group": "空間",
+"opposite": "BELOW",
+"icon": {
+"id": "ABOVE",
+"tier": 1,
+"template": "single",
+"icon": "⬆️"
+}
+},
+{
+"id": "BELOW",
+"key": "پایین",
+"words": [
+"پایین",
+"زیر"
+],
+"group": "空間",
+"opposite": "ABOVE",
+"icon": {
+"id": "BELOW",
+"tier": 1,
+"template": "single",
+"icon": "⬇️"
+}
+},
+{
+"id": "FAR",
+"key": "دور",
+"words": [
+"دور"
+],
+"group": "空間",
+"opposite": "NEAR",
+"icon": {
+"id": "FAR",
+"tier": 1,
+"template": "single",
+"icon": "🔭"
+}
+},
+{
+"id": "NEAR",
+"key": "نزدیک",
+"words": [
+"نزدیک"
+],
+"group": "空間",
+"opposite": "FAR",
+"icon": {
+"id": "NEAR",
+"tier": 1,
+"template": "single",
+"icon": "🧍🏠"
+}
+},
+{
+"id": "SIDE",
+"key": "طرف",
+"words": [
+"طرف",
+"کنار"
+],
+"group": "空間",
+"opposite": "INSIDE",
+"icon": {
+"id": "SIDE",
+"tier": 1,
+"template": "single",
+"icon": "↔️"
+}
+},
+{
+"id": "INSIDE",
+"key": "داخل",
+"words": [
+"داخل",
+"درون"
+],
+"group": "空間",
+"opposite": "SIDE",
+"icon": {
+"id": "INSIDE",
+"tier": 1,
+"template": "single",
+"icon": "📦🐈"
+}
+},
+{
+"id": "TOUCH",
+"key": "لمس",
+"words": [
+"لمس"
+],
+"group": "空間",
+"opposite": "MOVE",
+"icon": {
+"id": "TOUCH",
+"tier": 1,
+"template": "single",
+"icon": "👆"
+}
+},
+{
+"id": "NOT",
+"key": "نه",
+"words": [
+"نه"
+],
+"group": "邏輯",
+"opposite": "CAN",
+"icon": {
+"id": "NOT",
+"tier": 1,
+"template": "single",
+"icon": "🚫"
+}
+},
+{
+"id": "MAYBE",
+"key": "شاید",
+"words": [
+"شاید"
+],
+"group": "邏輯",
+"opposite": "TRUE",
+"icon": {
+"id": "MAYBE",
+"tier": 1,
+"template": "single",
+"icon": "🤷"
+}
+},
+{
+"id": "CAN",
+"key": "توانستن",
+"words": [
+"توانستن"
+],
+"group": "邏輯",
+"opposite": "NOT",
+"icon": {
+"id": "CAN",
+"tier": 1,
+"template": "single",
+"icon": "💪"
+}
+},
+{
+"id": "BECAUSE",
+"key": "چون",
+"words": [
+"چون",
+"زیرا"
+],
+"group": "邏輯",
+"opposite": "IF",
+"icon": {
+"id": "BECAUSE",
+"tier": 1,
+"template": "single",
+"icon": "🌧️☂️"
+}
+},
+{
+"id": "IF",
+"key": "اگر",
+"words": [
+"اگر"
+],
+"group": "邏輯",
+"opposite": "BECAUSE",
+"icon": {
+"id": "IF",
+"tier": 1,
+"template": "single",
+"icon": "🌧️❓"
+}
+},
+{
+"id": "VERY",
+"key": "خیلی",
+"words": [
+"خیلی"
+],
+"group": "強化",
+"opposite": "MORE",
+"icon": {
+"id": "VERY",
+"tier": 1,
+"template": "single",
+"icon": "‼️"
+}
+},
+{
+"id": "MORE",
+"key": "بیشتر",
+"words": [
+"بیشتر"
+],
+"group": "強化",
+"opposite": "VERY",
+"icon": {
+"id": "MORE",
+"tier": 1,
+"template": "single",
+"icon": "➕"
+}
+},
+{
+"id": "LIKE_AS",
+"key": "مثل",
+"words": [
+"مثل"
+],
+"group": "相似",
+"opposite": null,
+"icon": {
+"id": "LIKE_AS",
+"tier": 1,
+"template": "single",
+"icon": "🐱🐯"
+}
+}
+]
+}

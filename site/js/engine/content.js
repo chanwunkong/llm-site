@@ -89,6 +89,10 @@ export function buildLanguage(data, base = {}) {
   const lang = { ...data, base, sentences, situations, lemmas };
   lang.chunks = mineChunks(lang);
   mineFormulas(lang);
+  // 「基元 65」：基元清單與查表；好幾個字組成的基元（don't want、a long time）在文章裡當成語塊比對
+  lang.core = data.sources.find(s => s.core)?.primes || [];
+  lang.coreByKey = new Map(lang.core.map(p => [p.key, p]));
+  markPrimePhrases(lang);
   return lang;
 }
 
@@ -185,6 +189,26 @@ export function mineFormulas(lang) {
           if (found.some(f => !(idx.at(-1) < f[0] || idx[0] > f.at(-1)))) continue;
           found.push(idx);
         }
+    if (found.length) lang.formulaSpans.set(s.id, found);
+  }
+}
+
+// 好幾個字組成的基元：比對連續的字（去掉空格與撇號後相同，例如 do + n't + want = don't want），加進語塊的位置
+export function markPrimePhrases(lang) {
+  const flat = t => t.toLocaleLowerCase().replace(/[\s\u00a0'’]/g, '');
+  const phrases = lang.core.flatMap(p => p.words.filter(w => /[\s\u00a0]/.test(w)).map(w => flat(w)));
+  if (!phrases.length) return;
+  const want = new Set(phrases);
+  for (const s of lang.sentences) {
+    const found = lang.formulaSpans.get(s.id) || [];
+    for (let i = 0; i < s.tokens.length; i++)
+      for (let n = 2; n <= 5 && i + n <= s.tokens.length; n++) {
+        const idx = Array.from({ length: n }, (_, k) => i + k);
+        if (!idx.every(j => isWord(s.tokens[j]))) break;
+        if (!want.has(flat(idx.map(j => s.tokens[j].surface).join('')))) continue;
+        if (found.some(f => !(idx.at(-1) < f[0] || idx[0] > f.at(-1)))) continue;
+        found.push(idx);
+      }
     if (found.length) lang.formulaSpans.set(s.id, found);
   }
 }

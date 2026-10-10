@@ -142,6 +142,7 @@ export function situationProgress(lang, sit) {
 }
 
 export function buildRun(lang, sourceId, env) {
+  if (lang.sources.find(s => s.id === sourceId)?.core) return buildCoreRun(lang, sourceId, env);
   const lg = L();
   const sit = currentSituation(lang, sourceId);
   const lv = l => lg.words[l]?.lv || 1;
@@ -186,7 +187,11 @@ export function buildRun(lang, sourceId, env) {
   const seen = new Set();
   for (const it of items) (seen.has(it.lemma) ? second : first).push(it), seen.add(it.lemma);
   const queue = [...shuffle(first), ...shuffle(second)];
+  return newRun(lang, sourceId, sit, env, queue, pickBoss(lang, sit, main));
+}
 
+function newRun(lang, sourceId, sit, env, queue, boss) {
+  const lg = L();
   return {
     lang, sourceId, sit, env, queue, pos: 0,
     score: 0, combo: 0, maxCombo: 0, correct: 0, wrong: 0,
@@ -194,7 +199,60 @@ export function buildRun(lang, sourceId, env) {
     pendingChoice: false, chainUsed: new Set(), maxChain: 0, chainLinks: 0,
     firstEncounter: {}, leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
     ruleHits: {}, pathTotal: 0, missed: new Map(), log: [],
-    boss: pickBoss(lang, sit, main), bossDone: false, bossOk: false,
+    boss, bossDone: false, bossOk: false,
+  };
+}
+
+// ---- 「基元 65」：沒有句子，直接用圖示和字出題 ----
+// 選字方式和文章相同：依等級分組、同級從最不熟的開始，每個字出 2 次；加上快要降級的基元與 Lv5 抽查
+function buildCoreRun(lang, sourceId, env) {
+  const lg = L(), sit = currentSituation(lang, sourceId);
+  const lv = k => lg.words[k]?.lv || 1, prof = k => lg.words[k]?.prof || 0;
+  const keys = lang.core.map(p => p.key);
+  const byLevel = [1, 2, 3, 4].map(n => keys.filter(k => lv(k) === n).sort((a, b) => prof(a) - prof(b) || keys.indexOf(a) - keys.indexOf(b)));
+  const mainCount = lg.runs === 0 ? 7 : 9, main = [];
+  for (let round = 0; round < 9 && main.length < mainCount; round++)
+    for (const group of byLevel) if (group[round] && main.length < mainCount) main.push(group[round]);
+  const review = keys.filter(k => lg.words[k] && lv(k) < 5 && !main.includes(k) && isDue(lg.words[k])).slice(0, 3);
+  const spot = pickN(keys.filter(k => lv(k) === 5), 2);
+  const items = [];
+  const add = (lemma, kind, times) => { for (let i = 0; i < times; i++) items.push({ lemma, kind, core: true, attempts: 0 }); };
+  main.forEach(k => add(k, 'main', 2));
+  review.forEach(k => add(k, 'review', 2));
+  spot.forEach(k => add(k, 'spot', 1));
+  const first = [], second = [], seen = new Set();
+  for (const it of items) (seen.has(it.lemma) ? second : first).push(it), seen.add(it.lemma);
+  return newRun(lang, sourceId, sit, env, [...shuffle(first), ...shuffle(second)], null);
+}
+
+// Lv1 看圖選字；Lv2 看字（或聽字）選圖，干擾選項含意思相對的基元；Lv3 一對相對的圖，依序選出兩個字；Lv4 看圖說出或打出
+function makeCoreQuestion(run, item) {
+  const { lang } = run, P = lang.coreByKey.get(item.lemma), w = word(item.lemma);
+  const lv = item.kind === 'spot' ? 5 : w.lv;
+  const opp = P.opposite ? lang.core.find(p => p.id === P.opposite) : null;
+  const others = avoid => shuffle(lang.core.filter(p => p !== P && !avoid.includes(p)));
+  let mode = 'pick', answer = [P.key], cards = [], icons = [P.icon], cardIcons = null, prompt = null, accept = P.words;
+  if (lv === 1) {
+    cards = shuffle([P.key, ...others([]).slice(0, 3).map(p => p.key)]);
+  } else if (lv === 2) {
+    const ds = [opp, ...others([opp])].filter(Boolean).slice(0, 3);
+    cards = shuffle([P, ...ds].map(p => p.key));
+    cardIcons = Object.fromEntries([P, ...ds].map(p => [p.key, p.icon]));
+    icons = []; prompt = P.key;
+  } else if (lv === 3) {
+    const B = opp || others([])[0];
+    mode = 'order'; answer = [P.key, B.key]; icons = [P.icon, B.icon]; accept = null;
+    cards = shuffle([P.key, B.key, ...others([B]).slice(0, 2).map(p => p.key)]);
+  } else {
+    mode = 'produce';
+  }
+  const challenge = item.kind !== 'spot' && lv >= 2 && lv < 5 && !run.leveled.has(item.lemma) &&
+    w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
+  const text = answer.join(' ');
+  return {
+    item, lv, mode, core: true, tokens: [], gap: [], answer, cards, cardIcons, icons, prompt, accept, challenge,
+    timer: lv <= 2 ? 0 : lv === 3 ? 15 : 12, neighbors: [], image: null, rules: [],
+    before: '', after: '', full: text, answerText: text,
   };
 }
 
@@ -248,6 +306,7 @@ function neighborCards(run, lemma, surface, n) {
 }
 
 export function makeQuestion(run, item) {
+  if (item.core) return makeCoreQuestion(run, item);
   if (item.kind === 'chain') return makeChainQuestion(run, item);
   if (item.kind === 'boss') return makeBossQuestion(run, item);
   const { lang } = run;
@@ -298,10 +357,10 @@ export const current = run => run.queue[run.pos] || (run.boss && !run.bossDone ?
 export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) {
   const item = q.item;
   let ok;
-  if (spoken) ok = [].concat(response).some(r => normalize(r).includes(normalize(q.answerText)));
+  if (spoken) ok = [].concat(response).some(r => (q.accept || [q.answerText]).some(a => normalize(r).includes(normalize(a))));
   else if (q.mode === 'pick') ok = response === q.answer[0];
   else if (q.mode === 'order') ok = response.join('\u0000') === q.answer.join('\u0000');
-  else ok = normalize(response) === normalize(q.answerText);
+  else ok = (q.accept || [q.answerText]).some(a => normalize(response) === normalize(a));
 
   if (item.kind === 'chain') return answerChain(run, q, ok, timeLeft);
   if (item.kind === 'boss') return answerBoss(run, q, ok, timeLeft);
@@ -368,7 +427,8 @@ function levelUp(run, lemma, w, result) {
   run.leveled.add(lemma);
   run.levelUps.push({ lemma, lv: w.lv });
   result.levelUp = w.lv;
-  if (w.lv === 2 && run.lang.lemmas.get(lemma).content) run.newTiles.push(lemma);
+  // 基元全部算進領土（包括 I、this、not 這類功能詞）
+  if (w.lv === 2 && (run.lang.lemmas.get(lemma)?.content || run.lang.coreByKey?.has(lemma))) run.newTiles.push(lemma);
 }
 
 // ---- 局中升級：三選一（只有已解鎖的規則；再選一次同一條規則 = 連鎖多跳一環） ----

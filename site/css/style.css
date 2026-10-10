@@ -368,3 +368,19 @@ body.playing #simBar { display: none; }
 .chip-btn:active { background: var(--yellow); }
 .mine-cue { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .mine-cue .mine { justify-content: center; }
+
+/* ---- 基元 65 ---- */
+.sentence.core { font-size: 22px; }
+.core-row { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.core-pair { display: flex; justify-content: center; gap: 28px; }
+.core-cell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.core-icon { font-size: 64px; line-height: 1.1; }
+.core-icon .cicon.pair { font-size: 1em; }
+.core-word { font-size: 34px; font-weight: 800; }
+.core-eq { font-size: 26px; color: var(--muted); }
+.slot.core-slot { min-width: 72px; text-align: center; font-size: 22px; }
+.slot.core-slot .cicon { font-size: 32px; }
+.wcard.icon-card { font-size: 40px; padding: 8px; display: grid; place-items: center; min-height: 76px; }
+.src-card .cover.core-cover { font-size: 24px; }
+.core-hint { display: flex; flex-direction: column; gap: 6px; border-color: var(--blue); box-shadow: inset 6px 0 0 var(--blue); }
+.prime-note { border-left: 4px solid var(--yellow); padding-left: 10px; margin-top: 12px; }

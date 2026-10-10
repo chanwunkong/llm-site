@@ -26,7 +26,11 @@ export function generate(req, getLang) {
   // 規則依詞彙量自動開放（金幣經濟打開時才照舊規則手動解鎖）
   if (SHOW.rulePurchase) L().unlocked = rulesToUnlock(lang, { mid: 4, late: 'A1' }[req.preset] || 0);
   for (let r = 0; r < p.runs; r++) {
-    const run = R.buildRun(lang, lang.sources[0].id, 'ear');
+    // 和學習者一樣：先練「基元 65」，一半的基元到 Lv2 後改讀文章
+    const core = lang.sources.find(s => s.core), article = lang.sources.find(s => !s.core);
+    const primesDone = lang.core.filter(p => (L().words[p.key]?.lv || 1) >= 2).length;
+    const src = core && (!article || primesDone < lang.core.length / 2) ? core : article;
+    const run = R.buildRun(lang, src.id, 'ear');
     while (R.current(run)) {
       const q = R.makeQuestion(run, R.current(run));
       const ok = Math.random() < 0.85;

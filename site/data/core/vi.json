@@ -1,0 +1,944 @@
+{
+"lang": "vi",
+"primes": [
+{
+"id": "I",
+"key": "tôi",
+"words": [
+"tôi"
+],
+"group": "實體",
+"opposite": "YOU",
+"icon": {
+"id": "I",
+"tier": 1,
+"template": "single",
+"icon": "🙋"
+}
+},
+{
+"id": "YOU",
+"key": "bạn",
+"words": [
+"bạn"
+],
+"group": "實體",
+"opposite": "I",
+"icon": {
+"id": "YOU",
+"tier": 1,
+"template": "single",
+"icon": "🫵"
+}
+},
+{
+"id": "SOMEONE",
+"key": "ai",
+"words": [
+"ai"
+],
+"group": "實體",
+"opposite": "SOMETHING",
+"icon": {
+"id": "SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "👤❓"
+}
+},
+{
+"id": "SOMETHING",
+"key": "gì",
+"words": [
+"gì",
+"vật"
+],
+"group": "實體",
+"opposite": "SOMEONE",
+"icon": {
+"id": "SOMETHING",
+"tier": 1,
+"template": "single",
+"icon": "📦❓"
+}
+},
+{
+"id": "PEOPLE",
+"key": "người",
+"words": [
+"người"
+],
+"group": "實體",
+"opposite": "BODY",
+"icon": {
+"id": "PEOPLE",
+"tier": 1,
+"template": "single",
+"icon": "👥"
+}
+},
+{
+"id": "BODY",
+"key": "cơ thể",
+"words": [
+"cơ thể"
+],
+"group": "實體",
+"opposite": "PEOPLE",
+"icon": {
+"id": "BODY",
+"tier": 1,
+"template": "single",
+"icon": "🧍"
+}
+},
+{
+"id": "KIND",
+"key": "loại",
+"words": [
+"loại"
+],
+"group": "關係",
+"opposite": "PART",
+"icon": {
+"id": "KIND",
+"tier": 1,
+"template": "single",
+"icon": "🍎🍌"
+}
+},
+{
+"id": "PART",
+"key": "phần",
+"words": [
+"phần"
+],
+"group": "關係",
+"opposite": "KIND",
+"icon": {
+"id": "PART",
+"tier": 1,
+"template": "single",
+"icon": "🍰"
+}
+},
+{
+"id": "THIS",
+"key": "này",
+"words": [
+"này"
+],
+"group": "限定",
+"opposite": null,
+"icon": {
+"id": "THIS",
+"tier": 1,
+"template": "single",
+"icon": "👇"
+}
+},
+{
+"id": "THE_SAME",
+"key": "giống",
+"words": [
+"giống"
+],
+"group": "限定",
+"opposite": "OTHER",
+"icon": {
+"id": "THE_SAME",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍏"
+}
+},
+{
+"id": "OTHER",
+"key": "khác",
+"words": [
+"khác"
+],
+"group": "限定",
+"opposite": "THE_SAME",
+"icon": {
+"id": "OTHER",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍎"
+}
+},
+{
+"id": "ONE",
+"key": "một",
+"words": [
+"một"
+],
+"group": "數量",
+"opposite": "TWO",
+"icon": {
+"id": "ONE",
+"tier": 1,
+"template": "single",
+"icon": "1️⃣"
+}
+},
+{
+"id": "TWO",
+"key": "hai",
+"words": [
+"hai"
+],
+"group": "數量",
+"opposite": "ONE",
+"icon": {
+"id": "TWO",
+"tier": 1,
+"template": "single",
+"icon": "2️⃣"
+}
+},
+{
+"id": "SOME",
+"key": "vài",
+"words": [
+"vài"
+],
+"group": "數量",
+"opposite": "ALL",
+"icon": {
+"id": "SOME",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎🍎|*🍎🍎"
+}
+},
+{
+"id": "ALL",
+"key": "tất cả",
+"words": [
+"tất cả"
+],
+"group": "數量",
+"opposite": "SOME",
+"icon": {
+"id": "ALL",
+"tier": 1,
+"template": "single",
+"icon": "💯"
+}
+},
+{
+"id": "MUCH_MANY",
+"key": "nhiều",
+"words": [
+"nhiều"
+],
+"group": "數量",
+"opposite": "LITTLE_FEW",
+"icon": {
+"id": "MUCH_MANY",
+"tier": 1,
+"template": "contrast",
+"icon": "*🍎🍎🍎|🍎"
+}
+},
+{
+"id": "LITTLE_FEW",
+"key": "ít",
+"words": [
+"ít"
+],
+"group": "數量",
+"opposite": "MUCH_MANY",
+"icon": {
+"id": "LITTLE_FEW",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎|*🍎"
+}
+},
+{
+"id": "GOOD",
+"key": "tốt",
+"words": [
+"tốt"
+],
+"group": "評價",
+"opposite": "BAD",
+"icon": {
+"id": "GOOD",
+"tier": 1,
+"template": "single",
+"icon": "👍"
+}
+},
+{
+"id": "BAD",
+"key": "xấu",
+"words": [
+"xấu"
+],
+"group": "評價",
+"opposite": "GOOD",
+"icon": {
+"id": "BAD",
+"tier": 1,
+"template": "single",
+"icon": "👎"
+}
+},
+{
+"id": "BIG",
+"key": "lớn",
+"words": [
+"lớn"
+],
+"group": "描述",
+"opposite": "SMALL",
+"icon": {
+"id": "BIG",
+"tier": 1,
+"template": "contrast",
+"icon": "*🐘|🐭"
+}
+},
+{
+"id": "SMALL",
+"key": "nhỏ",
+"words": [
+"nhỏ"
+],
+"group": "描述",
+"opposite": "BIG",
+"icon": {
+"id": "SMALL",
+"tier": 1,
+"template": "contrast",
+"icon": "🐘|*🐭"
+}
+},
+{
+"id": "THINK",
+"key": "nghĩ",
+"words": [
+"nghĩ"
+],
+"group": "心智",
+"opposite": "KNOW",
+"icon": {
+"id": "THINK",
+"tier": 1,
+"template": "single",
+"icon": "🤔"
+}
+},
+{
+"id": "KNOW",
+"key": "biết",
+"words": [
+"biết"
+],
+"group": "心智",
+"opposite": "THINK",
+"icon": {
+"id": "KNOW",
+"tier": 1,
+"template": "single",
+"icon": "💡"
+}
+},
+{
+"id": "WANT",
+"key": "muốn",
+"words": [
+"muốn"
+],
+"group": "心智",
+"opposite": "DONT_WANT",
+"icon": {
+"id": "WANT",
+"tier": 1,
+"template": "single",
+"icon": "🫴🍎"
+}
+},
+{
+"id": "DONT_WANT",
+"key": "không muốn",
+"words": [
+"không muốn"
+],
+"group": "心智",
+"opposite": "WANT",
+"icon": {
+"id": "DONT_WANT",
+"tier": 1,
+"template": "single",
+"icon": "🙅🍎"
+}
+},
+{
+"id": "FEEL",
+"key": "cảm thấy",
+"words": [
+"cảm thấy"
+],
+"group": "心智",
+"opposite": null,
+"icon": {
+"id": "FEEL",
+"tier": 1,
+"template": "single",
+"icon": "😊😢"
+}
+},
+{
+"id": "SEE",
+"key": "thấy",
+"words": [
+"thấy",
+"xem"
+],
+"group": "心智",
+"opposite": "HEAR",
+"icon": {
+"id": "SEE",
+"tier": 1,
+"template": "single",
+"icon": "👀"
+}
+},
+{
+"id": "HEAR",
+"key": "nghe",
+"words": [
+"nghe"
+],
+"group": "心智",
+"opposite": "SEE",
+"icon": {
+"id": "HEAR",
+"tier": 1,
+"template": "single",
+"icon": "👂"
+}
+},
+{
+"id": "SAY",
+"key": "nói",
+"words": [
+"nói"
+],
+"group": "言語",
+"opposite": "WORDS",
+"icon": {
+"id": "SAY",
+"tier": 1,
+"template": "single",
+"icon": "🗣️"
+}
+},
+{
+"id": "WORDS",
+"key": "lời",
+"words": [
+"lời",
+"từ"
+],
+"group": "言語",
+"opposite": "SAY",
+"icon": {
+"id": "WORDS",
+"tier": 1,
+"template": "single",
+"icon": "💬"
+}
+},
+{
+"id": "TRUE",
+"key": "thật",
+"words": [
+"thật",
+"đúng"
+],
+"group": "言語",
+"opposite": "MAYBE",
+"icon": {
+"id": "TRUE",
+"tier": 1,
+"template": "single",
+"icon": "🎯"
+}
+},
+{
+"id": "DO",
+"key": "làm",
+"words": [
+"làm"
+],
+"group": "動作",
+"opposite": "HAPPEN",
+"icon": {
+"id": "DO",
+"tier": 1,
+"template": "single",
+"icon": "🛠️"
+}
+},
+{
+"id": "HAPPEN",
+"key": "xảy ra",
+"words": [
+"xảy ra"
+],
+"group": "動作",
+"opposite": "DO",
+"icon": {
+"id": "HAPPEN",
+"tier": 1,
+"template": "single",
+"icon": "💥"
+}
+},
+{
+"id": "MOVE",
+"key": "di chuyển",
+"words": [
+"di chuyển"
+],
+"group": "動作",
+"opposite": "TOUCH",
+"icon": {
+"id": "MOVE",
+"tier": 1,
+"template": "single",
+"icon": "🏃"
+}
+},
+{
+"id": "BE_SOMEWHERE",
+"key": "ở",
+"words": [
+"ở"
+],
+"group": "存在",
+"opposite": "THERE_IS",
+"icon": {
+"id": "BE_SOMEWHERE",
+"tier": 1,
+"template": "single",
+"icon": "🧍📍"
+}
+},
+{
+"id": "THERE_IS",
+"key": "có",
+"words": [
+"có"
+],
+"group": "存在",
+"opposite": "BE_SOMEWHERE",
+"icon": {
+"id": "THERE_IS",
+"tier": 1,
+"template": "single",
+"icon": "👀📦"
+}
+},
+{
+"id": "BE_SOMEONE",
+"key": "là",
+"words": [
+"là"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "BE_SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "🧑🪪"
+}
+},
+{
+"id": "LIVE",
+"key": "sống",
+"words": [
+"sống"
+],
+"group": "生命",
+"opposite": "DIE",
+"icon": {
+"id": "LIVE",
+"tier": 1,
+"template": "single",
+"icon": "💓"
+}
+},
+{
+"id": "DIE",
+"key": "chết",
+"words": [
+"chết"
+],
+"group": "生命",
+"opposite": "LIVE",
+"icon": {
+"id": "DIE",
+"tier": 1,
+"template": "single",
+"icon": "🥀"
+}
+},
+{
+"id": "WHEN_TIME",
+"key": "khi",
+"words": [
+"khi",
+"lúc"
+],
+"group": "時間",
+"opposite": "WHERE_PLACE",
+"icon": {
+"id": "WHEN_TIME",
+"tier": 1,
+"template": "single",
+"icon": "🕰️"
+}
+},
+{
+"id": "NOW",
+"key": "bây giờ",
+"words": [
+"bây giờ"
+],
+"group": "時間",
+"opposite": "HERE",
+"icon": {
+"id": "NOW",
+"tier": 1,
+"template": "single",
+"icon": "👉🕰️"
+}
+},
+{
+"id": "BEFORE",
+"key": "trước",
+"words": [
+"trước"
+],
+"group": "時間",
+"opposite": "AFTER",
+"icon": {
+"id": "BEFORE",
+"tier": 1,
+"template": "single",
+"icon": "🕰️⬅️"
+}
+},
+{
+"id": "AFTER",
+"key": "sau",
+"words": [
+"sau"
+],
+"group": "時間",
+"opposite": "BEFORE",
+"icon": {
+"id": "AFTER",
+"tier": 1,
+"template": "single",
+"icon": "🕰️➡️"
+}
+},
+{
+"id": "LONG_TIME",
+"key": "lâu",
+"words": [
+"lâu"
+],
+"group": "時間",
+"opposite": "SHORT_TIME",
+"icon": {
+"id": "LONG_TIME",
+"tier": 1,
+"template": "contrast",
+"icon": "*⏳⏳⏳|⏳"
+}
+},
+{
+"id": "MOMENT",
+"key": "khoảnh khắc",
+"words": [
+"khoảnh khắc"
+],
+"group": "時間",
+"opposite": "FOR_SOME_TIME",
+"icon": {
+"id": "MOMENT",
+"tier": 1,
+"template": "single",
+"icon": "⚡"
+}
+},
+{
+"id": "WHERE_PLACE",
+"key": "đâu",
+"words": [
+"đâu",
+"chỗ",
+"nơi"
+],
+"group": "空間",
+"opposite": "WHEN_TIME",
+"icon": {
+"id": "WHERE_PLACE",
+"tier": 1,
+"template": "single",
+"icon": "📍"
+}
+},
+{
+"id": "HERE",
+"key": "đây",
+"words": [
+"đây"
+],
+"group": "空間",
+"opposite": "NOW",
+"icon": {
+"id": "HERE",
+"tier": 1,
+"template": "single",
+"icon": "👇📍"
+}
+},
+{
+"id": "ABOVE",
+"key": "trên",
+"words": [
+"trên"
+],
+"group": "空間",
+"opposite": "BELOW",
+"icon": {
+"id": "ABOVE",
+"tier": 1,
+"template": "single",
+"icon": "⬆️"
+}
+},
+{
+"id": "BELOW",
+"key": "dưới",
+"words": [
+"dưới"
+],
+"group": "空間",
+"opposite": "ABOVE",
+"icon": {
+"id": "BELOW",
+"tier": 1,
+"template": "single",
+"icon": "⬇️"
+}
+},
+{
+"id": "FAR",
+"key": "xa",
+"words": [
+"xa"
+],
+"group": "空間",
+"opposite": "NEAR",
+"icon": {
+"id": "FAR",
+"tier": 1,
+"template": "single",
+"icon": "🔭"
+}
+},
+{
+"id": "NEAR",
+"key": "gần",
+"words": [
+"gần"
+],
+"group": "空間",
+"opposite": "FAR",
+"icon": {
+"id": "NEAR",
+"tier": 1,
+"template": "single",
+"icon": "🧍🏠"
+}
+},
+{
+"id": "SIDE",
+"key": "bên",
+"words": [
+"bên",
+"phía"
+],
+"group": "空間",
+"opposite": "INSIDE",
+"icon": {
+"id": "SIDE",
+"tier": 1,
+"template": "single",
+"icon": "↔️"
+}
+},
+{
+"id": "INSIDE",
+"key": "trong",
+"words": [
+"trong"
+],
+"group": "空間",
+"opposite": "SIDE",
+"icon": {
+"id": "INSIDE",
+"tier": 1,
+"template": "single",
+"icon": "📦🐈"
+}
+},
+{
+"id": "TOUCH",
+"key": "chạm",
+"words": [
+"chạm"
+],
+"group": "空間",
+"opposite": "MOVE",
+"icon": {
+"id": "TOUCH",
+"tier": 1,
+"template": "single",
+"icon": "👆"
+}
+},
+{
+"id": "NOT",
+"key": "không",
+"words": [
+"không"
+],
+"group": "邏輯",
+"opposite": "CAN",
+"icon": {
+"id": "NOT",
+"tier": 1,
+"template": "single",
+"icon": "🚫"
+}
+},
+{
+"id": "MAYBE",
+"key": "có lẽ",
+"words": [
+"có lẽ"
+],
+"group": "邏輯",
+"opposite": "TRUE",
+"icon": {
+"id": "MAYBE",
+"tier": 1,
+"template": "single",
+"icon": "🤷"
+}
+},
+{
+"id": "CAN",
+"key": "có thể",
+"words": [
+"có thể"
+],
+"group": "邏輯",
+"opposite": "NOT",
+"icon": {
+"id": "CAN",
+"tier": 1,
+"template": "single",
+"icon": "💪"
+}
+},
+{
+"id": "BECAUSE",
+"key": "vì",
+"words": [
+"vì"
+],
+"group": "邏輯",
+"opposite": "IF",
+"icon": {
+"id": "BECAUSE",
+"tier": 1,
+"template": "single",
+"icon": "🌧️☂️"
+}
+},
+{
+"id": "IF",
+"key": "nếu",
+"words": [
+"nếu"
+],
+"group": "邏輯",
+"opposite": "BECAUSE",
+"icon": {
+"id": "IF",
+"tier": 1,
+"template": "single",
+"icon": "🌧️❓"
+}
+},
+{
+"id": "VERY",
+"key": "rất",
+"words": [
+"rất"
+],
+"group": "強化",
+"opposite": "MORE",
+"icon": {
+"id": "VERY",
+"tier": 1,
+"template": "single",
+"icon": "‼️"
+}
+},
+{
+"id": "MORE",
+"key": "hơn",
+"words": [
+"hơn",
+"thêm"
+],
+"group": "強化",
+"opposite": "VERY",
+"icon": {
+"id": "MORE",
+"tier": 1,
+"template": "single",
+"icon": "➕"
+}
+},
+{
+"id": "LIKE_AS",
+"key": "như",
+"words": [
+"như"
+],
+"group": "相似",
+"opposite": null,
+"icon": {
+"id": "LIKE_AS",
+"tier": 1,
+"template": "single",
+"icon": "🐱🐯"
+}
+}
+]
+}

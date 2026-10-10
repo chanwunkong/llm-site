@@ -74,5 +74,29 @@ js = ('// 自動產生（data/concepts/build_base.py），請勿手動修改。\
       '// 第一層：NSM 語意基元；第二層：日常概念（種子為 The CEFR-J Wordlist Version 1.5, compiled by Yukio Tono, TUFS）。\n'
       f'export const BASE = {json.dumps(base, ensure_ascii=False)};\n')
 open('../../site/js/data/base.js', 'w', encoding='utf-8').write(js)
+# ---- 內建來源「基元 65」：每種語言一個資料檔 site/data/core/<語言>.json ----
+# 相對的基元：Lv2 的干擾選項、Lv3 的一對題
+OPPOSITE = [('BIG', 'SMALL'), ('GOOD', 'BAD'), ('BEFORE', 'AFTER'), ('ABOVE', 'BELOW'), ('FAR', 'NEAR'), ('MUCH_MANY', 'LITTLE_FEW'),
+            ('LONG_TIME', 'SHORT_TIME'), ('LIVE', 'DIE'), ('THE_SAME', 'OTHER'), ('WANT', 'DONT_WANT'), ('SEE', 'HEAR'), ('I', 'YOU'),
+            ('ONE', 'TWO'), ('ALL', 'SOME'), ('THINK', 'KNOW'), ('TRUE', 'MAYBE'), ('IF', 'BECAUSE'), ('SOMEONE', 'SOMETHING'),
+            ('KIND', 'PART'), ('DO', 'HAPPEN'), ('BE_SOMEWHERE', 'THERE_IS'), ('WHEN_TIME', 'WHERE_PLACE'), ('MOMENT', 'FOR_SOME_TIME'),
+            ('NOW', 'HERE'), ('SAY', 'WORDS'), ('INSIDE', 'SIDE'), ('MORE', 'VERY'), ('PEOPLE', 'BODY'), ('MOVE', 'TOUCH'), ('NOT', 'CAN')]
+opp = {}
+for a, b in OPPOSITE: opp[a], opp[b] = b, a
+core_dir = os.path.join('..', '..', 'site', 'data', 'core')
+os.makedirs(core_dir, exist_ok=True)
+index = []
+for lang in langs:
+    primes = []
+    for e in exps:
+        words = [w.strip() for w in e[lang].split(';') if w.strip()]
+        if not words: continue
+        p = prime[e['prime']]
+        primes.append({'id': p['id'], 'key': words[0], 'words': words, 'group': p['group'], 'opposite': opp.get(p['id']),
+                       'icon': {'id': p['id'], 'tier': 1, 'template': p['template'], 'icon': p['icon']}})
+    json.dump({'lang': lang, 'primes': primes}, open(os.path.join(core_dir, f'{lang}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=0)
+    index.append(lang)
+json.dump(index, open(os.path.join(core_dir, 'index.json'), 'w', encoding='utf-8'))
+
 print({k: len(v) for k, v in base.items()})
 print('tier1', {k: len({r['id'] for r in v.values() if r['tier'] == 1}) for k, v in base.items()})

@@ -23,7 +23,7 @@ SMALL,small,小さい,klein,pequeño,pequeno,petit,piccolo,маленький,�
 THINK,think,思う,denken,pensar,pensar,penser,pensare,думать,ভাবা,सोचना;सोच,فکر,فكر,நினை,想,düşünmek;düşün,생각하다,nghĩ,pikir;berpikir,คิด,fikiri;kufikiri,ойлоо;ойло
 KNOW,know,知る;分かる,wissen,saber,saber,savoir,sapere,знать,জানা,जानना;जान,دانستن,عرف,தெரி,知道,bilmek;bil,알다,biết,tahu,รู้,jua;kujua,билүү;бил
 WANT,want,ほしい;たい,wollen,querer,querer,vouloir,volere,хотеть,চাওয়া,चाहना;चाह,خواستن,أراد,வேண்டு,要;想要,istemek;iste,원하다,muốn,mau;ingin,อยาก;ต้องการ,taka;kutaka,каалоо;каала
-DONT_WANT,,いらない,,,,,,,,,,,,,,,,,,,
+DONT_WANT,don't want,いらない,,no querer,não querer,ne pas vouloir,,,,,,,,不想要;不要,,원하지 않다,không muốn,tidak mau,ไม่อยาก,,
 FEEL,feel,感じる,fühlen,sentir,sentir,sentir,sentire,чувствовать,অনুভব,महसूस,احساس,شعر,உணர்,感覺;感觉;覺得;觉得,hissetmek;hisset,느끼다,cảm thấy,merasa;rasa,รู้สึก,hisi;kuhisi,сезүү;сез
 SEE,see,見る,sehen,ver,ver,voir,vedere,видеть,দেখা,देखना;देख,دیدن,رأى,பார்,看;看見;看见,görmek;gör,보다,thấy;xem,lihat;melihat,เห็น;ดู,ona;kuona,көрүү;көр
 HEAR,hear,聞く,hören,oír,ouvir,entendre,udire;sentire,слышать,শোনা,सुनना;सुन,شنیدن,سمع,கேள்,聽;听;聽見;听见,duymak;duy,듣다,nghe,dengar;mendengar,ได้ยิน,sikia;kusikia,угуу;ук
@@ -34,7 +34,7 @@ DO,do,する,tun;machen,hacer,fazer,faire,fare,делать,করা,करन�
 HAPPEN,happen,起こる,geschehen;passieren,pasar;ocurrir,acontecer,arriver;passer,succedere,случиться;происходить,ঘটা,घटना,اتفاق,حدث,நட,發生;发生,olmak;ol,일어나다,xảy ra,terjadi,เกิด,tokea;kutokea,болуу;бол
 MOVE,move,動く,bewegen,mover,mover,bouger,muovere,двигаться,নড়া,हिलना,حرکت,تحرك,நகர்,動;动,hareket,움직이다,di chuyển,bergerak;gerak,เคลื่อน,sogea;kusogea,кыймылдоо
 BE_SOMEWHERE,be,いる;ある,sein,estar,estar,être,stare;essere,быть,থাকা,होना,بودن,كان,இரு,在,bulunmak,있다,ở,berada;ada,อยู่,kuwa,болуу
-THERE_IS,,ある;いる,geben,haber;hay,haver;ter,avoir,esserci,есть,আছে,है,هست,يوجد;هناك,உண்டு,有,var,있다,có,ada,มี,kuna,бар
+THERE_IS,there is;there are,ある;いる,geben,haber;hay,haver;ter,avoir,esserci,есть,আছে,है,هست,يوجد;هناك,உண்டு,有,var,있다,có,ada,มี,kuna,бар
 BE_SOMEONE,be,だ;である,sein,ser,ser,être,essere,быть,হওয়া,होना,بودن,كان,ஆ,是,olmak,이다,là,adalah,เป็น,ni;kuwa,болуу
 MINE,mine,私の,mein,mío,meu,mien,mio,мой,আমার,मेरा,,لي,என்னுடைய,我的,benim,내;나의,,milikku;punyaku,ของฉัน,yangu,меники
 LIVE,live,生きる,leben,vivir,viver,vivre,vivere,жить,বাঁচা,जीना;जी,زیستن;زندگی,عاش,வாழ்,活,yaşamak;yaşa,살다,sống,hidup,มีชีวิต,ishi;kuishi,жашоо;жаша
@@ -43,9 +43,9 @@ WHEN_TIME,when;time,時;いつ,wann;Zeit,cuando;tiempo,quando;tempo,quand;temps,
 NOW,now,今,jetzt,ahora,agora,maintenant,ora;adesso,сейчас,এখন,अब,حالا;اکنون,الآن,இப்போது,現在;现在,şimdi,지금,bây giờ,sekarang,ตอนนี้,sasa,азыр
 BEFORE,before,前,vorher;vor,antes,antes,avant,prima,раньше;до,আগে,पहले,قبل,قبل,முன்,以前;之前,önce,전,trước,sebelum,ก่อน,kabla,мурун
 AFTER,after,後,nachher;nach,después,depois,après,dopo,после,পরে,बाद,بعد,بعد,பின்,以後;以后;之後;之后,sonra,후,sau,sesudah;setelah,หลัง,baada,кийин
-LONG_TIME,long,長い間,lange,,,longtemps,,долго,অনেকক্ষণ,देर,مدت,طويلا,நீண்ட,很久;久,uzun,오래,lâu,lama,นาน,,көпкө
-SHORT_TIME,,短い間,kurz,,,,,недолго,,,,,,一會兒;一会儿,kısa,잠깐,,sebentar,ครู่,,
-FOR_SOME_TIME,,しばらく,,,,,,,,,,,,一陣子;一阵子,,한동안,,sementara,,,
+LONG_TIME,a long time;long,長い間,lange,mucho tiempo,muito tempo,longtemps,,долго,অনেকক্ষণ,देर,مدت,طويلا,நீண்ட,很久;久,uzun,오래,lâu,lama,นาน,,көпкө
+SHORT_TIME,a short time,短い間,kurz,poco tiempo,pouco tempo,,,недолго,,,,,,一會兒;一会儿,kısa,잠깐,,sebentar,ครู่,,
+FOR_SOME_TIME,for some time,しばらく,,por un tiempo,,,,,,,,,,一陣子;一阵子,,한동안,,sementara,,,
 MOMENT,moment,瞬間;一瞬,Moment;Augenblick,momento,momento,moment,momento,момент;миг,মুহূর্ত,पल;क्षण,لحظه,لحظة,கணம்,瞬間;瞬间,an,순간,khoảnh khắc,saat,ขณะ,dakika,учур
 WHERE_PLACE,where;place,所;どこ,wo;Ort,donde;lugar,onde;lugar,où;endroit,dove;posto,где;место,কোথায়;জায়গা,कहाँ;जगह,کجا;جا,أين;مكان,எங்கே;இடம்,哪裡;哪里;地方,nere;yer,어디;곳,đâu;chỗ;nơi,mana;tempat,ที่ไหน;ที่,wapi;mahali,кайда;жер
 HERE,here,ここ,hier,aquí,aqui,ici,qui,здесь,এখানে,यहाँ,اینجا,هنا,இங்கே,這裡;这里,bura;burada,여기,đây,sini,ที่นี่,hapa,мында

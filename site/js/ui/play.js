@@ -55,7 +55,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     else startTimer();
   }
 
-  const playGap = () => speakGap(q.before, q.after, 0.9);
+  // 基元題沒有句子：Lv2 唸出題目的字，其他等級不唸（答完才唸）
+  const playGap = () => (q.core ? (q.prompt ? speak(q.prompt, { rate: 0.85 }) : Promise.resolve()) : speakGap(q.before, q.after, 0.9));
 
   // ---------- 畫面 ----------
   function renderQ() {
@@ -78,7 +79,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       <div class="qmain">
       ${q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
       ${q.mineCue ? `<div class="mine-cue"><span class="muted">你的理解</span><div class="mine">${q.mineCue.map(p => `<span class="mchip">${run.lang.base[p] ? iconHtml(run.lang.base[p]) + ' ' : ''}${esc(p)}</span>`).join('<i>＋</i>')}</div></div>` : ''}
-      <div class="sentence${showText ? '' : ' hidden-text'}" id="sent" dir="${run.lang.dir || 'ltr'}">${sentenceHtml()}</div>
+      <div class="sentence${q.core ? ' core' : ''}${showText ? '' : ' hidden-text'}" id="sent" dir="${run.lang.dir || 'ltr'}">${sentenceHtml()}</div>
       ${audio() ? `<div class="listen-row">
         <button class="btn sm" id="replay">${G.speaker()} 再聽一次</button>
         <button class="btn sm" id="eye">${G.eye()} ${showText ? '隱藏文字' : '顯示文字'}</button></div>` : ''}
@@ -86,10 +87,10 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       <div id="fb" class="feedback"></div>
       </div>
       ${cardMode ? `<div class="cards">${q.cards.map((c, i) => `
-        <button class="wcard" data-i="${i}" dir="auto">${esc(c)}${audio() ? `<span class="say" data-say="${i}">${G.speaker(14)}</span>` : ''}</button>`).join('')}</div>` : ''}
+        <button class="wcard${q.cardIcons ? ' icon-card' : ''}" data-i="${i}" dir="auto">${q.cardIcons ? iconHtml(q.cardIcons[c]) : esc(c)}${audio() && !q.cardIcons ? `<span class="say" data-say="${i}">${G.speaker(14)}</span>` : ''}</button>`).join('')}</div>` : ''}
       ${useMic ? `<button class="btn gold mic" id="mic">${G.mic()} 說出${q.mode === 'pick' ? '答案' : '整段'}</button>
         <button class="linkish" id="alt">${cardMode ? '改用點選作答（積分以耳機計）' : '改用打字作答（積分以耳機計）'}</button>` : ''}
-      ${!cardMode && !useMic ? `<div class="produce"><input id="inp" placeholder="輸入空格裡的內容" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn gold" id="send">送出</button></div>` : ''}`;
+      ${!cardMode && !useMic ? `<div class="produce"><input id="inp" placeholder="${q.core ? '輸入這個圖示的字' : '輸入空格裡的內容'}" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn gold" id="send">送出</button></div>` : ''}`;
 
     $('#replay') && ($('#replay').onclick = () => playGap());
     $('#eye') && ($('#eye').onclick = () => { showText = !showText; $('#sent').classList.toggle('hidden-text', !showText); $('#eye').innerHTML = `${G.eye()} ${showText ? '隱藏文字' : '顯示文字'}`; });
@@ -119,6 +120,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
 
   // 句子逐字畫出：空格換成字卡槽；規則透視的片段加底線與規則編號
   function sentenceHtml(result) {
+    if (q.core) return coreHtml(result);
     const marks = (q.marks ||= ruleMarks(run, q.tokens));
     const trigger = marks.some(m => m.idx.every(i => q.gap.includes(i)));
     const slots = q.answer.map((a, i) => {
@@ -130,6 +132,22 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       return `<span class="slot${k !== undefined ? ' filled' : ''}" data-slot="${i}">${k !== undefined ? esc(q.cards[k]) : '　'}</span>`;
     }).join(run.lang.joiner === '' ? '' : ' ');
     return markedHtml(q.tokens, marks, q.gap, slots, trigger);
+  }
+
+  // 基元題：圖示（或題目的字）＋字卡槽。Lv2 的字卡是圖示，槽裡也放圖示
+  function coreHtml(result) {
+    const show = k => (q.cardIcons ? iconHtml(q.cardIcons[k]) : esc(k));
+    const slot = i => {
+      if (result) {
+        const v = result.ok ? q.answer[i] : (result.mine?.[i] ?? q.answer[i]);
+        return `<span class="slot core-slot ${result.ok ? 'ok' : 'no'}">${v ? show(v) : '　'}</span>`;
+      }
+      const k = picked[i];
+      return `<span class="slot core-slot${k !== undefined ? ' filled' : ''}" data-slot="${i}">${k !== undefined ? show(q.cards[k]) : '　'}</span>`;
+    };
+    if (q.prompt) return `<div class="core-row"><span class="ctx core-word">${esc(q.prompt)}</span><span class="core-eq">＝</span>${slot(0)}</div>`;
+    if (q.mode === 'order') return `<div class="core-pair">${q.icons.map((ic, i) => `<div class="core-cell"><div class="core-icon">${iconHtml(ic)}</div>${slot(i)}</div>`).join('')}</div>`;
+    return `<div class="core-row"><div class="core-icon">${iconHtml(q.icons[0])}</div>${q.mode === 'produce' && !result ? '' : slot(0)}</div>`;
   }
 
   // tokens：整句；gap：空格的位置（沒有空格時傳空陣列）；slotsHtml：空格處要放的內容；trigger：空格會觸發連鎖
@@ -366,7 +384,12 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
       ${rep.newTiles.length ? `<h3>${SHOW.backpack ? '新詞元進背包' : '新字加入領土'}</h3>
         <p class="muted">點一個字，用學過的字寫下你對它的理解（可以略過）。</p>
-        <div class="chips">${rep.newTiles.map(l => `<button class="chip-btn" data-mine="${esc(l)}">${run.lang.base[l] ? iconHtml(run.lang.base[l]) + ' ' : ''}${esc(l)}${L().words[l]?.mine?.length ? ' ✓' : ''}</button>`).join('')}</div>
+        <div class="chips">${rep.newTiles.map(l => {
+          const ic = run.lang.base[l] || run.lang.coreByKey?.get(l)?.icon, prime = ic?.tier === 1;
+          // 基元不可分割：只顯示，不能寫註解
+          return prime ? `<span>${iconHtml(ic)} ${esc(l)}</span>`
+            : `<button class="chip-btn" data-mine="${esc(l)}">${ic ? iconHtml(ic) + ' ' : ''}${esc(l)}${L().words[l]?.mine?.length ? ' ✓' : ''}</button>`;
+        }).join('')}</div>
         ${SHOW.backpack && rep.auto.length ? `<p class="muted">背包滿了，${rep.auto.map(esc).join('、')} 已自動放在領土邊緣。</p>` : ''}` : ''}
       ${rep.newRules?.length ? `<h3>開放新規則</h3><p class="muted">${rep.newRules.map(r => `${r} ${esc(WALS.find(w => w.id === r).name)}`).join('、')}：之後升級時可以選到，答對用到它的空格會觸發連鎖。</p>` : ''}
       ${rulesTxt ? `<h3>連鎖（共 ${rep.chainLinks} 環）</h3><p class="muted">${rulesTxt}</p>` : ''}

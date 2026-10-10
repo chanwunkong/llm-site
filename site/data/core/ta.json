@@ -1,0 +1,929 @@
+{
+"lang": "ta",
+"primes": [
+{
+"id": "I",
+"key": "நான்",
+"words": [
+"நான்"
+],
+"group": "實體",
+"opposite": "YOU",
+"icon": {
+"id": "I",
+"tier": 1,
+"template": "single",
+"icon": "🙋"
+}
+},
+{
+"id": "YOU",
+"key": "நீ",
+"words": [
+"நீ"
+],
+"group": "實體",
+"opposite": "I",
+"icon": {
+"id": "YOU",
+"tier": 1,
+"template": "single",
+"icon": "🫵"
+}
+},
+{
+"id": "SOMEONE",
+"key": "யாரோ",
+"words": [
+"யாரோ",
+"யார்"
+],
+"group": "實體",
+"opposite": "SOMETHING",
+"icon": {
+"id": "SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "👤❓"
+}
+},
+{
+"id": "SOMETHING",
+"key": "ஏதோ",
+"words": [
+"ஏதோ",
+"பொருள்",
+"என்ன"
+],
+"group": "實體",
+"opposite": "SOMEONE",
+"icon": {
+"id": "SOMETHING",
+"tier": 1,
+"template": "single",
+"icon": "📦❓"
+}
+},
+{
+"id": "PEOPLE",
+"key": "மக்கள்",
+"words": [
+"மக்கள்"
+],
+"group": "實體",
+"opposite": "BODY",
+"icon": {
+"id": "PEOPLE",
+"tier": 1,
+"template": "single",
+"icon": "👥"
+}
+},
+{
+"id": "BODY",
+"key": "உடல்",
+"words": [
+"உடல்"
+],
+"group": "實體",
+"opposite": "PEOPLE",
+"icon": {
+"id": "BODY",
+"tier": 1,
+"template": "single",
+"icon": "🧍"
+}
+},
+{
+"id": "KIND",
+"key": "வகை",
+"words": [
+"வகை"
+],
+"group": "關係",
+"opposite": "PART",
+"icon": {
+"id": "KIND",
+"tier": 1,
+"template": "single",
+"icon": "🍎🍌"
+}
+},
+{
+"id": "PART",
+"key": "பகுதி",
+"words": [
+"பகுதி"
+],
+"group": "關係",
+"opposite": "KIND",
+"icon": {
+"id": "PART",
+"tier": 1,
+"template": "single",
+"icon": "🍰"
+}
+},
+{
+"id": "THIS",
+"key": "இது",
+"words": [
+"இது",
+"இந்த"
+],
+"group": "限定",
+"opposite": null,
+"icon": {
+"id": "THIS",
+"tier": 1,
+"template": "single",
+"icon": "👇"
+}
+},
+{
+"id": "THE_SAME",
+"key": "அதே",
+"words": [
+"அதே"
+],
+"group": "限定",
+"opposite": "OTHER",
+"icon": {
+"id": "THE_SAME",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍏"
+}
+},
+{
+"id": "OTHER",
+"key": "மற்ற",
+"words": [
+"மற்ற",
+"வேறு"
+],
+"group": "限定",
+"opposite": "THE_SAME",
+"icon": {
+"id": "OTHER",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍎"
+}
+},
+{
+"id": "ONE",
+"key": "ஒன்று",
+"words": [
+"ஒன்று",
+"ஒரு"
+],
+"group": "數量",
+"opposite": "TWO",
+"icon": {
+"id": "ONE",
+"tier": 1,
+"template": "single",
+"icon": "1️⃣"
+}
+},
+{
+"id": "TWO",
+"key": "இரண்டு",
+"words": [
+"இரண்டு"
+],
+"group": "數量",
+"opposite": "ONE",
+"icon": {
+"id": "TWO",
+"tier": 1,
+"template": "single",
+"icon": "2️⃣"
+}
+},
+{
+"id": "SOME",
+"key": "சில",
+"words": [
+"சில"
+],
+"group": "數量",
+"opposite": "ALL",
+"icon": {
+"id": "SOME",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎🍎|*🍎🍎"
+}
+},
+{
+"id": "ALL",
+"key": "எல்லாம்",
+"words": [
+"எல்லாம்"
+],
+"group": "數量",
+"opposite": "SOME",
+"icon": {
+"id": "ALL",
+"tier": 1,
+"template": "single",
+"icon": "💯"
+}
+},
+{
+"id": "MUCH_MANY",
+"key": "நிறைய",
+"words": [
+"நிறைய",
+"பல"
+],
+"group": "數量",
+"opposite": "LITTLE_FEW",
+"icon": {
+"id": "MUCH_MANY",
+"tier": 1,
+"template": "contrast",
+"icon": "*🍎🍎🍎|🍎"
+}
+},
+{
+"id": "LITTLE_FEW",
+"key": "கொஞ்சம்",
+"words": [
+"கொஞ்சம்"
+],
+"group": "數量",
+"opposite": "MUCH_MANY",
+"icon": {
+"id": "LITTLE_FEW",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎|*🍎"
+}
+},
+{
+"id": "GOOD",
+"key": "நல்ல",
+"words": [
+"நல்ல"
+],
+"group": "評價",
+"opposite": "BAD",
+"icon": {
+"id": "GOOD",
+"tier": 1,
+"template": "single",
+"icon": "👍"
+}
+},
+{
+"id": "BAD",
+"key": "கெட்ட",
+"words": [
+"கெட்ட"
+],
+"group": "評價",
+"opposite": "GOOD",
+"icon": {
+"id": "BAD",
+"tier": 1,
+"template": "single",
+"icon": "👎"
+}
+},
+{
+"id": "BIG",
+"key": "பெரிய",
+"words": [
+"பெரிய"
+],
+"group": "描述",
+"opposite": "SMALL",
+"icon": {
+"id": "BIG",
+"tier": 1,
+"template": "contrast",
+"icon": "*🐘|🐭"
+}
+},
+{
+"id": "SMALL",
+"key": "சிறிய",
+"words": [
+"சிறிய"
+],
+"group": "描述",
+"opposite": "BIG",
+"icon": {
+"id": "SMALL",
+"tier": 1,
+"template": "contrast",
+"icon": "🐘|*🐭"
+}
+},
+{
+"id": "THINK",
+"key": "நினை",
+"words": [
+"நினை"
+],
+"group": "心智",
+"opposite": "KNOW",
+"icon": {
+"id": "THINK",
+"tier": 1,
+"template": "single",
+"icon": "🤔"
+}
+},
+{
+"id": "KNOW",
+"key": "தெரி",
+"words": [
+"தெரி"
+],
+"group": "心智",
+"opposite": "THINK",
+"icon": {
+"id": "KNOW",
+"tier": 1,
+"template": "single",
+"icon": "💡"
+}
+},
+{
+"id": "WANT",
+"key": "வேண்டு",
+"words": [
+"வேண்டு"
+],
+"group": "心智",
+"opposite": "DONT_WANT",
+"icon": {
+"id": "WANT",
+"tier": 1,
+"template": "single",
+"icon": "🫴🍎"
+}
+},
+{
+"id": "FEEL",
+"key": "உணர்",
+"words": [
+"உணர்"
+],
+"group": "心智",
+"opposite": null,
+"icon": {
+"id": "FEEL",
+"tier": 1,
+"template": "single",
+"icon": "😊😢"
+}
+},
+{
+"id": "SEE",
+"key": "பார்",
+"words": [
+"பார்"
+],
+"group": "心智",
+"opposite": "HEAR",
+"icon": {
+"id": "SEE",
+"tier": 1,
+"template": "single",
+"icon": "👀"
+}
+},
+{
+"id": "HEAR",
+"key": "கேள்",
+"words": [
+"கேள்"
+],
+"group": "心智",
+"opposite": "SEE",
+"icon": {
+"id": "HEAR",
+"tier": 1,
+"template": "single",
+"icon": "👂"
+}
+},
+{
+"id": "SAY",
+"key": "சொல்",
+"words": [
+"சொல்"
+],
+"group": "言語",
+"opposite": "WORDS",
+"icon": {
+"id": "SAY",
+"tier": 1,
+"template": "single",
+"icon": "🗣️"
+}
+},
+{
+"id": "WORDS",
+"key": "வார்த்தை",
+"words": [
+"வார்த்தை"
+],
+"group": "言語",
+"opposite": "SAY",
+"icon": {
+"id": "WORDS",
+"tier": 1,
+"template": "single",
+"icon": "💬"
+}
+},
+{
+"id": "TRUE",
+"key": "உண்மை",
+"words": [
+"உண்மை"
+],
+"group": "言語",
+"opposite": "MAYBE",
+"icon": {
+"id": "TRUE",
+"tier": 1,
+"template": "single",
+"icon": "🎯"
+}
+},
+{
+"id": "DO",
+"key": "செய்",
+"words": [
+"செய்"
+],
+"group": "動作",
+"opposite": "HAPPEN",
+"icon": {
+"id": "DO",
+"tier": 1,
+"template": "single",
+"icon": "🛠️"
+}
+},
+{
+"id": "HAPPEN",
+"key": "நட",
+"words": [
+"நட"
+],
+"group": "動作",
+"opposite": "DO",
+"icon": {
+"id": "HAPPEN",
+"tier": 1,
+"template": "single",
+"icon": "💥"
+}
+},
+{
+"id": "MOVE",
+"key": "நகர்",
+"words": [
+"நகர்"
+],
+"group": "動作",
+"opposite": "TOUCH",
+"icon": {
+"id": "MOVE",
+"tier": 1,
+"template": "single",
+"icon": "🏃"
+}
+},
+{
+"id": "BE_SOMEWHERE",
+"key": "இரு",
+"words": [
+"இரு"
+],
+"group": "存在",
+"opposite": "THERE_IS",
+"icon": {
+"id": "BE_SOMEWHERE",
+"tier": 1,
+"template": "single",
+"icon": "🧍📍"
+}
+},
+{
+"id": "THERE_IS",
+"key": "உண்டு",
+"words": [
+"உண்டு"
+],
+"group": "存在",
+"opposite": "BE_SOMEWHERE",
+"icon": {
+"id": "THERE_IS",
+"tier": 1,
+"template": "single",
+"icon": "👀📦"
+}
+},
+{
+"id": "BE_SOMEONE",
+"key": "ஆ",
+"words": [
+"ஆ"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "BE_SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "🧑🪪"
+}
+},
+{
+"id": "MINE",
+"key": "என்னுடைய",
+"words": [
+"என்னுடைய"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "MINE",
+"tier": 1,
+"template": "single",
+"icon": "🙋🎒"
+}
+},
+{
+"id": "LIVE",
+"key": "வாழ்",
+"words": [
+"வாழ்"
+],
+"group": "生命",
+"opposite": "DIE",
+"icon": {
+"id": "LIVE",
+"tier": 1,
+"template": "single",
+"icon": "💓"
+}
+},
+{
+"id": "DIE",
+"key": "இற",
+"words": [
+"இற"
+],
+"group": "生命",
+"opposite": "LIVE",
+"icon": {
+"id": "DIE",
+"tier": 1,
+"template": "single",
+"icon": "🥀"
+}
+},
+{
+"id": "WHEN_TIME",
+"key": "எப்போது",
+"words": [
+"எப்போது",
+"நேரம்"
+],
+"group": "時間",
+"opposite": "WHERE_PLACE",
+"icon": {
+"id": "WHEN_TIME",
+"tier": 1,
+"template": "single",
+"icon": "🕰️"
+}
+},
+{
+"id": "NOW",
+"key": "இப்போது",
+"words": [
+"இப்போது"
+],
+"group": "時間",
+"opposite": "HERE",
+"icon": {
+"id": "NOW",
+"tier": 1,
+"template": "single",
+"icon": "👉🕰️"
+}
+},
+{
+"id": "BEFORE",
+"key": "முன்",
+"words": [
+"முன்"
+],
+"group": "時間",
+"opposite": "AFTER",
+"icon": {
+"id": "BEFORE",
+"tier": 1,
+"template": "single",
+"icon": "🕰️⬅️"
+}
+},
+{
+"id": "AFTER",
+"key": "பின்",
+"words": [
+"பின்"
+],
+"group": "時間",
+"opposite": "BEFORE",
+"icon": {
+"id": "AFTER",
+"tier": 1,
+"template": "single",
+"icon": "🕰️➡️"
+}
+},
+{
+"id": "LONG_TIME",
+"key": "நீண்ட",
+"words": [
+"நீண்ட"
+],
+"group": "時間",
+"opposite": "SHORT_TIME",
+"icon": {
+"id": "LONG_TIME",
+"tier": 1,
+"template": "contrast",
+"icon": "*⏳⏳⏳|⏳"
+}
+},
+{
+"id": "MOMENT",
+"key": "கணம்",
+"words": [
+"கணம்"
+],
+"group": "時間",
+"opposite": "FOR_SOME_TIME",
+"icon": {
+"id": "MOMENT",
+"tier": 1,
+"template": "single",
+"icon": "⚡"
+}
+},
+{
+"id": "WHERE_PLACE",
+"key": "எங்கே",
+"words": [
+"எங்கே",
+"இடம்"
+],
+"group": "空間",
+"opposite": "WHEN_TIME",
+"icon": {
+"id": "WHERE_PLACE",
+"tier": 1,
+"template": "single",
+"icon": "📍"
+}
+},
+{
+"id": "HERE",
+"key": "இங்கே",
+"words": [
+"இங்கே"
+],
+"group": "空間",
+"opposite": "NOW",
+"icon": {
+"id": "HERE",
+"tier": 1,
+"template": "single",
+"icon": "👇📍"
+}
+},
+{
+"id": "ABOVE",
+"key": "மேல்",
+"words": [
+"மேல்"
+],
+"group": "空間",
+"opposite": "BELOW",
+"icon": {
+"id": "ABOVE",
+"tier": 1,
+"template": "single",
+"icon": "⬆️"
+}
+},
+{
+"id": "BELOW",
+"key": "கீழ்",
+"words": [
+"கீழ்"
+],
+"group": "空間",
+"opposite": "ABOVE",
+"icon": {
+"id": "BELOW",
+"tier": 1,
+"template": "single",
+"icon": "⬇️"
+}
+},
+{
+"id": "FAR",
+"key": "தூரம்",
+"words": [
+"தூரம்"
+],
+"group": "空間",
+"opposite": "NEAR",
+"icon": {
+"id": "FAR",
+"tier": 1,
+"template": "single",
+"icon": "🔭"
+}
+},
+{
+"id": "NEAR",
+"key": "அருகில்",
+"words": [
+"அருகில்"
+],
+"group": "空間",
+"opposite": "FAR",
+"icon": {
+"id": "NEAR",
+"tier": 1,
+"template": "single",
+"icon": "🧍🏠"
+}
+},
+{
+"id": "SIDE",
+"key": "பக்கம்",
+"words": [
+"பக்கம்"
+],
+"group": "空間",
+"opposite": "INSIDE",
+"icon": {
+"id": "SIDE",
+"tier": 1,
+"template": "single",
+"icon": "↔️"
+}
+},
+{
+"id": "INSIDE",
+"key": "உள்ளே",
+"words": [
+"உள்ளே"
+],
+"group": "空間",
+"opposite": "SIDE",
+"icon": {
+"id": "INSIDE",
+"tier": 1,
+"template": "single",
+"icon": "📦🐈"
+}
+},
+{
+"id": "TOUCH",
+"key": "தொடு",
+"words": [
+"தொடு"
+],
+"group": "空間",
+"opposite": "MOVE",
+"icon": {
+"id": "TOUCH",
+"tier": 1,
+"template": "single",
+"icon": "👆"
+}
+},
+{
+"id": "NOT",
+"key": "இல்லை",
+"words": [
+"இல்லை"
+],
+"group": "邏輯",
+"opposite": "CAN",
+"icon": {
+"id": "NOT",
+"tier": 1,
+"template": "single",
+"icon": "🚫"
+}
+},
+{
+"id": "MAYBE",
+"key": "ஒருவேளை",
+"words": [
+"ஒருவேளை"
+],
+"group": "邏輯",
+"opposite": "TRUE",
+"icon": {
+"id": "MAYBE",
+"tier": 1,
+"template": "single",
+"icon": "🤷"
+}
+},
+{
+"id": "CAN",
+"key": "முடி",
+"words": [
+"முடி"
+],
+"group": "邏輯",
+"opposite": "NOT",
+"icon": {
+"id": "CAN",
+"tier": 1,
+"template": "single",
+"icon": "💪"
+}
+},
+{
+"id": "BECAUSE",
+"key": "ஏனென்றால்",
+"words": [
+"ஏனென்றால்"
+],
+"group": "邏輯",
+"opposite": "IF",
+"icon": {
+"id": "BECAUSE",
+"tier": 1,
+"template": "single",
+"icon": "🌧️☂️"
+}
+},
+{
+"id": "VERY",
+"key": "மிகவும்",
+"words": [
+"மிகவும்"
+],
+"group": "強化",
+"opposite": "MORE",
+"icon": {
+"id": "VERY",
+"tier": 1,
+"template": "single",
+"icon": "‼️"
+}
+},
+{
+"id": "MORE",
+"key": "அதிகம்",
+"words": [
+"அதிகம்"
+],
+"group": "強化",
+"opposite": "VERY",
+"icon": {
+"id": "MORE",
+"tier": 1,
+"template": "single",
+"icon": "➕"
+}
+},
+{
+"id": "LIKE_AS",
+"key": "போல",
+"words": [
+"போல"
+],
+"group": "相似",
+"opposite": null,
+"icon": {
+"id": "LIKE_AS",
+"tier": 1,
+"template": "single",
+"icon": "🐱🐯"
+}
+}
+]
+}

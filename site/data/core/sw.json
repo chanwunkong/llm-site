@@ -1,0 +1,931 @@
+{
+"lang": "sw",
+"primes": [
+{
+"id": "I",
+"key": "mimi",
+"words": [
+"mimi"
+],
+"group": "實體",
+"opposite": "YOU",
+"icon": {
+"id": "I",
+"tier": 1,
+"template": "single",
+"icon": "🙋"
+}
+},
+{
+"id": "YOU",
+"key": "wewe",
+"words": [
+"wewe"
+],
+"group": "實體",
+"opposite": "I",
+"icon": {
+"id": "YOU",
+"tier": 1,
+"template": "single",
+"icon": "🫵"
+}
+},
+{
+"id": "SOMEONE",
+"key": "mtu",
+"words": [
+"mtu",
+"nani"
+],
+"group": "實體",
+"opposite": "SOMETHING",
+"icon": {
+"id": "SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "👤❓"
+}
+},
+{
+"id": "SOMETHING",
+"key": "kitu",
+"words": [
+"kitu",
+"nini"
+],
+"group": "實體",
+"opposite": "SOMEONE",
+"icon": {
+"id": "SOMETHING",
+"tier": 1,
+"template": "single",
+"icon": "📦❓"
+}
+},
+{
+"id": "PEOPLE",
+"key": "watu",
+"words": [
+"watu"
+],
+"group": "實體",
+"opposite": "BODY",
+"icon": {
+"id": "PEOPLE",
+"tier": 1,
+"template": "single",
+"icon": "👥"
+}
+},
+{
+"id": "BODY",
+"key": "mwili",
+"words": [
+"mwili"
+],
+"group": "實體",
+"opposite": "PEOPLE",
+"icon": {
+"id": "BODY",
+"tier": 1,
+"template": "single",
+"icon": "🧍"
+}
+},
+{
+"id": "KIND",
+"key": "aina",
+"words": [
+"aina"
+],
+"group": "關係",
+"opposite": "PART",
+"icon": {
+"id": "KIND",
+"tier": 1,
+"template": "single",
+"icon": "🍎🍌"
+}
+},
+{
+"id": "PART",
+"key": "sehemu",
+"words": [
+"sehemu"
+],
+"group": "關係",
+"opposite": "KIND",
+"icon": {
+"id": "PART",
+"tier": 1,
+"template": "single",
+"icon": "🍰"
+}
+},
+{
+"id": "THIS",
+"key": "hii",
+"words": [
+"hii",
+"huyu"
+],
+"group": "限定",
+"opposite": null,
+"icon": {
+"id": "THIS",
+"tier": 1,
+"template": "single",
+"icon": "👇"
+}
+},
+{
+"id": "THE_SAME",
+"key": "sawa",
+"words": [
+"sawa"
+],
+"group": "限定",
+"opposite": "OTHER",
+"icon": {
+"id": "THE_SAME",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍏"
+}
+},
+{
+"id": "OTHER",
+"key": "nyingine",
+"words": [
+"nyingine",
+"mwingine"
+],
+"group": "限定",
+"opposite": "THE_SAME",
+"icon": {
+"id": "OTHER",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍎"
+}
+},
+{
+"id": "ONE",
+"key": "moja",
+"words": [
+"moja"
+],
+"group": "數量",
+"opposite": "TWO",
+"icon": {
+"id": "ONE",
+"tier": 1,
+"template": "single",
+"icon": "1️⃣"
+}
+},
+{
+"id": "TWO",
+"key": "mbili",
+"words": [
+"mbili"
+],
+"group": "數量",
+"opposite": "ONE",
+"icon": {
+"id": "TWO",
+"tier": 1,
+"template": "single",
+"icon": "2️⃣"
+}
+},
+{
+"id": "SOME",
+"key": "baadhi",
+"words": [
+"baadhi"
+],
+"group": "數量",
+"opposite": "ALL",
+"icon": {
+"id": "SOME",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎🍎|*🍎🍎"
+}
+},
+{
+"id": "ALL",
+"key": "yote",
+"words": [
+"yote",
+"wote"
+],
+"group": "數量",
+"opposite": "SOME",
+"icon": {
+"id": "ALL",
+"tier": 1,
+"template": "single",
+"icon": "💯"
+}
+},
+{
+"id": "MUCH_MANY",
+"key": "sana",
+"words": [
+"sana",
+"wengi"
+],
+"group": "數量",
+"opposite": "LITTLE_FEW",
+"icon": {
+"id": "MUCH_MANY",
+"tier": 1,
+"template": "contrast",
+"icon": "*🍎🍎🍎|🍎"
+}
+},
+{
+"id": "LITTLE_FEW",
+"key": "kidogo",
+"words": [
+"kidogo"
+],
+"group": "數量",
+"opposite": "MUCH_MANY",
+"icon": {
+"id": "LITTLE_FEW",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎|*🍎"
+}
+},
+{
+"id": "GOOD",
+"key": "nzuri",
+"words": [
+"nzuri",
+"mzuri"
+],
+"group": "評價",
+"opposite": "BAD",
+"icon": {
+"id": "GOOD",
+"tier": 1,
+"template": "single",
+"icon": "👍"
+}
+},
+{
+"id": "BAD",
+"key": "mbaya",
+"words": [
+"mbaya"
+],
+"group": "評價",
+"opposite": "GOOD",
+"icon": {
+"id": "BAD",
+"tier": 1,
+"template": "single",
+"icon": "👎"
+}
+},
+{
+"id": "BIG",
+"key": "kubwa",
+"words": [
+"kubwa"
+],
+"group": "描述",
+"opposite": "SMALL",
+"icon": {
+"id": "BIG",
+"tier": 1,
+"template": "contrast",
+"icon": "*🐘|🐭"
+}
+},
+{
+"id": "SMALL",
+"key": "ndogo",
+"words": [
+"ndogo"
+],
+"group": "描述",
+"opposite": "BIG",
+"icon": {
+"id": "SMALL",
+"tier": 1,
+"template": "contrast",
+"icon": "🐘|*🐭"
+}
+},
+{
+"id": "THINK",
+"key": "fikiri",
+"words": [
+"fikiri",
+"kufikiri"
+],
+"group": "心智",
+"opposite": "KNOW",
+"icon": {
+"id": "THINK",
+"tier": 1,
+"template": "single",
+"icon": "🤔"
+}
+},
+{
+"id": "KNOW",
+"key": "jua",
+"words": [
+"jua",
+"kujua"
+],
+"group": "心智",
+"opposite": "THINK",
+"icon": {
+"id": "KNOW",
+"tier": 1,
+"template": "single",
+"icon": "💡"
+}
+},
+{
+"id": "WANT",
+"key": "taka",
+"words": [
+"taka",
+"kutaka"
+],
+"group": "心智",
+"opposite": "DONT_WANT",
+"icon": {
+"id": "WANT",
+"tier": 1,
+"template": "single",
+"icon": "🫴🍎"
+}
+},
+{
+"id": "FEEL",
+"key": "hisi",
+"words": [
+"hisi",
+"kuhisi"
+],
+"group": "心智",
+"opposite": null,
+"icon": {
+"id": "FEEL",
+"tier": 1,
+"template": "single",
+"icon": "😊😢"
+}
+},
+{
+"id": "SEE",
+"key": "ona",
+"words": [
+"ona",
+"kuona"
+],
+"group": "心智",
+"opposite": "HEAR",
+"icon": {
+"id": "SEE",
+"tier": 1,
+"template": "single",
+"icon": "👀"
+}
+},
+{
+"id": "HEAR",
+"key": "sikia",
+"words": [
+"sikia",
+"kusikia"
+],
+"group": "心智",
+"opposite": "SEE",
+"icon": {
+"id": "HEAR",
+"tier": 1,
+"template": "single",
+"icon": "👂"
+}
+},
+{
+"id": "SAY",
+"key": "sema",
+"words": [
+"sema",
+"kusema"
+],
+"group": "言語",
+"opposite": "WORDS",
+"icon": {
+"id": "SAY",
+"tier": 1,
+"template": "single",
+"icon": "🗣️"
+}
+},
+{
+"id": "WORDS",
+"key": "neno",
+"words": [
+"neno",
+"maneno"
+],
+"group": "言語",
+"opposite": "SAY",
+"icon": {
+"id": "WORDS",
+"tier": 1,
+"template": "single",
+"icon": "💬"
+}
+},
+{
+"id": "TRUE",
+"key": "kweli",
+"words": [
+"kweli"
+],
+"group": "言語",
+"opposite": "MAYBE",
+"icon": {
+"id": "TRUE",
+"tier": 1,
+"template": "single",
+"icon": "🎯"
+}
+},
+{
+"id": "DO",
+"key": "fanya",
+"words": [
+"fanya",
+"kufanya"
+],
+"group": "動作",
+"opposite": "HAPPEN",
+"icon": {
+"id": "DO",
+"tier": 1,
+"template": "single",
+"icon": "🛠️"
+}
+},
+{
+"id": "HAPPEN",
+"key": "tokea",
+"words": [
+"tokea",
+"kutokea"
+],
+"group": "動作",
+"opposite": "DO",
+"icon": {
+"id": "HAPPEN",
+"tier": 1,
+"template": "single",
+"icon": "💥"
+}
+},
+{
+"id": "MOVE",
+"key": "sogea",
+"words": [
+"sogea",
+"kusogea"
+],
+"group": "動作",
+"opposite": "TOUCH",
+"icon": {
+"id": "MOVE",
+"tier": 1,
+"template": "single",
+"icon": "🏃"
+}
+},
+{
+"id": "BE_SOMEWHERE",
+"key": "kuwa",
+"words": [
+"kuwa"
+],
+"group": "存在",
+"opposite": "THERE_IS",
+"icon": {
+"id": "BE_SOMEWHERE",
+"tier": 1,
+"template": "single",
+"icon": "🧍📍"
+}
+},
+{
+"id": "THERE_IS",
+"key": "kuna",
+"words": [
+"kuna"
+],
+"group": "存在",
+"opposite": "BE_SOMEWHERE",
+"icon": {
+"id": "THERE_IS",
+"tier": 1,
+"template": "single",
+"icon": "👀📦"
+}
+},
+{
+"id": "BE_SOMEONE",
+"key": "ni",
+"words": [
+"ni",
+"kuwa"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "BE_SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "🧑🪪"
+}
+},
+{
+"id": "MINE",
+"key": "yangu",
+"words": [
+"yangu"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "MINE",
+"tier": 1,
+"template": "single",
+"icon": "🙋🎒"
+}
+},
+{
+"id": "LIVE",
+"key": "ishi",
+"words": [
+"ishi",
+"kuishi"
+],
+"group": "生命",
+"opposite": "DIE",
+"icon": {
+"id": "LIVE",
+"tier": 1,
+"template": "single",
+"icon": "💓"
+}
+},
+{
+"id": "DIE",
+"key": "kufa",
+"words": [
+"kufa",
+"fa"
+],
+"group": "生命",
+"opposite": "LIVE",
+"icon": {
+"id": "DIE",
+"tier": 1,
+"template": "single",
+"icon": "🥀"
+}
+},
+{
+"id": "WHEN_TIME",
+"key": "lini",
+"words": [
+"lini",
+"wakati"
+],
+"group": "時間",
+"opposite": "WHERE_PLACE",
+"icon": {
+"id": "WHEN_TIME",
+"tier": 1,
+"template": "single",
+"icon": "🕰️"
+}
+},
+{
+"id": "NOW",
+"key": "sasa",
+"words": [
+"sasa"
+],
+"group": "時間",
+"opposite": "HERE",
+"icon": {
+"id": "NOW",
+"tier": 1,
+"template": "single",
+"icon": "👉🕰️"
+}
+},
+{
+"id": "BEFORE",
+"key": "kabla",
+"words": [
+"kabla"
+],
+"group": "時間",
+"opposite": "AFTER",
+"icon": {
+"id": "BEFORE",
+"tier": 1,
+"template": "single",
+"icon": "🕰️⬅️"
+}
+},
+{
+"id": "AFTER",
+"key": "baada",
+"words": [
+"baada"
+],
+"group": "時間",
+"opposite": "BEFORE",
+"icon": {
+"id": "AFTER",
+"tier": 1,
+"template": "single",
+"icon": "🕰️➡️"
+}
+},
+{
+"id": "MOMENT",
+"key": "dakika",
+"words": [
+"dakika"
+],
+"group": "時間",
+"opposite": "FOR_SOME_TIME",
+"icon": {
+"id": "MOMENT",
+"tier": 1,
+"template": "single",
+"icon": "⚡"
+}
+},
+{
+"id": "WHERE_PLACE",
+"key": "wapi",
+"words": [
+"wapi",
+"mahali"
+],
+"group": "空間",
+"opposite": "WHEN_TIME",
+"icon": {
+"id": "WHERE_PLACE",
+"tier": 1,
+"template": "single",
+"icon": "📍"
+}
+},
+{
+"id": "HERE",
+"key": "hapa",
+"words": [
+"hapa"
+],
+"group": "空間",
+"opposite": "NOW",
+"icon": {
+"id": "HERE",
+"tier": 1,
+"template": "single",
+"icon": "👇📍"
+}
+},
+{
+"id": "ABOVE",
+"key": "juu",
+"words": [
+"juu"
+],
+"group": "空間",
+"opposite": "BELOW",
+"icon": {
+"id": "ABOVE",
+"tier": 1,
+"template": "single",
+"icon": "⬆️"
+}
+},
+{
+"id": "BELOW",
+"key": "chini",
+"words": [
+"chini"
+],
+"group": "空間",
+"opposite": "ABOVE",
+"icon": {
+"id": "BELOW",
+"tier": 1,
+"template": "single",
+"icon": "⬇️"
+}
+},
+{
+"id": "FAR",
+"key": "mbali",
+"words": [
+"mbali"
+],
+"group": "空間",
+"opposite": "NEAR",
+"icon": {
+"id": "FAR",
+"tier": 1,
+"template": "single",
+"icon": "🔭"
+}
+},
+{
+"id": "NEAR",
+"key": "karibu",
+"words": [
+"karibu"
+],
+"group": "空間",
+"opposite": "FAR",
+"icon": {
+"id": "NEAR",
+"tier": 1,
+"template": "single",
+"icon": "🧍🏠"
+}
+},
+{
+"id": "SIDE",
+"key": "upande",
+"words": [
+"upande"
+],
+"group": "空間",
+"opposite": "INSIDE",
+"icon": {
+"id": "SIDE",
+"tier": 1,
+"template": "single",
+"icon": "↔️"
+}
+},
+{
+"id": "INSIDE",
+"key": "ndani",
+"words": [
+"ndani"
+],
+"group": "空間",
+"opposite": "SIDE",
+"icon": {
+"id": "INSIDE",
+"tier": 1,
+"template": "single",
+"icon": "📦🐈"
+}
+},
+{
+"id": "TOUCH",
+"key": "gusa",
+"words": [
+"gusa",
+"kugusa"
+],
+"group": "空間",
+"opposite": "MOVE",
+"icon": {
+"id": "TOUCH",
+"tier": 1,
+"template": "single",
+"icon": "👆"
+}
+},
+{
+"id": "NOT",
+"key": "si",
+"words": [
+"si",
+"hapana"
+],
+"group": "邏輯",
+"opposite": "CAN",
+"icon": {
+"id": "NOT",
+"tier": 1,
+"template": "single",
+"icon": "🚫"
+}
+},
+{
+"id": "MAYBE",
+"key": "labda",
+"words": [
+"labda"
+],
+"group": "邏輯",
+"opposite": "TRUE",
+"icon": {
+"id": "MAYBE",
+"tier": 1,
+"template": "single",
+"icon": "🤷"
+}
+},
+{
+"id": "CAN",
+"key": "weza",
+"words": [
+"weza",
+"kuweza"
+],
+"group": "邏輯",
+"opposite": "NOT",
+"icon": {
+"id": "CAN",
+"tier": 1,
+"template": "single",
+"icon": "💪"
+}
+},
+{
+"id": "IF",
+"key": "kama",
+"words": [
+"kama"
+],
+"group": "邏輯",
+"opposite": "BECAUSE",
+"icon": {
+"id": "IF",
+"tier": 1,
+"template": "single",
+"icon": "🌧️❓"
+}
+},
+{
+"id": "VERY",
+"key": "sana",
+"words": [
+"sana"
+],
+"group": "強化",
+"opposite": "MORE",
+"icon": {
+"id": "VERY",
+"tier": 1,
+"template": "single",
+"icon": "‼️"
+}
+},
+{
+"id": "MORE",
+"key": "zaidi",
+"words": [
+"zaidi"
+],
+"group": "強化",
+"opposite": "VERY",
+"icon": {
+"id": "MORE",
+"tier": 1,
+"template": "single",
+"icon": "➕"
+}
+},
+{
+"id": "LIKE_AS",
+"key": "kama",
+"words": [
+"kama"
+],
+"group": "相似",
+"opposite": null,
+"icon": {
+"id": "LIKE_AS",
+"tier": 1,
+"template": "single",
+"icon": "🐱🐯"
+}
+}
+]
+}

@@ -1,0 +1,1002 @@
+{
+"lang": "ja",
+"primes": [
+{
+"id": "I",
+"key": "私",
+"words": [
+"私",
+"僕",
+"わたし"
+],
+"group": "實體",
+"opposite": "YOU",
+"icon": {
+"id": "I",
+"tier": 1,
+"template": "single",
+"icon": "🙋"
+}
+},
+{
+"id": "YOU",
+"key": "あなた",
+"words": [
+"あなた",
+"君"
+],
+"group": "實體",
+"opposite": "I",
+"icon": {
+"id": "YOU",
+"tier": 1,
+"template": "single",
+"icon": "🫵"
+}
+},
+{
+"id": "SOMEONE",
+"key": "誰か",
+"words": [
+"誰か",
+"誰"
+],
+"group": "實體",
+"opposite": "SOMETHING",
+"icon": {
+"id": "SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "👤❓"
+}
+},
+{
+"id": "SOMETHING",
+"key": "何か",
+"words": [
+"何か",
+"もの",
+"何"
+],
+"group": "實體",
+"opposite": "SOMEONE",
+"icon": {
+"id": "SOMETHING",
+"tier": 1,
+"template": "single",
+"icon": "📦❓"
+}
+},
+{
+"id": "PEOPLE",
+"key": "人",
+"words": [
+"人",
+"人々"
+],
+"group": "實體",
+"opposite": "BODY",
+"icon": {
+"id": "PEOPLE",
+"tier": 1,
+"template": "single",
+"icon": "👥"
+}
+},
+{
+"id": "BODY",
+"key": "体",
+"words": [
+"体"
+],
+"group": "實體",
+"opposite": "PEOPLE",
+"icon": {
+"id": "BODY",
+"tier": 1,
+"template": "single",
+"icon": "🧍"
+}
+},
+{
+"id": "KIND",
+"key": "種類",
+"words": [
+"種類"
+],
+"group": "關係",
+"opposite": "PART",
+"icon": {
+"id": "KIND",
+"tier": 1,
+"template": "single",
+"icon": "🍎🍌"
+}
+},
+{
+"id": "PART",
+"key": "部分",
+"words": [
+"部分"
+],
+"group": "關係",
+"opposite": "KIND",
+"icon": {
+"id": "PART",
+"tier": 1,
+"template": "single",
+"icon": "🍰"
+}
+},
+{
+"id": "THIS",
+"key": "この",
+"words": [
+"この",
+"これ"
+],
+"group": "限定",
+"opposite": null,
+"icon": {
+"id": "THIS",
+"tier": 1,
+"template": "single",
+"icon": "👇"
+}
+},
+{
+"id": "THE_SAME",
+"key": "同じ",
+"words": [
+"同じ"
+],
+"group": "限定",
+"opposite": "OTHER",
+"icon": {
+"id": "THE_SAME",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍏"
+}
+},
+{
+"id": "OTHER",
+"key": "他",
+"words": [
+"他",
+"別"
+],
+"group": "限定",
+"opposite": "THE_SAME",
+"icon": {
+"id": "OTHER",
+"tier": 1,
+"template": "single",
+"icon": "🍏🍎"
+}
+},
+{
+"id": "ONE",
+"key": "一つ",
+"words": [
+"一つ"
+],
+"group": "數量",
+"opposite": "TWO",
+"icon": {
+"id": "ONE",
+"tier": 1,
+"template": "single",
+"icon": "1️⃣"
+}
+},
+{
+"id": "TWO",
+"key": "二つ",
+"words": [
+"二つ"
+],
+"group": "數量",
+"opposite": "ONE",
+"icon": {
+"id": "TWO",
+"tier": 1,
+"template": "single",
+"icon": "2️⃣"
+}
+},
+{
+"id": "SOME",
+"key": "いくつか",
+"words": [
+"いくつか"
+],
+"group": "數量",
+"opposite": "ALL",
+"icon": {
+"id": "SOME",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎🍎|*🍎🍎"
+}
+},
+{
+"id": "ALL",
+"key": "全部",
+"words": [
+"全部",
+"みんな"
+],
+"group": "數量",
+"opposite": "SOME",
+"icon": {
+"id": "ALL",
+"tier": 1,
+"template": "single",
+"icon": "💯"
+}
+},
+{
+"id": "MUCH_MANY",
+"key": "たくさん",
+"words": [
+"たくさん"
+],
+"group": "數量",
+"opposite": "LITTLE_FEW",
+"icon": {
+"id": "MUCH_MANY",
+"tier": 1,
+"template": "contrast",
+"icon": "*🍎🍎🍎|🍎"
+}
+},
+{
+"id": "LITTLE_FEW",
+"key": "少し",
+"words": [
+"少し"
+],
+"group": "數量",
+"opposite": "MUCH_MANY",
+"icon": {
+"id": "LITTLE_FEW",
+"tier": 1,
+"template": "contrast",
+"icon": "🍎🍎🍎|*🍎"
+}
+},
+{
+"id": "GOOD",
+"key": "いい",
+"words": [
+"いい",
+"良い"
+],
+"group": "評價",
+"opposite": "BAD",
+"icon": {
+"id": "GOOD",
+"tier": 1,
+"template": "single",
+"icon": "👍"
+}
+},
+{
+"id": "BAD",
+"key": "悪い",
+"words": [
+"悪い"
+],
+"group": "評價",
+"opposite": "GOOD",
+"icon": {
+"id": "BAD",
+"tier": 1,
+"template": "single",
+"icon": "👎"
+}
+},
+{
+"id": "BIG",
+"key": "大きい",
+"words": [
+"大きい"
+],
+"group": "描述",
+"opposite": "SMALL",
+"icon": {
+"id": "BIG",
+"tier": 1,
+"template": "contrast",
+"icon": "*🐘|🐭"
+}
+},
+{
+"id": "SMALL",
+"key": "小さい",
+"words": [
+"小さい"
+],
+"group": "描述",
+"opposite": "BIG",
+"icon": {
+"id": "SMALL",
+"tier": 1,
+"template": "contrast",
+"icon": "🐘|*🐭"
+}
+},
+{
+"id": "THINK",
+"key": "思う",
+"words": [
+"思う"
+],
+"group": "心智",
+"opposite": "KNOW",
+"icon": {
+"id": "THINK",
+"tier": 1,
+"template": "single",
+"icon": "🤔"
+}
+},
+{
+"id": "KNOW",
+"key": "知る",
+"words": [
+"知る",
+"分かる"
+],
+"group": "心智",
+"opposite": "THINK",
+"icon": {
+"id": "KNOW",
+"tier": 1,
+"template": "single",
+"icon": "💡"
+}
+},
+{
+"id": "WANT",
+"key": "ほしい",
+"words": [
+"ほしい",
+"たい"
+],
+"group": "心智",
+"opposite": "DONT_WANT",
+"icon": {
+"id": "WANT",
+"tier": 1,
+"template": "single",
+"icon": "🫴🍎"
+}
+},
+{
+"id": "DONT_WANT",
+"key": "いらない",
+"words": [
+"いらない"
+],
+"group": "心智",
+"opposite": "WANT",
+"icon": {
+"id": "DONT_WANT",
+"tier": 1,
+"template": "single",
+"icon": "🙅🍎"
+}
+},
+{
+"id": "FEEL",
+"key": "感じる",
+"words": [
+"感じる"
+],
+"group": "心智",
+"opposite": null,
+"icon": {
+"id": "FEEL",
+"tier": 1,
+"template": "single",
+"icon": "😊😢"
+}
+},
+{
+"id": "SEE",
+"key": "見る",
+"words": [
+"見る"
+],
+"group": "心智",
+"opposite": "HEAR",
+"icon": {
+"id": "SEE",
+"tier": 1,
+"template": "single",
+"icon": "👀"
+}
+},
+{
+"id": "HEAR",
+"key": "聞く",
+"words": [
+"聞く"
+],
+"group": "心智",
+"opposite": "SEE",
+"icon": {
+"id": "HEAR",
+"tier": 1,
+"template": "single",
+"icon": "👂"
+}
+},
+{
+"id": "SAY",
+"key": "言う",
+"words": [
+"言う"
+],
+"group": "言語",
+"opposite": "WORDS",
+"icon": {
+"id": "SAY",
+"tier": 1,
+"template": "single",
+"icon": "🗣️"
+}
+},
+{
+"id": "WORDS",
+"key": "言葉",
+"words": [
+"言葉"
+],
+"group": "言語",
+"opposite": "SAY",
+"icon": {
+"id": "WORDS",
+"tier": 1,
+"template": "single",
+"icon": "💬"
+}
+},
+{
+"id": "TRUE",
+"key": "本当",
+"words": [
+"本当"
+],
+"group": "言語",
+"opposite": "MAYBE",
+"icon": {
+"id": "TRUE",
+"tier": 1,
+"template": "single",
+"icon": "🎯"
+}
+},
+{
+"id": "DO",
+"key": "する",
+"words": [
+"する"
+],
+"group": "動作",
+"opposite": "HAPPEN",
+"icon": {
+"id": "DO",
+"tier": 1,
+"template": "single",
+"icon": "🛠️"
+}
+},
+{
+"id": "HAPPEN",
+"key": "起こる",
+"words": [
+"起こる"
+],
+"group": "動作",
+"opposite": "DO",
+"icon": {
+"id": "HAPPEN",
+"tier": 1,
+"template": "single",
+"icon": "💥"
+}
+},
+{
+"id": "MOVE",
+"key": "動く",
+"words": [
+"動く"
+],
+"group": "動作",
+"opposite": "TOUCH",
+"icon": {
+"id": "MOVE",
+"tier": 1,
+"template": "single",
+"icon": "🏃"
+}
+},
+{
+"id": "BE_SOMEWHERE",
+"key": "いる",
+"words": [
+"いる",
+"ある"
+],
+"group": "存在",
+"opposite": "THERE_IS",
+"icon": {
+"id": "BE_SOMEWHERE",
+"tier": 1,
+"template": "single",
+"icon": "🧍📍"
+}
+},
+{
+"id": "THERE_IS",
+"key": "ある",
+"words": [
+"ある",
+"いる"
+],
+"group": "存在",
+"opposite": "BE_SOMEWHERE",
+"icon": {
+"id": "THERE_IS",
+"tier": 1,
+"template": "single",
+"icon": "👀📦"
+}
+},
+{
+"id": "BE_SOMEONE",
+"key": "だ",
+"words": [
+"だ",
+"である"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "BE_SOMEONE",
+"tier": 1,
+"template": "single",
+"icon": "🧑🪪"
+}
+},
+{
+"id": "MINE",
+"key": "私の",
+"words": [
+"私の"
+],
+"group": "存在",
+"opposite": null,
+"icon": {
+"id": "MINE",
+"tier": 1,
+"template": "single",
+"icon": "🙋🎒"
+}
+},
+{
+"id": "LIVE",
+"key": "生きる",
+"words": [
+"生きる"
+],
+"group": "生命",
+"opposite": "DIE",
+"icon": {
+"id": "LIVE",
+"tier": 1,
+"template": "single",
+"icon": "💓"
+}
+},
+{
+"id": "DIE",
+"key": "死ぬ",
+"words": [
+"死ぬ"
+],
+"group": "生命",
+"opposite": "LIVE",
+"icon": {
+"id": "DIE",
+"tier": 1,
+"template": "single",
+"icon": "🥀"
+}
+},
+{
+"id": "WHEN_TIME",
+"key": "時",
+"words": [
+"時",
+"いつ"
+],
+"group": "時間",
+"opposite": "WHERE_PLACE",
+"icon": {
+"id": "WHEN_TIME",
+"tier": 1,
+"template": "single",
+"icon": "🕰️"
+}
+},
+{
+"id": "NOW",
+"key": "今",
+"words": [
+"今"
+],
+"group": "時間",
+"opposite": "HERE",
+"icon": {
+"id": "NOW",
+"tier": 1,
+"template": "single",
+"icon": "👉🕰️"
+}
+},
+{
+"id": "BEFORE",
+"key": "前",
+"words": [
+"前"
+],
+"group": "時間",
+"opposite": "AFTER",
+"icon": {
+"id": "BEFORE",
+"tier": 1,
+"template": "single",
+"icon": "🕰️⬅️"
+}
+},
+{
+"id": "AFTER",
+"key": "後",
+"words": [
+"後"
+],
+"group": "時間",
+"opposite": "BEFORE",
+"icon": {
+"id": "AFTER",
+"tier": 1,
+"template": "single",
+"icon": "🕰️➡️"
+}
+},
+{
+"id": "LONG_TIME",
+"key": "長い間",
+"words": [
+"長い間"
+],
+"group": "時間",
+"opposite": "SHORT_TIME",
+"icon": {
+"id": "LONG_TIME",
+"tier": 1,
+"template": "contrast",
+"icon": "*⏳⏳⏳|⏳"
+}
+},
+{
+"id": "SHORT_TIME",
+"key": "短い間",
+"words": [
+"短い間"
+],
+"group": "時間",
+"opposite": "LONG_TIME",
+"icon": {
+"id": "SHORT_TIME",
+"tier": 1,
+"template": "contrast",
+"icon": "⏳⏳⏳|*⏳"
+}
+},
+{
+"id": "FOR_SOME_TIME",
+"key": "しばらく",
+"words": [
+"しばらく"
+],
+"group": "時間",
+"opposite": "MOMENT",
+"icon": {
+"id": "FOR_SOME_TIME",
+"tier": 1,
+"template": "single",
+"icon": "⏳"
+}
+},
+{
+"id": "MOMENT",
+"key": "瞬間",
+"words": [
+"瞬間",
+"一瞬"
+],
+"group": "時間",
+"opposite": "FOR_SOME_TIME",
+"icon": {
+"id": "MOMENT",
+"tier": 1,
+"template": "single",
+"icon": "⚡"
+}
+},
+{
+"id": "WHERE_PLACE",
+"key": "所",
+"words": [
+"所",
+"どこ"
+],
+"group": "空間",
+"opposite": "WHEN_TIME",
+"icon": {
+"id": "WHERE_PLACE",
+"tier": 1,
+"template": "single",
+"icon": "📍"
+}
+},
+{
+"id": "HERE",
+"key": "ここ",
+"words": [
+"ここ"
+],
+"group": "空間",
+"opposite": "NOW",
+"icon": {
+"id": "HERE",
+"tier": 1,
+"template": "single",
+"icon": "👇📍"
+}
+},
+{
+"id": "ABOVE",
+"key": "上",
+"words": [
+"上"
+],
+"group": "空間",
+"opposite": "BELOW",
+"icon": {
+"id": "ABOVE",
+"tier": 1,
+"template": "single",
+"icon": "⬆️"
+}
+},
+{
+"id": "BELOW",
+"key": "下",
+"words": [
+"下"
+],
+"group": "空間",
+"opposite": "ABOVE",
+"icon": {
+"id": "BELOW",
+"tier": 1,
+"template": "single",
+"icon": "⬇️"
+}
+},
+{
+"id": "FAR",
+"key": "遠い",
+"words": [
+"遠い"
+],
+"group": "空間",
+"opposite": "NEAR",
+"icon": {
+"id": "FAR",
+"tier": 1,
+"template": "single",
+"icon": "🔭"
+}
+},
+{
+"id": "NEAR",
+"key": "近い",
+"words": [
+"近い"
+],
+"group": "空間",
+"opposite": "FAR",
+"icon": {
+"id": "NEAR",
+"tier": 1,
+"template": "single",
+"icon": "🧍🏠"
+}
+},
+{
+"id": "SIDE",
+"key": "横",
+"words": [
+"横",
+"側"
+],
+"group": "空間",
+"opposite": "INSIDE",
+"icon": {
+"id": "SIDE",
+"tier": 1,
+"template": "single",
+"icon": "↔️"
+}
+},
+{
+"id": "INSIDE",
+"key": "中",
+"words": [
+"中"
+],
+"group": "空間",
+"opposite": "SIDE",
+"icon": {
+"id": "INSIDE",
+"tier": 1,
+"template": "single",
+"icon": "📦🐈"
+}
+},
+{
+"id": "TOUCH",
+"key": "触る",
+"words": [
+"触る"
+],
+"group": "空間",
+"opposite": "MOVE",
+"icon": {
+"id": "TOUCH",
+"tier": 1,
+"template": "single",
+"icon": "👆"
+}
+},
+{
+"id": "NOT",
+"key": "ない",
+"words": [
+"ない"
+],
+"group": "邏輯",
+"opposite": "CAN",
+"icon": {
+"id": "NOT",
+"tier": 1,
+"template": "single",
+"icon": "🚫"
+}
+},
+{
+"id": "MAYBE",
+"key": "かもしれない",
+"words": [
+"かもしれない"
+],
+"group": "邏輯",
+"opposite": "TRUE",
+"icon": {
+"id": "MAYBE",
+"tier": 1,
+"template": "single",
+"icon": "🤷"
+}
+},
+{
+"id": "CAN",
+"key": "できる",
+"words": [
+"できる"
+],
+"group": "邏輯",
+"opposite": "NOT",
+"icon": {
+"id": "CAN",
+"tier": 1,
+"template": "single",
+"icon": "💪"
+}
+},
+{
+"id": "BECAUSE",
+"key": "から",
+"words": [
+"から",
+"ので"
+],
+"group": "邏輯",
+"opposite": "IF",
+"icon": {
+"id": "BECAUSE",
+"tier": 1,
+"template": "single",
+"icon": "🌧️☂️"
+}
+},
+{
+"id": "IF",
+"key": "もし",
+"words": [
+"もし"
+],
+"group": "邏輯",
+"opposite": "BECAUSE",
+"icon": {
+"id": "IF",
+"tier": 1,
+"template": "single",
+"icon": "🌧️❓"
+}
+},
+{
+"id": "VERY",
+"key": "とても",
+"words": [
+"とても"
+],
+"group": "強化",
+"opposite": "MORE",
+"icon": {
+"id": "VERY",
+"tier": 1,
+"template": "single",
+"icon": "‼️"
+}
+},
+{
+"id": "MORE",
+"key": "もっと",
+"words": [
+"もっと"
+],
+"group": "強化",
+"opposite": "VERY",
+"icon": {
+"id": "MORE",
+"tier": 1,
+"template": "single",
+"icon": "➕"
+}
+},
+{
+"id": "LIKE_AS",
+"key": "よう",
+"words": [
+"よう",
+"みたい"
+],
+"group": "相似",
+"opposite": null,
+"icon": {
+"id": "LIKE_AS",
+"tier": 1,
+"template": "single",
+"icon": "🐱🐯"
+}
+}
+]
+}

@@ -3,7 +3,7 @@ import { buildLanguage } from './engine/content.js';
 import { BASE } from './data/base.js';
 import { LANG_LIST, LANG_BY_ID } from './data/langs.js';
 import { importsOf } from './engine/importer.js';
-import { loadDemo } from './engine/demo.js';
+import { loadDemo, loadCore } from './engine/demo.js';
 import { state, save, L, applyDecay, skipDay, resetAll, SIM, SHOW, enterSim, exitSim, takeSimRequest, refreshFeatures } from './engine/store.js';
 import { PRESETS, generate } from './engine/sim.js';
 import { syncUnlocks } from './engine/run.js';
@@ -19,8 +19,11 @@ import { createSounds } from './ui/sounds.js';
 import { openSheet, closeSheet, toast } from './ui/sheet.js';
 
 // 內建示範來源（資料檔，見 engine/demo.js）；20 種語言都可以匯入自己的文章
-const DEMO = await loadDemo();
-const dataOf = id => ({ ...LANG_BY_ID[id], id, sources: [...(DEMO[id] || []), ...importsOf(id)] });
+const [DEMO, CORE] = await Promise.all([loadDemo(), loadCore()]);
+// 每種語言的第一個來源是「基元 65」：沒有文章也能直接練
+const coreSource = id => (CORE[id]?.length ? [{ id: 'core', kind: '基元', title: '基元 65', core: true, primes: CORE[id],
+  credit: 'NSM 語意基元（Goddard & Wierzbicka）', situations: [{ title: '基元 65', sentences: [] }] }] : []);
+const dataOf = id => ({ ...LANG_BY_ID[id], id, sources: [...coreSource(id), ...(DEMO[id] || []), ...importsOf(id)] });
 const DATA = Object.fromEntries(LANG_LIST.map(l => [l.id, l]));
 const built = {};
 const getLang = () => (built[state.lang] ||= buildLanguage(dataOf(state.lang), BASE[state.lang] || {}));

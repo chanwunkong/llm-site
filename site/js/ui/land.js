@@ -276,12 +276,15 @@ export function createLand(root, { getLang, onChange }) {
 
   // ---------- 格子資訊 ----------
   // ---------- 我的理解：用學過的其他字組合出對這個字的解釋（不判斷對錯、不計分） ----------
-  const chip = (lang, l, attr = '') => `<button class="mchip" ${attr}>${lang.base[l] ? iconHtml(lang.base[l]) + ' ' : ''}${esc(l)}</button>`;
+  const chip = (lang, l, attr = '') => { const ic = lang.base[l] || lang.coreByKey?.get(l)?.icon; return `<button class="mchip" ${attr}>${ic ? iconHtml(ic) + ' ' : ''}${esc(l)}</button>`; };
   const mineHtml = (lang, parts) => `<div class="mine">${parts.map(p => chip(lang, p, 'disabled')).join('<i>＋</i>')}</div>`;
 
   function tileSheet(k) {
     const lang = getLang(), lg = L(), lemma = lg.territory[k], w = word(lemma);
     const info = lang.lemmas.get(lemma);
+    // 基元不可分割：不能寫「我的理解」，只當作解釋其他字的材料
+    const isPrime = lang.base[lemma]?.tier === 1 || lang.coreByKey?.has(lemma);
+    const icon = lang.base[lemma] || lang.coreByKey?.get(lemma)?.icon;
     const days = RULES.decayDays[w.lv];
     const status = w.lv === 5 ? '5 級：不會因時間降級，但會被隨機抽查'
       : days ? `${isDue(w) ? '快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
@@ -293,12 +296,13 @@ export function createLand(root, { getLang, onChange }) {
     highlight = new Set((mine?.parts || []).map(T.cellOf).filter(Boolean));
     redraw();
     openSheet(`
-      <h2>${lang.base[lemma] ? iconHtml(lang.base[lemma]) + ' ' : ''}${esc(lemma)} ${levelBlocks(w.lv)}</h2>
+      <h2>${icon ? iconHtml(icon) + ' ' : ''}${esc(lemma)} ${levelBlocks(w.lv)}</h2>
       ${isDue(w) ? mineBlock : ''}
-      <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>寫法：${[...info.forms].map(esc).join('、')}</p>
+      <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>${info ? `寫法：${[...info.forms].map(esc).join('、')}` : ''}</p>
       ${isDue(w) ? '' : mineBlock}
       ${SHOW.chunks && chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
-      ${SHOW.mine ? `<button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '修改我的理解' : '寫下我的理解'}</button>` : ''}
+      ${isPrime ? '<p class="muted prime-note">這是基元：最基本的意思，不能再拆開。它是用來解釋其他字的材料。</p>'
+        : SHOW.mine ? `<button class="btn ghost big" id="mineBtn" style="margin-top:14px">${mine ? '修改我的理解' : '寫下我的理解'}</button>` : ''}
       <div class="row" style="margin-top:12px">
         <button class="btn ghost big" id="say">${G.speaker()} 發音</button>
         ${SHOW.move ? `<button class="btn gold big" id="lift">移動${SHOW.gold ? `（${RULES.moveCost} 金幣）` : ''}</button>` : ''}
@@ -322,9 +326,9 @@ export function createLand(root, { getLang, onChange }) {
     const lang = getLang(), lg = L(), lemma = lg.territory[k], w = word(lemma);
     let parts = [...(w.mine?.at(-1)?.parts || [])], filter = '';
     // 材料：學過（Lv2 以上）的其他字；NSM 基元排前面
-    const materials = Object.entries(lg.words).filter(([l, x]) => x.lv >= 2 && l !== lemma && lang.lemmas.get(l)).map(([l]) => l)
+    const materials = Object.entries(lg.words).filter(([l, x]) => x.lv >= 2 && l !== lemma && (lang.lemmas.get(l) || lang.coreByKey?.has(l))).map(([l]) => l)
       .sort((a, b) => (lang.base[b]?.tier === 1) - (lang.base[a]?.tier === 1) || a.localeCompare(b));
-    const exs = lang.lemmas.get(lemma).sentences.slice(0, 3).map(id => joinTokens(lang.sentences[id].tokens, lang.joiner));
+    const exs = (lang.lemmas.get(lemma)?.sentences || []).slice(0, 3).map(id => joinTokens(lang.sentences[id].tokens, lang.joiner));
     openSheet(`<h2>我對「${esc(lemma)}」的理解</h2>
       <p class="muted">用你學過的字，組合出你對這個字的理解。沒有標準答案，只給你自己看。</p>
       <div class="stack">${exs.map((t, i) => `<button class="ex-row" data-ex="${i}">${esc(t)} ${G.speaker(14)}</button>`).join('')}</div>
