@@ -1,5 +1,6 @@
 // 答題畫面：唯一的題型「用字卡填滿空格」
-import { buildRun, makeQuestion, answer, current, choices, choose, settle, WALS } from '../engine/run.js';
+import { buildRun, makeQuestion, answer, current, choices, choose, settle, WALS, ruleMarks, profileOf } from '../engine/run.js';
+import { spaceBefore } from '../engine/content.js';
 import { L, SHOW, RULES } from '../engine/store.js';
 import { speak, speakGap, stopSpeech, sfx, listen, canListen } from '../audio.js';
 import { openSheet, closeSheet, esc, toast, sheetOpen } from './sheet.js';
@@ -60,7 +61,6 @@ export function createPlay(root, { onEnd, onSound }) {
   function renderQ() {
     const lg = L(), item = q.item;
     const chain = item.kind === 'chain', boss = item.kind === 'boss';
-    const active = chain ? [] : q.rules.filter(r => run.skills[r] && lg.unlocked.includes(r)).map(r => WALS.find(w => w.id === r));
     const ruleOf = id => WALS.find(w => w.id === id);
     $('#qcard').classList.toggle('chain', chain);
     $('#qcard').classList.toggle('boss', boss);
@@ -73,7 +73,6 @@ export function createPlay(root, { onEnd, onSound }) {
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
         ${item.kind === 'spot' ? '<span class="badge spot">5 級抽查</span>' : ''}
         ${q.challenge ? '<span class="badge challenge">升級挑戰</span>' : ''}
-        ${active.map(r => `<span class="badge rule-b">${r.id} 可觸發連鎖</span>`).join('')}
         <span class="badge" style="margin-left:auto">${ENV_NAME[run.env]}</span>
       </div>
       <div class="qmain">
@@ -117,7 +116,10 @@ export function createPlay(root, { onEnd, onSound }) {
     }
   }
 
+  // 句子逐字畫出：空格換成字卡槽；規則透視的片段加底線與規則編號
   function sentenceHtml(result) {
+    const marks = (q.marks ||= ruleMarks(run, q.tokens));
+    const trigger = marks.some(m => m.idx.every(i => q.gap.includes(i)));
     const slots = q.answer.map((a, i) => {
       if (result) {
         const mine = result.mine?.[i];
@@ -126,10 +128,30 @@ export function createPlay(root, { onEnd, onSound }) {
       const k = picked[i];
       return `<span class="slot${k !== undefined ? ' filled' : ''}" data-slot="${i}">${k !== undefined ? esc(q.cards[k]) : '　'}</span>`;
     }).join(run.lang.joiner === '' ? '' : ' ');
-    const j = run.lang.joiner;
-    const before = q.before ? `<span class="ctx">${esc(q.before)}</span>${j}` : '';
-    const after = q.after ? `${/^[\p{P}]/u.test(q.after) ? '' : j}<span class="ctx">${esc(q.after)}</span>` : '';
-    return before + slots + after;
+    return markedHtml(q.tokens, marks, q.gap, slots, trigger);
+  }
+
+  // tokens：整句；gap：空格的位置（沒有空格時傳空陣列）；slotsHtml：空格處要放的內容；trigger：空格會觸發連鎖
+  function markedHtml(tokens, marks, gap, slotsHtml = '', trigger = false) {
+    const j = run.lang.joiner, inGap = new Set(gap);
+    const marked = i => marks.filter(m => m.idx.includes(i) && !m.idx.every(x => inGap.has(x)));
+    const lastOf = i => marked(i).filter(m => m.idx.filter(x => !inGap.has(x)).at(-1) === i).map(m => m.rule);
+    let out = '';
+    tokens.forEach((t, i) => {
+      if (inGap.has(i) && i !== gap[0]) return;
+      const sep = spaceBefore(tokens, i, j);
+      // 同一個片段內的空白也加底線，底線才連成一條
+      const joinMark = i > 0 && marked(i).some(m => m.idx.includes(i - 1) && !inGap.has(i - 1));
+      out += sep ? (joinMark ? `<span class="ctx rmk">${sep}</span>` : sep) : '';
+      if (inGap.has(i)) {
+        const rules = [...new Set(marks.filter(m => m.idx.every(x => inGap.has(x))).map(m => m.rule))];
+        out += trigger ? `<span class="rslot">${slotsHtml}<sup class="rtag">${rules.join(' ')}</sup></span>` : slotsHtml;
+        return;
+      }
+      const tags = lastOf(i);
+      out += `<span class="ctx${marked(i).length ? ' rmk' : ''}">${esc(t.surface)}</span>${tags.length ? `<sup class="rtag">${tags.join(' ')}</sup>` : ''}`;
+    });
+    return out;
   }
 
   function bindSlots() {
@@ -232,7 +254,7 @@ export function createPlay(root, { onEnd, onSound }) {
       fb.className = 'feedback ok';
       fb.innerHTML = `正確 +${res.points}${extra ? `<br><small>${extra}</small>` : ''}`;
       floatText(`+${res.points}`);
-      if (res.chains?.length) setTimeout(() => floatText(`連鎖！${res.chains.map(c => c.rule).join(' ＋ ')}`, true), 250);
+      if (res.chains?.length) { sent.classList.add('fire'); setTimeout(() => floatText(`連鎖！${res.chains.map(c => c.rule).join(' ＋ ')}`, true), 250); }
       const c = $('.combo');
       c.classList.remove('bump'); c.offsetWidth; c.classList.add('bump');
     } else {
@@ -281,14 +303,29 @@ export function createPlay(root, { onEnd, onSound }) {
   }
 
   // ---------- 局中升級：三選一 ----------
+  // 三選一的例句：目前情境裡（找不到就整個來源）最短、有這條規則的句子，片段加底線
+  function ruleExample(ruleId) {
+    const r = WALS.find(w => w.id === ruleId), prof = profileOf(run.lang);
+    const pool = [...run.sit.sentences, ...run.lang.situations.filter(x => x.source === run.sourceId).flatMap(x => x.sentences)];
+    let best = null;
+    for (const id of pool) {
+      const tk = run.lang.sentences[id].tokens, span = r.spans(tk, prof)[0];
+      if (span && (!best || tk.length < best.tk.length)) best = { tk, span };
+      if (best && run.sit.sentences.includes(id) && best.tk.length <= 10) break;
+    }
+    if (!best) return '';
+    const idx = Array.from({ length: best.span[1] - best.span[0] + 1 }, (_, k) => best.span[0] + k);
+    return `<span class="choice-ex" dir="${run.lang.dir || 'ltr'}">${markedHtml(best.tk, [{ rule: ruleId, idx }], [])}</span>`;
+  }
+
   function levelChoice() {
     const cs = choices(run);
     if (!cs.length) { run.pendingChoice = false; return next(); }
     sfx('level');
     openSheet(`<h2>升級！選一條規則</h2>
-      <p class="muted">只在這一局有效。答對用到這條規則的空格時觸發連鎖；第 k 環分數 ×(1 + 0.5k)，答錯就斷掉。</p>
+      <p class="muted">只在這一局有效。選了之後，句子裡符合這條規則的片段會加上底線。空格是藍框時，答對會觸發連鎖；第 k 環分數 ×(1 + 0.5k)，答錯就斷掉。</p>
       <div class="stack">${cs.map((c, i) => `<button class="choice" data-i="${i}">
-        <span class="ic">${c.id}${c.next > 1 ? `<br>Lv${c.next}` : ''}</span><b>${esc(c.name)}</b><small>${esc(c.desc)}</small></button>`).join('')}</div>`,
+        <span class="ic">${c.id}${c.next > 1 ? `<br>Lv${c.next}` : ''}</span><b>${esc(c.name)}</b><small>${esc(c.desc)}</small>${c.next === 1 ? ruleExample(c.id) : ''}</button>`).join('')}</div>`,
       { locked: true }, body => body.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => { choose(run, cs[+b.dataset.i]); closeSheet(); hud(); next(); })));
   }
 

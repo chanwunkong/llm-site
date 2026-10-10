@@ -350,3 +350,13 @@ body.playing #simBar { display: none; }
 .unlock-card { border: var(--b); background: var(--white); padding: 12px 14px; margin-bottom: 10px; box-shadow: inset 6px 0 0 var(--blue); }
 .unlock-card b { font-size: 17px; }
 .unlock-card ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.7; }
+
+/* ---- 規則透視 ---- */
+.rmk { text-decoration: underline; text-decoration-color: var(--blue); text-decoration-thickness: 3px; text-underline-offset: 5px; }
+.rtag { font-size: 10px; font-weight: 800; color: var(--white); background: var(--blue); padding: 0 3px; margin-left: 2px; vertical-align: super; line-height: 1.2; }
+.rslot .slot:not(.ok):not(.no) { border-bottom: 5px solid var(--blue); }
+.sentence.hidden-text .rtag { visibility: hidden; }
+.sentence.hidden-text .rslot .rtag { visibility: visible; }
+.sentence.fire .rmk, .sentence.fire .rslot { animation: fire .6s ease-out 2; }
+@keyframes fire { 50% { background: var(--yellow); } }
+.choice .choice-ex { grid-column: 2; display: block; margin-top: 6px; font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.8; }

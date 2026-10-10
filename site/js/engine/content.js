@@ -27,6 +27,15 @@ function parseToken(raw) {
 
 // 句子顯示：依語言設定檔的 joiner 串接。標點前、開引號或開括號後、以撇號開頭的附著詞（’m、's）前不加空白
 const OPENING = /^[“‘"'(\[「『（¿¡«„]$/u;
+// 第 i 個字前面要放的分隔（和 joinTokens 的規則相同），給逐字畫句子的畫面使用
+export function spaceBefore(tokens, i, joiner) {
+  if (i === 0) return '';
+  const t = tokens[i], p = tokens[i - 1];
+  if (p.sa) return ' ';
+  const punct = t.upos === 'PUNCT' && !OPENING.test(t.surface);
+  return punct || OPENING.test(p.surface) || /^[’']/.test(t.surface) || p.nsa ? '' : joiner;
+}
+
 export function joinTokens(tokens, joiner) {
   let out = '', prev = null, prevNsa = false, prevSa = false;
   tokens.forEach((t, i) => {

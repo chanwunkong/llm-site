@@ -59,7 +59,8 @@ const featNounSpans = (tk, key, val) => modSpans(tk, t => t.feats[key] === val);
 export const WALS = [
   { id: '81A', stage: 'A1', icon: '🔀', spans: argVerbSpans, approx: true },
   { id: '87A', stage: 'A1', icon: '🎨', spans: tk => pairSpans(tk, t => t.upos === 'ADJ', isNoun) },
-  { id: '88A', stage: 'A1', icon: '👉', spans: tk => modSpans(tk, t => t.feats.PronType === 'Dem') },
+  // 指示詞只算限定詞、代名詞（英文模型把副詞 then、there 也標成 PronType=Dem）
+  { id: '88A', stage: 'A1', icon: '👉', spans: tk => modSpans(tk, t => t.feats.PronType === 'Dem' && ['DET', 'PRON'].includes(t.upos)) },
   { id: '89A', stage: 'A1', icon: '🔢', spans: tk => modSpans(tk, t => t.upos === 'NUM') },
   { id: '33A', stage: 'A1', icon: '👥', spans: tk => featSpans(tk, 'Number', 'Plur', ['NOUN']) },
   { id: '37A', stage: 'A1', icon: '🅃', spans: tk => featNounSpans(tk, 'Definite', 'Def') },
@@ -148,7 +149,7 @@ export function buildRun(lang, sourceId, env) {
   return {
     lang, sourceId, sit, env, queue, pos: 0,
     score: 0, combo: 0, maxCombo: 0, correct: 0, wrong: 0,
-    skills: state.sim?.autoSkills ? Object.fromEntries(lg.unlocked.filter(id => WALS.some(r => r.id === id)).map(id => [id, 1])) : {},
+    skills: state.sim?.autoSkills ? Object.fromEntries(lg.unlocked.filter(id => WALS.some(r => r.id === id && !r.approx)).map(id => [id, 1])) : {},
     pendingChoice: false, chainUsed: new Set(), maxChain: 0, chainLinks: 0,
     firstEncounter: {}, leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
     ruleHits: {}, pathTotal: 0, missed: new Map(), log: [],
@@ -330,7 +331,8 @@ function levelUp(run, lemma, w, result) {
 // ---- 局中升級：三選一（只有已解鎖的規則；再選一次同一條規則 = 連鎖多跳一環） ----
 export function choices(run) {
   const lg = L();
-  const pool = WALS.filter(r => lg.unlocked.includes(r.id) && (run.skills[r.id] || 0) < CHAIN.maxLevel).map(r => {
+  // 判斷方式只是近似的規則（81A、67A、116A）不出現：規則透視會把片段標在畫面上，判斷錯誤會讓學習者學錯
+  const pool = WALS.filter(r => !r.approx && lg.unlocked.includes(r.id) && (run.skills[r.id] || 0) < CHAIN.maxLevel).map(r => {
     const next = (run.skills[r.id] || 0) + 1;
     return { ...r, type: 'wals', next, desc: next === 1 ? `開啟連鎖：答對用到這條規則的空格，跳到另一個有相同模式的句子（1 環）` : `升到 Lv${next}：連鎖跳 ${next} 環` };
   });
@@ -342,7 +344,22 @@ export function choose(run, c) {
 }
 
 // ---- 連鎖 ----
-const activeRules = (run, q) => q.rules.filter(r => run.skills[r] && L().unlocked.includes(r));
+// 規則透視：句子裡屬於「本局選到的規則」的片段（整句判斷）。[{ rule, idx: [字的位置…] }]
+export function ruleMarks(run, tokens) {
+  const prof = profileOf(run.lang), out = [];
+  for (const r of WALS) {
+    if (!run.skills[r.id] || !L().unlocked.includes(r.id)) continue;
+    for (const [a, b] of r.spans(tokens, prof)) {
+      let x = a, y = b;
+      while (x <= y && !isWord(tokens[x])) x++;
+      while (y >= x && !isWord(tokens[y])) y--;
+      if (x <= y) out.push({ rule: r.id, idx: Array.from({ length: y - x + 1 }, (_, k) => x + k) });
+    }
+  }
+  return out;
+}
+// 觸發連鎖的規則：整段規則片段都在空格裡（和畫面上藍框的空格一致）
+const activeRules = (run, q) => [...new Set(ruleMarks(run, q.tokens).filter(m => m.idx.every(i => q.gap.includes(i))).map(m => m.rule))];
 
 // 找同一個來源裡、有這條規則模式的另一個句子；空格就是規則對應的那一段
 function findChainTarget(run, ruleId, exclude) {
@@ -495,7 +512,7 @@ function sitSummary(lang, sit) {
 export function syncUnlocks(lang) {
   if (SHOW.rulePurchase) return [];
   const lg = L(), prof = profileOf(lang), sents = Object.values(lang.sentences);
-  const order = WALS.filter(r => stageReached(r.stage))
+  const order = WALS.filter(r => !r.approx && stageReached(r.stage))
     .map(r => [r.id, sents.filter(s => r.test(s.tokens, prof)).length])
     .filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([id]) => id);
   const n = Math.floor(vocabCount() / RULES.wordsPerRule);
