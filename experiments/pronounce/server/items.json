@@ -1,0 +1,219 @@
+[
+ {
+  "id": "en-think",
+  "lang": "en",
+  "text": "think",
+  "segments": [
+   "",
+   "th",
+   "ink"
+  ],
+  "phones": [
+   "θ",
+   "ɪ",
+   "ŋ",
+   "k"
+  ],
+  "target_index": 0,
+  "sub": "s",
+  "sub_desc": "中文的「ㄙ」"
+ },
+ {
+  "id": "en-three",
+  "lang": "en",
+  "text": "three",
+  "segments": [
+   "",
+   "th",
+   "ree"
+  ],
+  "phones": [
+   "θ",
+   "ɹ",
+   "iː"
+  ],
+  "target_index": 0,
+  "sub": "s",
+  "sub_desc": "中文的「ㄙ」"
+ },
+ {
+  "id": "en-mouth",
+  "lang": "en",
+  "text": "mouth",
+  "segments": [
+   "mou",
+   "th",
+   ""
+  ],
+  "phones": [
+   "m",
+   "aʊ",
+   "θ"
+  ],
+  "target_index": 2,
+  "sub": "s",
+  "sub_desc": "中文的「ㄙ」"
+ },
+ {
+  "id": "en-this",
+  "lang": "en",
+  "text": "this",
+  "segments": [
+   "",
+   "th",
+   "is"
+  ],
+  "phones": [
+   "ð",
+   "ɪ",
+   "s"
+  ],
+  "target_index": 0,
+  "sub": "d",
+  "sub_desc": "中文的「ㄉ」"
+ },
+ {
+  "id": "en-they",
+  "lang": "en",
+  "text": "they",
+  "segments": [
+   "",
+   "th",
+   "ey"
+  ],
+  "phones": [
+   "ð",
+   "eɪ"
+  ],
+  "target_index": 0,
+  "sub": "d",
+  "sub_desc": "中文的「ㄉ」"
+ },
+ {
+  "id": "en-very",
+  "lang": "en",
+  "text": "very",
+  "segments": [
+   "",
+   "v",
+   "ery"
+  ],
+  "phones": [
+   "v",
+   "ɛɹ",
+   "i"
+  ],
+  "target_index": 0,
+  "sub": "w",
+  "sub_desc": "中文的「ㄨ」開頭"
+ },
+ {
+  "id": "en-vest",
+  "lang": "en",
+  "text": "vest",
+  "segments": [
+   "",
+   "v",
+   "est"
+  ],
+  "phones": [
+   "v",
+   "ɛ",
+   "s",
+   "t"
+  ],
+  "target_index": 0,
+  "sub": "w",
+  "sub_desc": "中文的「ㄨ」開頭"
+ },
+ {
+  "id": "en-ship",
+  "lang": "en",
+  "text": "ship",
+  "segments": [
+   "sh",
+   "i",
+   "p"
+  ],
+  "phones": [
+   "ʃ",
+   "ɪ",
+   "p"
+  ],
+  "target_index": 1,
+  "sub": "iː",
+  "sub_desc": "中文的「一」（太長）"
+ },
+ {
+  "id": "en-sit",
+  "lang": "en",
+  "text": "sit",
+  "segments": [
+   "s",
+   "i",
+   "t"
+  ],
+  "phones": [
+   "s",
+   "ɪ",
+   "t"
+  ],
+  "target_index": 1,
+  "sub": "iː",
+  "sub_desc": "中文的「一」（太長）"
+ },
+ {
+  "id": "en-bad",
+  "lang": "en",
+  "text": "bad",
+  "segments": [
+   "b",
+   "a",
+   "d"
+  ],
+  "phones": [
+   "b",
+   "æ",
+   "d"
+  ],
+  "target_index": 1,
+  "sub": "ɛ",
+  "sub_desc": "中文的「ㄝ」"
+ },
+ {
+  "id": "en-man",
+  "lang": "en",
+  "text": "man",
+  "segments": [
+   "m",
+   "a",
+   "n"
+  ],
+  "phones": [
+   "m",
+   "æ",
+   "n"
+  ],
+  "target_index": 1,
+  "sub": "ɛ",
+  "sub_desc": "中文的「ㄝ」"
+ },
+ {
+  "id": "en-right",
+  "lang": "en",
+  "text": "right",
+  "segments": [
+   "",
+   "r",
+   "ight"
+  ],
+  "phones": [
+   "ɹ",
+   "aɪ",
+   "t"
+  ],
+  "target_index": 0,
+  "sub": "l",
+  "sub_desc": "中文的「ㄌ」"
+ }
+]

@@ -1,0 +1,3 @@
+# 模型檔太大（355 MB／1.2 GB），用 export_model.py 重新產生
+model/
+.venv/

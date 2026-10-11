@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>發音實驗</title>
+<style>
+  :root { --paper:#f4f1e8; --white:#fff; --ink:#111; --blue:#1f4fd1; --red:#d6301f; --yellow:#f2c400; --mute:#777; --soft:#e6e1d3; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:-apple-system,"PingFang TC",system-ui,sans-serif; }
+  main { max-width:520px; margin:0 auto; padding:16px; }
+  h1 { font-size:18px; margin:4px 0 16px; border-bottom:3px solid var(--ink); padding-bottom:8px; }
+  .words { display:flex; flex-wrap:wrap; gap:8px; }
+  .words button { font:inherit; font-size:16px; padding:8px 12px; background:var(--paper); border:2px solid var(--ink); border-radius:0; color:var(--ink); }
+  .words button.sel { background:var(--yellow); }
+  .card { margin-top:20px; border:3px solid var(--ink); padding:20px 16px; text-align:center; background:var(--white); }
+  .word { font-size:56px; font-weight:700; letter-spacing:1px; min-height:72px; }
+  .word span.focus { border-bottom:6px solid var(--ink); }
+  .word span.good { color:var(--blue); border-color:var(--blue); }
+  .word span.bad { color:var(--red); border-color:var(--red); }
+  .word span.close { border-bottom:6px dashed var(--ink); }
+  .hint { color:var(--mute); font-size:14px; margin-top:6px; }
+  .row { display:flex; gap:10px; margin-top:18px; }
+  .row button { flex:1; font:inherit; font-size:17px; padding:14px 8px; border:2px solid var(--ink); border-radius:0; background:var(--paper); color:var(--ink); }
+  #rec { background:var(--red); color:#fff; border-color:var(--red); }
+  #rec.on { background:var(--ink); border-color:var(--ink); }
+  button:disabled { opacity:.35; }
+  .msg { margin-top:18px; font-size:18px; min-height:26px; }
+  .msg.good { color:var(--blue); } .msg.bad { color:var(--red); }
+  .cmp { display:flex; margin-top:14px; border:2px solid var(--ink); }
+  .cmp > div { flex:1; padding:8px 4px; }
+  .cmp > div + div { border-left:2px solid var(--ink); }
+  .cmp small { display:block; color:var(--mute); font-size:12px; }
+  .cmp b { font-size:26px; font-family:"Charis SIL","Doulos SIL","Gentium Plus",serif; }
+  .cmp .t b { color:var(--blue); } .cmp .s b { color:var(--red); }
+  .cmp .you { font-size:12px; color:var(--ink); font-weight:700; }
+  .meta { color:var(--mute); font-size:12px; margin-top:8px; min-height:16px; }
+  .chart { margin-top:18px; }
+  .chart h2 { font-size:14px; margin:0 0 8px; text-align:left; }
+  table.ipa { border-collapse:collapse; font-size:12px; margin:0 auto; background:var(--white); }
+  table.ipa th { font-weight:800; padding:4px 6px; border:1px solid var(--ink); background:var(--paper); white-space:nowrap; }
+  table.ipa td { border:1px solid var(--ink); min-width:44px; height:52px; text-align:center; vertical-align:middle; }
+  table.ipa td.r { border-left:1px dotted var(--mute); }
+  .sym { display:inline-block; min-width:30px; border:2px solid var(--ink); padding:1px 5px; font-size:20px; font-weight:600; font-family:"Charis SIL","Doulos SIL",serif; background:var(--white); }
+  .sym.t { border-color:var(--blue); color:var(--blue); } .sym.s { border-color:var(--red); color:var(--red); }
+  .sym.t.you { background:var(--blue); color:#fff; } .sym.s.you { background:var(--red); color:#fff; }
+  .sym.half { border-style:dashed; }
+  .tag { display:block; font-size:10px; font-weight:700; margin-top:2px; }
+  .legend { display:flex; justify-content:center; gap:14px; font-size:12px; margin-top:8px; color:var(--mute); }
+  .legend i { display:inline-block; width:10px; height:10px; margin-right:4px; vertical-align:middle; }
+  svg.vq { width:100%; max-width:360px; display:block; margin:0 auto; overflow:hidden; }
+  svg.vq.zoom { border:1px solid var(--ink); }
+  .side-note { font-size:11px; color:var(--mute); margin-top:4px; }
+  .ipa-wrap { overflow-x:auto; }
+  .cellsym { display:inline-block; margin:2px; }
+  .sym.o { border-color:#999; color:#555; }
+  .bars { margin-top:12px; text-align:left; }
+  .bar { display:grid; grid-template-columns:52px 1fr 40px; grid-template-rows:auto auto; align-items:center; column-gap:8px; padding:5px 0; border-bottom:1px solid var(--soft); }
+  .bar .ph { font-family:"Charis SIL","Doulos SIL",serif; font-size:20px; font-weight:700; grid-row:span 2; }
+  .bar .track { height:10px; background:var(--soft); display:block; }
+  .bar .track span { display:block; height:100%; background:#999; }
+  .bar.t .ph { color:var(--blue); } .bar.t .track span { background:var(--blue); }
+  .bar.s .ph { color:var(--red); } .bar.s .track span { background:var(--red); }
+  .bar .pc { font-size:13px; text-align:right; }
+  .bar .ds { grid-column:2 / span 2; font-size:12px; color:var(--mute); }
+</style>
+</head>
+<body>
+<main>
+  <h1>發音實驗：模型聽到的是哪個音</h1>
+  <div class="words" id="words"></div>
+  <div class="card">
+    <div class="word" id="word"></div>
+    <div class="hint" id="hint">選一個字開始</div>
+    <div class="row">
+      <button id="ref" disabled>標準發音</button>
+      <button id="rec" disabled>錄音</button>
+      <button id="mine" disabled>我的錄音</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div id="cmp"></div>
+    <div class="meta" id="meta"></div>
+    <div class="chart" id="chart"></div>
+  </div>
+</main>
+<script>
+// ---- IPA 位置（與遊戲 site/js/engine/ipa-chart.js 相同的標準表格排列） ----
+const PLACES = [['bilabial','雙唇'],['labiodental','唇齒'],['dental','齒'],['alveolar','齒齦'],['postalveolar','齦後'],
+  ['alveolopalatal','齦顎'],['retroflex','捲舌'],['palatal','硬顎'],['velar','軟顎'],['uvular','小舌'],['pharyngeal','咽'],['glottal','聲門']];
+const MANNERS = [['plosive','塞音'],['nasal','鼻音'],['trill','顫音'],['tap','閃音'],['fricative','擦音'],
+  ['affricate','塞擦音'],['latfric','邊擦音'],['approximant','近音'],['latapprox','邊近音']];
+const HEIGHTS = ['close','nearclose','closemid','mid','openmid','nearopen','open'];
+const C = {}, V = {};
+const put = (m, p, vl, vd) => { for (const s of [].concat(vl || [])) C[s] = [m, p, false]; for (const s of [].concat(vd || [])) C[s] = [m, p, true]; };
+put('plosive','bilabial','p','b'); put('plosive','alveolar','t','d'); put('plosive','retroflex','ʈ','ɖ'); put('plosive','palatal','c','ɟ');
+put('plosive','velar','k',['ɡ','g']); put('plosive','uvular','q','ɢ'); put('plosive','glottal','ʔ');
+put('nasal','bilabial',null,'m'); put('nasal','labiodental',null,'ɱ'); put('nasal','alveolar',null,'n'); put('nasal','retroflex',null,'ɳ');
+put('nasal','palatal',null,'ɲ'); put('nasal','velar',null,'ŋ'); put('nasal','uvular',null,'ɴ');
+put('trill','bilabial',null,'ʙ'); put('trill','alveolar',null,'r'); put('trill','uvular',null,'ʀ');
+put('tap','labiodental',null,'ⱱ'); put('tap','alveolar',null,'ɾ'); put('tap','retroflex',null,'ɽ');
+put('fricative','bilabial','ɸ','β'); put('fricative','labiodental','f','v'); put('fricative','dental','θ','ð'); put('fricative','alveolar','s','z');
+put('fricative','postalveolar','ʃ','ʒ'); put('fricative','alveolopalatal','ɕ','ʑ'); put('fricative','retroflex','ʂ','ʐ'); put('fricative','palatal','ç','ʝ');
+put('fricative','velar','x','ɣ'); put('fricative','uvular','χ','ʁ'); put('fricative','pharyngeal','ħ','ʕ'); put('fricative','glottal','h','ɦ');
+put('affricate','labiodental','pf'); put('affricate','alveolar','ts','dz'); put('affricate','postalveolar','tʃ','dʒ');
+put('affricate','alveolopalatal','tɕ','dʑ'); put('affricate','retroflex','ʈʂ','ɖʐ'); put('latfric','alveolar','ɬ','ɮ');
+put('approximant','bilabial','ʍ','w'); put('approximant','labiodental',null,'ʋ'); put('approximant','alveolar',null,'ɹ');
+put('approximant','retroflex',null,'ɻ'); put('approximant','palatal',null,['j','ɥ']); put('approximant','velar',null,'ɰ');
+put('latapprox','alveolar',null,'l'); put('latapprox','retroflex',null,'ɭ'); put('latapprox','palatal',null,'ʎ'); put('latapprox','velar',null,'ʟ');
+const vow = (h, b, u, r) => { if (u) V[u] = [h, b, false]; if (r) V[r] = [h, b, true]; };
+vow('close','front','i','y'); vow('close','central','ɨ','ʉ'); vow('close','back','ɯ','u');
+vow('nearclose','front','ɪ','ʏ'); vow('nearclose','back',null,'ʊ');
+vow('closemid','front','e','ø'); vow('closemid','central','ɘ','ɵ'); vow('closemid','back','ɤ','o');
+vow('mid','central','ə',null); V['ɚ'] = ['mid','central',false];
+vow('openmid','front','ɛ','œ'); vow('openmid','central','ɜ','ɞ'); vow('openmid','back','ʌ','ɔ');
+vow('nearopen','front','æ',null); vow('nearopen','central','ɐ',null);
+vow('open','front','a','ɶ'); vow('open','back','ɑ','ɒ');
+const base = s => s.normalize('NFD').replace(/\p{Mn}/gu, '').replace(/[ː|ʰʲʷˠˤⁿˡ˞ʼ]/g, '');
+function position(seg) {
+  const b = base(seg);
+  if (C[b]) { const [manner, place, voiced] = C[b]; return { kind:'consonant', manner, place, voiced }; }
+  if (V[b]) { const [height, back, round] = V[b]; return { kind:'vowel', height, back, round }; }
+  return { kind:'other' };
+}
+
+// ---- 描述 ----
+const PL = Object.fromEntries(PLACES), MN = Object.fromEntries(MANNERS);
+const HT = { close:'高', nearclose:'次高', closemid:'半高', mid:'中', openmid:'半低', nearopen:'次低', open:'低' };
+const BK = { front:'前', central:'央', back:'後' };
+let ZH = {};
+function describe(ph) {
+  if (ph === '∅') return '漏掉了';
+  const x = position(ph);
+  if (x.kind === 'consonant') return `${x.voiced ? '濁' : '清'}${PL[x.place]}${MN[x.manner]}`;
+  if (x.kind === 'vowel') return `${HT[x.height]}${BK[x.back]}${x.round ? '圓唇' : ''}母音${ph.includes('ː') ? '・長' : ''}`;
+  return '';
+}
+const zh = ph => ZH[ph] || ZH[ph.replace('ː', '')] || '';
+const label = ph => { const z = zh(ph); return `/${ph}/（${describe(ph)}${z ? `，像中文的「${z}」` : ''}）`; };
+
+// ---- 圖表：目標音 + 模型認為你唸出的前幾個音 ----
+// cands: [{ph, p}]，第一個是模型最認為的音（＝你）
+function chart(target, cands) {
+  const you = cands.length ? cands[0].ph : null;
+  const a = position(target);
+  const shown = [{ ph: target, p: (cands.find(c => c.ph === target) || { p: 0 }).p }]
+    .concat(cands.filter(c => c.ph !== target && c.p >= 0.05)).slice(0, 5)
+    .map(c => ({ ...c, pos: position(c.ph) }));
+  const pct = p => `${Math.round(p * 100)}%`;
+  if (a.kind === 'consonant') {
+    const cs = shown.filter(c => c.pos.kind === 'consonant');
+    const rows = MANNERS.filter(([m]) => cs.some(c => c.pos.manner === m));
+    const cols = PLACES.filter(([pl]) => cs.some(c => c.pos.place === pl));
+    const sym = c => {
+      const isT = c.ph === target, isYou = c.ph === you;
+      const cls = `sym ${isT ? 't' : isYou ? 's' : 'o'}${isYou ? ' you' : ''}`;
+      return `<span class="cellsym"><span class="${cls}" style="${!isT && !isYou ? `opacity:${0.35 + c.p}` : ''}">${c.ph}</span><span class="tag">${isYou ? '你 ' : ''}${pct(c.p)}</span></span>`;
+    };
+    const cell = (m, pl, v) => cs.filter(c => c.pos.manner === m && c.pos.place === pl && c.pos.voiced === v).map(sym).join('');
+    const others = shown.filter(c => c.pos.kind !== 'consonant' && c.ph !== target);
+    return `<h2>發音部位對照</h2><div class="ipa-wrap"><table class="ipa"><thead><tr><th></th>${cols.map(([, z]) => `<th colspan="2">${z}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(([m, z]) => `<tr><th>${z}</th>${cols.map(([pl]) => `<td>${cell(m, pl, false)}</td><td class="r">${cell(m, pl, true)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+      <div class="side-note">每格左邊是清音，右邊是濁音${others.length ? `；不在表上：${others.map(c => `/${c.ph}/ ${pct(c.p)}`).join('、')}` : ''}</div>${legend()}`;
+  }
+  if (a.kind === 'vowel') {
+    const vs = shown.filter(c => c.pos.kind === 'vowel');
+    const W = 100, Hh = 77, xF = h => 10 + (h / 6) * 34, xB = 84, yOf = h => (7 + (h / 6) * 86) * Hh / 100;
+    const xy = v => { const h = HEIGHTS.indexOf(v.height); return [v.back === 'front' ? xF(h) : v.back === 'back' ? xB : (xF(h) + xB) / 2, yOf(h)]; };
+    const pts = vs.map(c => ({ ...c, xy: xy(c.pos) }));
+    const xs = pts.map(c => c.xy[0]), ys = pts.map(c => c.xy[1]);
+    const spread = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    const zoom = spread < 25;                     // points close together: zoom into their area
+    const k = zoom ? 0.45 : 1, mx = (Math.max(...xs) + Math.min(...xs)) / 2, my = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const view = zoom ? `${mx - 26} ${my - 18} 52 36` : `-14 -10 ${W + 22} ${Hh + 16}`;
+    const trap = `${xF(0) - 7},0 ${xB + 9},0 ${xB + 9},${Hh} ${xF(6) - 7},${Hh}`;
+    // several symbols may share one spot (e.g. i / iː): stack their labels
+    const seen = {};
+    const dot = c => {
+      const isT = c.ph === target, isYou = c.ph === you, [x, y] = c.xy, key = `${x},${y}`;
+      const n = (seen[key] = (seen[key] || 0) + 1) - 1, dy = n * 9 * k;
+      const color = isT ? '#1f4fd1' : isYou ? '#d6301f' : '#777';
+      const fill = isYou ? color : '#fff';
+      return `<circle cx="${x}" cy="${y + dy}" r="${5.5 * k}" fill="${fill}" stroke="${color}" stroke-width="${1.2 * k}" opacity="${isT || isYou ? 1 : 0.4 + c.p}"/>
+        <text x="${x}" y="${y + dy + 2.4 * k}" text-anchor="middle" font-size="${7 * k}" font-weight="700" fill="${isYou ? '#fff' : color}" font-family="Charis SIL,Doulos SIL,serif">${c.ph}</text>
+        <text x="${x + 7.5 * k}" y="${y + dy + 2 * k}" font-size="${4.6 * k}" fill="#111">${isYou ? '你 ' : ''}${pct(c.p)}</text>`;
+    };
+    const t = pts.find(c => c.ph === target), y = pts.find(c => c.ph === you);
+    const arrow = t && y && t !== y ? `<line x1="${t.xy[0]}" y1="${t.xy[1]}" x2="${y.xy[0]}" y2="${y.xy[1]}" stroke="#d6301f" stroke-width="${0.8 * k}" marker-end="url(#ah)"/>` : '';
+    const axes = zoom ? '' : [['前', xF(0)], ['央', (xF(0) + xB) / 2], ['後', xB]].map(([s, x]) => `<text x="${x}" y="-4" text-anchor="middle" font-size="4.5" fill="#777">${s}</text>`).join('')
+      + [['高', 0], ['半高', 2], ['半低', 4], ['低', 6]].map(([s, h]) => `<text x="-2" y="${yOf(h) + 1.5}" text-anchor="end" font-size="4.5" fill="#777">${s}</text>`).join('');
+    const ends = pts.filter(c => c.ph !== target && c.ph !== you);
+    return `<h2>舌頭位置對照（母音）${zoom ? '<small style="font-weight:400;color:#777">・已放大</small>' : ''}</h2>
+      <svg class="vq${zoom ? ' zoom' : ''}" viewBox="${view}">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="16" refY="5" markerWidth="${5}" markerHeight="${5}" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d6301f"/></marker></defs>
+      <polygon points="${trap}" fill="#e6e1d3"/>${axes}${arrow}${[...ends, t, y].filter(Boolean).filter((c, i, arr) => arr.indexOf(c) === i).map(dot).join('')}
+    </svg>${t && y && t !== y ? `<div class="side-note">箭頭：從目標音指向你的音（${direction(t.pos, y.pos)}）</div>` : ''}${legend()}`;
+  }
+  return '';
+}
+function direction(a, b) {
+  const H = HEIGHTS, dh = H.indexOf(b.height) - H.indexOf(a.height), B = ['front', 'central', 'back'], db = B.indexOf(b.back) - B.indexOf(a.back);
+  const out = [];
+  if (dh) out.push(dh > 0 ? '舌頭太低' : '舌頭太高');
+  if (db) out.push(db > 0 ? '太後面' : '太前面');
+  if (a.round !== b.round) out.push(b.round ? '嘴唇太圓' : '嘴唇不夠圓');
+  return out.join('、') || '位置相同，差在長短或音質';
+}
+const legend = () => `<div class="legend"><span><i style="background:var(--blue)"></i>目標音</span><span><i style="background:var(--red)"></i>你的音</span><span><i style="background:#999"></i>其他可能</span></div>`;
+
+// ---- 頁面流程 ----
+const $ = id => document.getElementById(id);
+let items = [], cur = null, recorder = null, chunks = [], myUrl = null, stopTimer = null;
+
+function renderWord(level) {
+  const [a, f, b] = cur.segments;
+  $('word').innerHTML = `${a}<span class="${level ? `focus ${level}` : 'focus'}">${f}</span>${b}`;
+}
+function clearResult() { $('msg').textContent = ''; $('msg').className = 'msg'; $('cmp').innerHTML = ''; $('meta').textContent = ''; $('chart').innerHTML = ''; }
+
+function select(it, btn) {
+  cur = it;
+  document.querySelectorAll('.words button').forEach(b => b.classList.toggle('sel', b === btn));
+  renderWord(null); clearResult();
+  $('hint').textContent = `畫線部分是 ${label(it.target)}`;
+  $('ref').disabled = $('rec').disabled = false; $('mine').disabled = true;
+}
+
+$('ref').onclick = () => {
+  const u = new SpeechSynthesisUtterance(cur.text);
+  u.lang = 'en-US'; u.rate = 0.8;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+};
+$('mine').onclick = () => { if (myUrl) new Audio(myUrl).play(); };
+
+$('rec').onclick = async () => {
+  if (recorder && recorder.state === 'recording') return stop();
+  try {
+    // raw audio: noise suppression / echo cancellation smear the high-frequency detail that tells θ, f, s apart
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    recorder = new MediaRecorder(stream); chunks = [];
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); send(); };
+    recorder.start();
+    $('rec').textContent = '停止'; $('rec').classList.add('on');
+    clearResult(); $('msg').textContent = `請唸：${cur.text}（唸完會自動停止）`;
+    autoStop(stream);
+  } catch (e) { $('msg').textContent = '無法使用麥克風：' + e.message; }
+};
+
+// Stop by itself once the learner has spoken and then gone quiet.
+// The first 0.3 s measures background noise; speech = clearly louder than that.
+const NOISE_MS = 300, SILENCE_MS = 700, NO_SPEECH_MS = 4000, MAX_MS = 5000;
+let vad = null;
+async function autoStop(stream) {
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  await ac.resume();
+  const an = ac.createAnalyser(); an.fftSize = 1024;
+  ac.createMediaStreamSource(stream).connect(an);
+  const buf = new Float32Array(an.fftSize), t0 = performance.now();
+  let noise = 0, spoke = false, lastVoice = 0;
+  vad = { ac, timer: setInterval(() => {
+    an.getFloatTimeDomainData(buf);
+    const rms = Math.sqrt(buf.reduce((s, x) => s + x * x, 0) / buf.length), now = performance.now() - t0;
+    if (now < NOISE_MS) { noise = Math.max(noise, rms); return; }
+    if (rms > Math.max(noise * 3, 0.015)) {
+      if (!spoke) $('msg').textContent = '聽到了…';
+      spoke = true; lastVoice = now;
+    }
+    if ((spoke && now - lastVoice > SILENCE_MS) || (!spoke && now > NO_SPEECH_MS) || now > MAX_MS) stop();
+  }, 30) };
+}
+
+function stop() {
+  if (vad) { clearInterval(vad.timer); vad.ac.close(); vad = null; }
+  if (recorder && recorder.state === 'recording') recorder.stop();
+  $('rec').textContent = '錄音'; $('rec').classList.remove('on');
+}
+
+async function toPcm16k(blob) {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+  ctx.close();
+  const off = new OfflineAudioContext(1, Math.ceil(buf.duration * 16000), 16000);
+  const src = off.createBufferSource(); src.buffer = buf; src.connect(off.destination); src.start();
+  return (await off.startRendering()).getChannelData(0);
+}
+
+function showResult(res) {
+  const t = res.target, top = res.top, you = top.length ? top[0].ph : t;
+  const second = top.find(c => c.ph !== you);
+  if (res.level === 'good') $('msg').textContent = `很好！唸對了 /${t}/`;
+  else if (you === '∅') $('msg').textContent = `畫線的音好像漏掉了，目標是 /${t}/`;
+  else if (you === t) $('msg').textContent = `接近了，但也有點像 /${second ? second.ph : '?'}/`;
+  else $('msg').textContent = `你的音比較像 ${label(you)}`;
+  $('msg').className = 'msg ' + (res.level === 'close' ? '' : res.level);
+  $('cmp').innerHTML = `<div class="bars">${top.map(c => `<div class="bar ${c.ph === t ? 't' : c.ph === you ? 's' : ''}">
+      <span class="ph">/${c.ph}/</span><span class="track"><span style="width:${Math.round(c.p * 100)}%"></span></span>
+      <span class="pc">${Math.round(c.p * 100)}%</span><span class="ds">${c.ph === t ? '目標・' : ''}${describe(c.ph)}${zh(c.ph) ? `・中文「${zh(c.ph)}」` : ''}</span></div>`).join('')}</div>`;
+  renderWord(res.level);
+  $('chart').innerHTML = chart(t, top);
+}
+
+async function send() {
+  const blob = new Blob(chunks, { type: recorder.mimeType });
+  if (myUrl) URL.revokeObjectURL(myUrl);
+  myUrl = URL.createObjectURL(blob); $('mine').disabled = false;
+  $('msg').textContent = '分析中…'; $('rec').disabled = true;
+  const t0 = performance.now();
+  try {
+    const pcm = await toPcm16k(blob);
+    const r = await fetch('score?id=' + encodeURIComponent(cur.id), { method: 'POST', body: pcm.buffer });
+    const res = await r.json();
+    const total = Math.round(performance.now() - t0);
+    if (res.ok) { showResult(res); $('meta').textContent = `伺服器 ${res.ms} ms　總共 ${total} ms`; }
+    else { $('msg').textContent = res.msg; $('meta').textContent = `總共 ${total} ms`; }
+  } catch (e) { $('msg').textContent = '分析失敗：' + e.message; }
+  $('rec').disabled = false;
+}
+
+Promise.all([fetch('items').then(r => r.json()), fetch('known/zh').then(r => r.json())]).then(([list, known]) => {
+  items = list; ZH = known.map;
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.textContent = it.text; b.onclick = () => select(it, b);
+    $('words').appendChild(b);
+  }
+});
+</script>
+</body>
+</html>
