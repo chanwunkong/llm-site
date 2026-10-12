@@ -7,6 +7,7 @@ import { openSheet, closeSheet, esc, toast, sheetOpen } from './sheet.js';
 import { iconHtml } from './icon.js';
 import * as P from '../engine/phono.js';
 import { G } from './glyph.js';
+import * as PR from '../engine/pronounce.js';
 
 const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
 const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
@@ -18,7 +19,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
   const $ = s => root.querySelector(s);
   const audio = () => run.env !== 'mute';
-  const speakMode = () => run.env === 'speak' && canListen;
+  // 開口：瀏覽器能語音辨識，或（產出題）有設定發音評分服務
+  const speakMode = () => run.env === 'speak' && (canListen || (q?.mode === 'produce' && PR.configured()));
 
   function start(lang, sourceId, env) {
     run = buildRun(lang, sourceId, env);
@@ -41,6 +43,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     const item = current(run);
     if (!item) return finish();
     q = makeQuestion(run, item);
+    pron = null;
     if (item.kind === 'boss') setTimeout(() => floatText('王關！', true), 50);
     answered = false;
     picked = [];
@@ -217,6 +220,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
 
   // ---------- 作答 ----------
   async function mic() {
+    // 產出題：有設定發音評分服務、而且這個語言可以評分時，改用服務逐音評分
+    if (q.mode === 'produce' && PR.configured() && await PR.supports(run.lang.id)) return scoredMic();
     const btn = $('#mic');
     btn.disabled = true;
     btn.textContent = '聆聽中…';
@@ -229,6 +234,40 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       q.mode === 'produce' ? (typeMode = true) : (tapMode = true);
       renderQ();
     }
+  }
+
+  // 發音評分：錄音 → 服務確認唸的是這個字，並判斷難音唸成了哪個音
+  let pron = null;
+  async function scoredMic() {
+    const btn = $('#mic');
+    btn.disabled = true;
+    stopTimer();
+    try {
+      const ph = await PR.phonemize(q.answerText, run.lang.id);
+      if (!ph.ok) throw new Error(ph.msg);
+      // 目標音：學習者的第一個難音（和「你會的語言」比較）；沒有難音時只確認是不是唸了這個字
+      const hard = new Set([...P.hardSounds(run.lang.wals)].map(P.norm));
+      const k = ph.ipa.findIndex((s, i) => ph.scorable[i] && hard.has(P.norm(s)));
+      const pcm = await PR.record(st => { btn.textContent = st === 'listening' ? '請說…' : st === 'heard' ? '聽到了…' : '評分中…'; });
+      const r = await PR.score(pcm, ph.phones, k, run.lang.id);
+      if (!r.ok) { toast(r.msg || '請再說一次'); btn.disabled = false; btn.textContent = `${G.mic()} 再說一次`; return; }
+      pron = { ...r, ipa: ph.ipa, k };
+      submit([q.answerText], { spoken: true });
+    } catch (e) {
+      toast(`發音評分無法使用（${e.message || '連線失敗'}），改用語音辨識`);
+      btn.disabled = false;
+      btn.innerHTML = `${G.mic()} 說出整段`;
+    }
+  }
+  function pronHtml() {
+    const r = pron;
+    if (!r.level) return `<div class="pron"><small>發音評分：唸對了這個字</small></div>`;
+    const you = r.top[0]?.ph, t = r.target;
+    const ipa = r.ipa.map((s, i) => (i === r.k ? `<b class="pron-${r.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s))).join('');
+    const line = r.level === 'good' ? `/${esc(t)}/ 唸對了` : you === '∅' ? `/${esc(t)}/ 好像漏掉了`
+      : you === t ? `接近了，也有點像 /${esc(r.top[1]?.ph || '?')}/` : `你的 /${esc(t)}/ 比較像 /${esc(you)}/`;
+    return `<div class="pron"><span class="ipa">/${ipa}/</span><span class="pron-line pron-${r.level}">${line}</span>
+      <small>${r.top.slice(0, 3).map(c => `/${esc(c.ph)}/ ${Math.round(c.p * 100)}%`).join('　')}（點紅字可以聽、可以和相近的音比較）</small></div>`;
   }
 
   function submit(response, { spoken = false, timeout = false } = {}) {
@@ -288,6 +327,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     const L_ID = run.lang.id, hard = P.hardSounds(run.lang.wals);
     const ipaHtml = w => { const sg = P.wordSegs(L_ID, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs" data-hs="${esc(x)}">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
     const sounds = q.neighbors.filter(n => n.kind === 'sound');
+    if (pron) { fb.insertAdjacentHTML('beforeend', pronHtml()); fb.querySelectorAll('.pron [data-hs]').forEach(b => (b.onclick = () => { stopTimer(); onSound?.(b.dataset.hs); })); }
     // 第一次在回饋裡出現難音：記下來，結算時開放發音頁
     const seesHard = sounds.some(n => n.hard?.length) || (q.mode === 'produce' && q.answer.some(w => (P.wordSegs(L_ID, w) || []).some(x => hard.has(x))));
     if (seesHard && !L().hardSeen) { L().hardSeen = true; }

@@ -384,3 +384,12 @@ body.playing #simBar { display: none; }
 .src-card .cover.core-cover { font-size: 24px; }
 .core-hint { display: flex; flex-direction: column; gap: 6px; border-color: var(--blue); box-shadow: inset 6px 0 0 var(--blue); }
 .prime-note { border-left: 4px solid var(--yellow); padding-left: 10px; margin-top: 12px; }
+
+/* ---- 發音評分 ---- */
+.pron { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 8px; font-weight: 600; }
+.pron .ipa { font-size: 20px; font-family: "Doulos SIL", "Charis SIL", "Noto Sans", sans-serif; }
+.pron small { color: var(--muted); font-weight: 500; }
+.pron-good { color: var(--blue); }
+.pron-close { color: var(--ink); text-decoration: underline dashed; }
+.pron-bad { color: var(--red); }
+.pron b { text-decoration: underline; cursor: pointer; }

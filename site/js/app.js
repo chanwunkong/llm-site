@@ -9,6 +9,7 @@ import { PRESETS, generate } from './engine/sim.js';
 import { syncUnlocks } from './engine/run.js';
 import { LANGS } from './data/wals.js';
 import { esc } from './ui/sheet.js';
+import * as PR from './engine/pronounce.js';
 import * as T from './engine/territory.js';
 import { setVoiceLang, speak } from './audio.js';
 import { createHome } from './ui/home.js';
@@ -103,12 +104,14 @@ $('#langBtn').onclick = () => openSheet(`<h2>學習語言</h2>
 
 $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
     <button class="btn ghost big" id="snd">${state.sound ? '聲音：開' : '聲音：關'}</button>
+    <button class="btn ghost big" id="pron">發音評分服務${PR.configured() ? '：已設定' : ''}</button>
     <button class="btn ghost big" id="sim">${SIM ? '重新產生模擬進度' : '模擬模式（測試用）'}</button>
     <button class="btn ghost big" id="day">時間快轉 1 天（測試降級用）</button>
     <button class="btn ghost big" id="rst">${SIM ? '重置模擬進度' : '重置所有進度'}</button>
   </div><p class="muted">學習資料是依《小王子》劇情自行改寫的範例，詞性與詞元為人工標註。</p>`, {}, body => {
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
   body.querySelector('#sim').onclick = simSheet;
+  body.querySelector('#pron').onclick = pronSheet;
   body.querySelector('#day').onclick = () => { skipDay(); closeSheet(); enterLanguage(); views[tab].hide(); setTab(tab); toast('已快轉 1 天'); };
   body.querySelector('#rst').onclick = () => openSheet(`<h2>確定重置？</h2><p class="muted">所有語言的單字、領土、金幣都會清除。</p>
     <div class="row"><button class="btn ghost big" id="no">取消</button><button class="btn gold big" id="yes">重置</button></div>`, {}, b2 => {
@@ -146,4 +149,29 @@ function simSheet() {
     body.querySelector('#simGo').onclick = () => { body.querySelector('#simGo').textContent = '產生中…'; enterSim(req); };
   };
   openSheet('', {}, draw);
+}
+
+// 發音評分服務：自行架設的服務網址與存取密碼，只存在這台裝置上
+function pronSheet() {
+  const c = PR.config();
+  openSheet(`<h2>發音評分服務</h2>
+    <p class="muted">開口環境的產出題，可以用自行架設的服務逐音評分：判斷難音唸成了哪個音。架設方法見專案的 services/pronounce/README.md。</p>
+    <input class="filter" id="pUrl" placeholder="服務網址，例如 https://…" value="${esc(c.url || '')}" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input class="filter" id="pTok" type="password" placeholder="存取密碼" value="${esc(c.token || '')}" autocomplete="off">
+    <p class="muted" id="pMsg">網址和密碼只存在這台裝置上。錄音只送到這個服務，遊戲本身不保存錄音。</p>
+    <div class="row"><button class="btn ghost big" id="pClear">清除</button><button class="btn gold big" id="pTest">測試並儲存</button></div>`, {}, body => {
+    const $b = s => body.querySelector(s);
+    $b('#pClear').onclick = () => { PR.setConfig(null); closeSheet(); toast('已清除發音評分服務'); };
+    $b('#pTest').onclick = async () => {
+      const cfg = { url: $b('#pUrl').value.trim(), token: $b('#pTok').value.trim() };
+      if (!/^https?:\/\//.test(cfg.url)) return ($b('#pMsg').textContent = '請輸入以 https:// 開頭的網址');
+      $b('#pMsg').textContent = '連線中…';
+      const h = await PR.health(cfg);
+      if (!h.ok) return ($b('#pMsg').textContent = h.msg || '連不上服務');
+      if (!h.authorized) return ($b('#pMsg').textContent = '連上了，但存取密碼不正確');
+      PR.setConfig(cfg);
+      const L = LANG_BY_ID[state.lang], level = h.languages?.[state.lang];
+      $b('#pMsg').textContent = `已儲存（服務版本 ${h.version}）。${L.zh}：${level === 'good' ? '可以評分' : level === 'no-tone' ? '只評子音' : '目前不支援評分'}`;
+    };
+  });
 }

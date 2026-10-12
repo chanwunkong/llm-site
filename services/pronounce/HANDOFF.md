@@ -1,6 +1,6 @@
 # Handoff: pronunciation feedback experiment (public copy)
 
-Status as of 2026-10-11: working prototype, paused. Tested only with synthetic (eSpeak) audio; no real-voice test yet.
+Status as of 2026-10-13: the experiment became a self-hostable service with a versioned API (`API.md`, `README.md`, `Dockerfile`; code in `server/app.py`). It supports 19 languages (Vietnamese and Thai not yet; Mandarin consonants only), adds `/v1/phonemize` (eSpeak NG; pyopenjtalk for Japanese when installed), a required access token, an origin allow-list and a rate limit. The scoring method is unchanged and gives identical results to the original program. Tested only with synthetic (eSpeak) audio; no real-voice test yet. On synthetic audio, deliberate errors are detected in the right direction, but many correct productions are also judged wrong in several languages.
 
 This is the public copy. Deployment details (machines, network, service endpoints) stay in the owner's private notes outside this repository. Do not add any of them here: this repository is public. Before pushing, run `scripts/check-private.sh`.
 
@@ -24,11 +24,11 @@ Constraints the owner set. Follow them:
 | `export_model.py` | Downloads `facebook/wav2vec2-xlsr-53-espeak-cv-ft` (Apache-2.0), exports it to ONNX, and quantizes it to int8 **MatMul only**. ONNX Runtime has no ConvInteger kernel, so the conv layers stay fp32. Output: `model/model.int8.onnx` (355 MB), `model/vocab.json`. The `model/` folder is not committed. |
 | `build_items.py` | Turns `data/en-hard.csv` into `server/items.json`. eSpeak NG (`en-us`) gives the expected phones; they are split into model tokens by greedy longest match. |
 | `data/en-hard.csv` | 12 English test words. Columns: `text, focus` (letters to underline), `target` (IPA), `sub, sub_desc` (legacy from v1, unused by scoring now). |
-| `server/app.py` | Scoring HTTP server (numpy + onnxruntime), port 8080. |
+| `server/app.py` | Scoring HTTP service (numpy + onnxruntime), port 8080. API v1 in `API.md`; settings in `README.md`. |
 | `server/index.html` | Test page (recording, results, charts). |
 | `server/known-zh.json` | IPA → 注音 approximations, used only to annotate feedback. |
 
-Run locally: `MODEL=model/model.int8.onnx VOCAB=model/vocab.json python server/app.py`, then open `http://localhost:8080/`. A phone microphone needs the page served over HTTPS.
+Run locally: `MODEL=model/model.int8.onnx VOCAB=model/vocab.json TOKEN=<secret> LEGACY=1 python server/app.py`, then open `http://localhost:8080/` for the original test page. A phone microphone needs the page served over HTTPS.
 
 ## 3. Scoring method (current, v2)
 
