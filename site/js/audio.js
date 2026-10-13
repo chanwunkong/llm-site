@@ -1,5 +1,6 @@
 // 聲音：朗讀（語音合成）、空格提示音、語音辨識、音效。全部依語言設定檔的 BCP-47 代碼運作。
 import { state } from './engine/store.js';
+import * as PR from './engine/pronounce.js';
 
 let voiceLang = 'en-US';
 export const setVoiceLang = l => { voiceLang = l; };
@@ -16,8 +17,49 @@ function pickVoice(variety) {
 }
 export const voiceCount = () => (canSpeak ? speechSynthesis.getVoices().filter(sameLang).length : 0);
 
+// 手機沒有這個語言的語音（例如 iPhone 沒有吉爾吉斯語）時，改請發音服務用 eSpeak NG 產生聲音。
+// 語音清單可能還沒載入：最多等 1 秒（voiceschanged），再判斷有沒有這個語言的語音。
+let voicesReady = null;
+function voices() {
+  if (!canSpeak) return Promise.resolve([]);
+  const now = speechSynthesis.getVoices();
+  if (now.length) return Promise.resolve(now);
+  voicesReady ||= new Promise(r => {
+    speechSynthesis.addEventListener?.('voiceschanged', () => r(speechSynthesis.getVoices()), { once: true });
+    setTimeout(() => r(speechSynthesis.getVoices()), 1000);
+  });
+  return voicesReady;
+}
+const hasVoice = async () => (await voices()).some(sameLang);
+const langId = () => voiceLang.slice(0, 2).toLowerCase();
+
+// 播放錄音檔共用一個 <audio>：iPhone 只允許「使用者點過之後」播放，第一次點畫面時先用一段無聲音檔解鎖
+const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+const audioEl = typeof Audio !== 'undefined' ? new Audio() : null;
+if (audioEl) addEventListener('pointerdown', () => { audioEl.src = SILENT; audioEl.play().catch(() => {}); }, { once: true });
+function playUrl(url) {
+  return new Promise(resolve => {
+    if (!audioEl) return resolve();
+    const done = () => { audioEl.onended = audioEl.onerror = null; resolve(); };
+    audioEl.onended = audioEl.onerror = done;
+    audioEl.src = url;
+    audioEl.play().catch(done);
+  });
+}
+const spoken = new Map();   // 同一句話只向服務要一次
+async function serviceSpeak(text, rate) {
+  const key = `${langId()}|${rate}|${text}`;
+  if (!spoken.has(key)) {
+    const blob = await PR.speakAudio(text, langId(), rate);
+    if (!blob) return;
+    spoken.set(key, URL.createObjectURL(blob));
+  }
+  await playUrl(spoken.get(key));
+}
+
 const alive = new Set();
-export function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
+export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
+  if (state.sound && text && PR.configured() && !(await hasVoice())) return serviceSpeak(text, rate).catch(() => {});
   return new Promise(resolve => {
     if (!canSpeak || !state.sound || !text) return resolve();
     const u = new SpeechSynthesisUtterance(text);
@@ -33,18 +75,17 @@ export function speak(text, { rate = 0.9, variety = false, voice = null } = {}) 
   });
 }
 // 錄音檔（單音）：用 <audio> 播放，手機靜音模式下也聽得到。依序播放多個檔案，中間停一下
-let player;
+let playSeq = 0;
 export async function playFiles(urls, gap = 250) {
   if (!state.sound) return;
-  player?.pause();
+  const my = ++playSeq;
   for (const [i, url] of urls.entries()) {
     if (i) await new Promise(r => setTimeout(r, gap));
-    const a = (player = new Audio(url));
-    await new Promise(r => { a.onended = a.onerror = r; a.play().catch(r); });
-    if (player !== a) return;   // 中途又按了別的
+    if (my !== playSeq) return;   // 中途又按了別的
+    await playUrl(url);
   }
 }
-export function stopSpeech() { if (canSpeak) speechSynthesis.cancel(); }
+export function stopSpeech() { if (canSpeak) speechSynthesis.cancel(); audioEl?.pause(); }
 
 let ac;
 function ctx() {

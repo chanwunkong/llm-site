@@ -54,4 +54,12 @@
 - `top`：模型認為最像的前 5 個音（`∅` 表示漏掉）。
 - 聽不出是這個字時：`{"ok": false, "code": "not_the_word"}`；沒有聲音：`code: "no_speech"`。
 
+## GET /v1/speak?lang=&text=&rate=
+
+朗讀：學習者的裝置沒有這個語言的語音時（例如 iPhone 沒有吉爾吉斯語），遊戲改用這個功能。用 eSpeak NG 產生，聲音比較機械。
+
+- `text`：最多 300 字；`rate`：語速倍率（1 = 正常）。
+- 回傳 `audio/wav`。同一句話會暫存，不重複產生。
+- 次數上限另外計算：`SPEAK_PER_MIN`（預設每分鐘 120 次）。
+
 服務**不保存錄音**。設定 `LOG_ATTEMPTS=1` 時，每次只印出一行分數。

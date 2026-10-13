@@ -12,13 +12,15 @@ API v1 (see ../API.md):
   GET  /v1/health                      service info, languages, whether the token is accepted
   POST /v1/phonemize                   {"text", "lang"} -> expected phones (model tokens)
   POST /v1/score?lang=&phones=&target= body: float32 little-endian PCM, 16 kHz mono
+  GET  /v1/speak?lang=&text=&rate=     WAV from eSpeak NG, for languages the learner's device has no voice for
 
 Settings (environment variables):
   MODEL, VOCAB      model files (see ../export_model.py)
   TOKEN             access token; required unless AUTH=off. Clients send "Authorization: Bearer <token>".
   AUTH              "off" disables the token check (only for a private machine you alone can reach)
   ALLOW_ORIGINS     comma-separated web origins allowed to call the API (CORS)
-  RATE_PER_MIN      requests per minute per client address (0 = no limit)
+  RATE_PER_MIN      scoring requests per minute per client address (0 = no limit)
+  SPEAK_PER_MIN     speak requests per minute per client address (default 120; the game reads every question aloud)
   LOG_ATTEMPTS      "1" prints one JSON line of scores per attempt (never audio)
   LEGACY            "1" also serves the original test page (/, /items, /score?id=)
 """
@@ -44,6 +46,7 @@ TOKEN = os.environ.get("TOKEN", "")
 AUTH = os.environ.get("AUTH", "on") != "off"
 ALLOW_ORIGINS = [o.strip() for o in os.environ.get("ALLOW_ORIGINS", "https://chanwunkong.github.io").split(",") if o.strip()]
 RATE_PER_MIN = int(os.environ.get("RATE_PER_MIN", "30"))
+SPEAK_PER_MIN = int(os.environ.get("SPEAK_PER_MIN", "120"))
 LOG_ATTEMPTS = os.environ.get("LOG_ATTEMPTS", "1") == "1"
 LEGACY = os.environ.get("LEGACY", "0") == "1"
 if AUTH and not TOKEN:
@@ -258,17 +261,37 @@ def score(phones, k, audio, tag=""):
             "top": top, "score": round(p_target * 100), "ms": ms}
 
 
+# ---- speaking (eSpeak NG) ----
+# Robotic, but it covers every game language; used only when the device has no voice for the language.
+SPEAK_CACHE, SPEAK_CACHE_MAX = {}, 500
+
+
+def speak_wav(text, lang, rate):
+    voice = LANGS.get(lang, (None,))[0]
+    if not voice or not shutil.which("espeak-ng"):
+        return None
+    wpm = max(80, min(260, int(170 * rate)))
+    key = (voice, wpm, text)
+    if key not in SPEAK_CACHE:
+        if len(SPEAK_CACHE) >= SPEAK_CACHE_MAX:
+            SPEAK_CACHE.pop(next(iter(SPEAK_CACHE)))
+        SPEAK_CACHE[key] = subprocess.run(["espeak-ng", "--stdout", "-v", voice, "-s", str(wpm), text],
+                                          capture_output=True, timeout=10).stdout
+    return SPEAK_CACHE[key]
+
+
 # ---- protection ----
 hits = defaultdict(deque)
 
 
-def rate_ok(addr):
-    if RATE_PER_MIN <= 0:
+def rate_ok(addr, kind="score"):
+    limit = SPEAK_PER_MIN if kind == "speak" else RATE_PER_MIN
+    if limit <= 0:
         return True
-    now, q = time.time(), hits[addr]
+    now, q = time.time(), hits[(addr, kind)]
     while q and now - q[0] > 60:
         q.popleft()
-    if len(q) >= RATE_PER_MIN:
+    if len(q) >= limit:
         return False
     q.append(now)
     return True
@@ -302,7 +325,7 @@ class Handler(BaseHTTPRequestHandler):
         got = self.headers.get("Authorization", "")
         return got.startswith("Bearer ") and hmac.compare_digest(got[7:].encode(), TOKEN.encode())
 
-    def guard(self):
+    def guard(self, kind="score"):
         """Browser origin, token and rate checks for the API. Returns True when the request may continue."""
         origin = self.headers.get("Origin")
         if origin and origin not in ALLOW_ORIGINS and "*" not in ALLOW_ORIGINS:
@@ -311,7 +334,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.authorized():
             self.json({"ok": False, "code": "token", "msg": "存取密碼不正確"}, 401)
             return False
-        if not rate_ok(self.client_address[0]):
+        if not rate_ok(self.client_address[0], kind):
             self.json({"ok": False, "code": "rate", "msg": "太頻繁了，請稍等一下"}, 429)
             return False
         return True
@@ -334,8 +357,21 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/v1/health":
             # answers without a token too, so the game can tell "wrong token" from "cannot reach"
             return self.json({"ok": True, "version": VERSION, "model": MODEL_NAME, "authorized": self.authorized(),
-                              "languages": {k: v[1] for k, v in LANGS.items()},
+                              "languages": {k: v[1] for k, v in LANGS.items()}, "speak": sorted(LANGS),
                               "japanese_tool": "pyopenjtalk" if JA_KANA_TOOL else "espeak-ng"})
+        if path == "/v1/speak":
+            if not self.guard("speak"):
+                return
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            text = q.get("text", [""])[0][:300]
+            try:
+                rate = float(q.get("rate", ["1"])[0])
+            except ValueError:
+                rate = 1.0
+            wav = speak_wav(text, q.get("lang", [""])[0], rate) if text.strip() else None
+            if not wav:
+                return self.json({"ok": False, "code": "speak", "msg": "這個語言不能朗讀"}, 400)
+            return self.reply(200, "audio/wav", wav)
         if LEGACY:
             if path == "/":
                 with open(os.path.join(HERE, "index.html"), "rb") as f:
