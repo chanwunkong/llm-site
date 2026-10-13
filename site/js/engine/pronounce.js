@@ -48,15 +48,6 @@ export async function score(pcm, phones, target, lang) {
   return r.json();
 }
 
-// 朗讀：手機沒有這個語言的語音時，由服務用 eSpeak NG 產生（聲音比較機械）。回傳音檔 Blob，失敗回傳 null
-export async function speakAudio(text, lang, rate = 1) {
-  const q = new URLSearchParams({ lang, text, rate: String(rate) });
-  try {
-    const r = await fetch(`${base()}/v1/speak?${q}`, { headers: auth() });
-    return r.ok ? await r.blob() : null;
-  } catch { return null; }
-}
-
 // ---- 錄音：唸完自動停止 ----
 // 關掉瀏覽器的降噪、回音消除與自動音量：它們會抹掉分辨 θ、f、s 的高頻細節。
 // 前 0.3 秒量背景噪音；講話後安靜 0.7 秒就停。沒講話 4 秒、總長 5 秒也會停。

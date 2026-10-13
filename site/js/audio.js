@@ -1,6 +1,6 @@
 // 聲音：朗讀（語音合成）、空格提示音、語音辨識、音效。全部依語言設定檔的 BCP-47 代碼運作。
 import { state } from './engine/store.js';
-import * as PR from './engine/pronounce.js';
+import { LANG_LIST } from './data/langs.js';
 
 let voiceLang = 'en-US';
 export const setVoiceLang = l => { voiceLang = l; };
@@ -17,7 +17,7 @@ function pickVoice(variety) {
 }
 export const voiceCount = () => (canSpeak ? speechSynthesis.getVoices().filter(sameLang).length : 0);
 
-// 手機沒有這個語言的語音（例如 iPhone 沒有吉爾吉斯語）時，改請發音服務用 eSpeak NG 產生聲音。
+// 手機沒有這個語言的語音（例如 iPhone 沒有吉爾吉斯語）時，改在手機上用 eSpeak NG（WebAssembly）產生聲音，不連任何伺服器。
 // 語音清單可能還沒載入：最多等 1 秒（voiceschanged），再判斷有沒有這個語言的語音。
 let voicesReady = null;
 function voices() {
@@ -46,20 +46,26 @@ function playUrl(url) {
     audioEl.play().catch(done);
   });
 }
-const spoken = new Map();   // 同一句話只向服務要一次
-async function serviceSpeak(text, rate) {
-  const key = `${langId()}|${rate}|${text}`;
+// eSpeak NG（GPL-3.0，放在網站的 vendor/espeak-ng/）：第一次使用時下載約 18 MB，瀏覽器會快取；之後每句在手機上即時產生
+const ESPEAK = new URL('../vendor/espeak-ng/espeak-ng.js', import.meta.url).href;
+let espeakMod = null;
+const spoken = new Map();   // 同一句話只產生一次
+export const onEspeakDownload = { fn: null };   // 第一次下載時通知畫面
+async function localSpeak(text, rate) {
+  const voice = LANG_LIST.find(l => l.id === langId())?.espeak;
+  if (!voice) return;
+  const key = `${voice}|${rate}|${text}`;
   if (!spoken.has(key)) {
-    const blob = await PR.speakAudio(text, langId(), rate);
-    if (!blob) return;
-    spoken.set(key, URL.createObjectURL(blob));
+    if (!espeakMod) { onEspeakDownload.fn?.(); espeakMod = import(ESPEAK).then(m => m.default); }
+    const es = await (await espeakMod)({ arguments: ['-w', '/out.wav', '-v', voice, '-s', String(Math.round(160 * rate)), text] });
+    spoken.set(key, URL.createObjectURL(new Blob([es.FS.readFile('/out.wav')], { type: 'audio/wav' })));
   }
   await playUrl(spoken.get(key));
 }
 
 const alive = new Set();
 export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
-  if (state.sound && text && PR.configured() && !(await hasVoice())) return serviceSpeak(text, rate).catch(() => {});
+  if (state.sound && text && !(await hasVoice())) return localSpeak(text, rate).catch(() => { espeakMod = null; });
   return new Promise(resolve => {
     if (!canSpeak || !state.sound || !text) return resolve();
     const u = new SpeechSynthesisUtterance(text);
