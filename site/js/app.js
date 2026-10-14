@@ -12,7 +12,7 @@ import { LANGS } from './data/wals.js';
 import { esc } from './ui/sheet.js';
 import * as PR from './engine/pronounce.js';
 import * as T from './engine/territory.js';
-import { setVoiceLang, speak, onEspeakDownload } from './audio.js';
+import { setVoiceLang, speak, onEspeakDownload, onPiperDownload } from './audio.js';
 import { createHome } from './ui/home.js';
 import { createPlay } from './ui/play.js';
 import { createLand } from './ui/land.js';
@@ -83,6 +83,7 @@ document.querySelectorAll('#nav button').forEach(b => (b.onclick = () => setTab(
 
 // 手機沒有這個語言的語音時，第一次朗讀要下載 eSpeak NG 的語音資料
 onEspeakDownload.fn = () => toast('這台手機沒有這個語言的語音，第一次使用要下載約 18 MB 的語音資料', 3500);
+onPiperDownload.fn = (lang, mb) => toast(`這台手機沒有${lang.zh}的語音，正在下載較自然的語音（約 ${mb} MB，只需一次）`, 4000);
 
 function enterLanguage() {
   setVoiceLang(DATA[state.lang].bcp47);

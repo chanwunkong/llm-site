@@ -49,6 +49,41 @@ function playUrl(url) {
 }
 const spoken = new Map();   // 同一句話只產生一次
 export const onEspeakDownload = ES.onDownload;   // 第一次下載時通知畫面
+// ---- Piper（神經網路語音，比 eSpeak 自然）：在手機上合成，聲音檔第一次使用時從 Piper 官方聲音庫（Hugging Face）下載 ----
+// 用 @mintplex-labs/piper-tts-web（MIT）。它預設從一個複本下載，複本缺少部分語言，所以把網址改到官方的 rhasspy/piper-voices。
+// 下載的聲音檔存在瀏覽器的私人檔案空間（OPFS），之後不再下載。
+const PIPER_LIB = 'https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.5/dist/piper-tts-web.js';
+const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';   // 和 index.html 匯入對照表的版本相同
+const PIPER_VOICES = 'https://huggingface.co/rhasspy/piper-voices/resolve/main';
+let piperLib = null;
+const piperSessions = new Map();
+export const onPiperDownload = { fn: null };   // (語言, MB) 第一次下載這個聲音時通知畫面
+function piper() {
+  piperLib ||= import(PIPER_LIB).then(m => {
+    const mirror = m.HF_BASE, f = window.fetch.bind(window);
+    window.fetch = (u, o) => (typeof u === 'string' && u.startsWith(mirror) ? f(PIPER_VOICES + u.slice(mirror.length), o) : f(u, o));
+    return m;
+  });
+  return piperLib;
+}
+async function piperSpeak(text, rate, lang) {
+  const key = `piper|${lang.piper}|${text}`;
+  if (!spoken.has(key)) {
+    const m = await piper();
+    const [fam, region, name, quality] = [lang.piper.split('_')[0], lang.piper.split('-')[0], ...lang.piper.split('-').slice(1)];
+    m.PATH_MAP[lang.piper] ||= `${fam}/${region}/${name}/${quality}/${lang.piper}.onnx`;
+    if (!piperSessions.has(lang.piper)) {
+      if (!(await m.stored()).includes(lang.piper)) onPiperDownload.fn?.(lang, lang.piperMB);
+      piperSessions.set(lang.piper, m.TtsSession.create({ voiceId: lang.piper, wasmPaths: { onnxWasm: ORT_WASM, piperData: `${m.WASM_BASE}.data`, piperWasm: `${m.WASM_BASE}.wasm` } }));
+    }
+    const wav = await (await piperSessions.get(lang.piper)).predict(text);
+    spoken.set(key, URL.createObjectURL(wav));
+  }
+  if (audioEl) audioEl.playbackRate = rate;
+  await playUrl(spoken.get(key));
+  if (audioEl) audioEl.playbackRate = 1;
+}
+
 async function localSpeak(text, rate) {
   const voice = LANG_LIST.find(l => l.id === langId())?.espeak;
   if (!voice) return;
@@ -62,7 +97,12 @@ async function localSpeak(text, rate) {
 
 const alive = new Set();
 export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
-  if (state.sound && text && !(await hasVoice())) return localSpeak(text, rate).catch(() => {});
+  // 手機沒有這個語言的語音：先用 Piper；Piper 沒有這個語言或失敗時，用 eSpeak NG
+  if (state.sound && text && !(await hasVoice())) {
+    const lang = LANG_LIST.find(l => l.id === langId());
+    if (lang?.piper) return piperSpeak(text, rate, lang).catch(() => { piperSessions.delete(lang.piper); return localSpeak(text, rate); }).catch(() => {});
+    return localSpeak(text, rate).catch(() => {});
+  }
   return new Promise(resolve => {
     if (!canSpeak || !state.sound || !text) return resolve();
     const u = new SpeechSynthesisUtterance(text);
