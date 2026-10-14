@@ -1,6 +1,7 @@
 // 聲音：朗讀（語音合成）、空格提示音、語音辨識、音效。全部依語言設定檔的 BCP-47 代碼運作。
 import { state } from './engine/store.js';
 import { LANG_LIST } from './data/langs.js';
+import * as ES from './engine/espeak.js';
 
 let voiceLang = 'en-US';
 export const setVoiceLang = l => { voiceLang = l; };
@@ -46,18 +47,14 @@ function playUrl(url) {
     audioEl.play().catch(done);
   });
 }
-// eSpeak NG（GPL-3.0，放在網站的 vendor/espeak-ng/）：第一次使用時下載約 18 MB，瀏覽器會快取；之後每句在手機上即時產生
-const ESPEAK = new URL('../vendor/espeak-ng/espeak-ng.js', import.meta.url).href;
-let espeakMod = null;
 const spoken = new Map();   // 同一句話只產生一次
-export const onEspeakDownload = { fn: null };   // 第一次下載時通知畫面
+export const onEspeakDownload = ES.onDownload;   // 第一次下載時通知畫面
 async function localSpeak(text, rate) {
   const voice = LANG_LIST.find(l => l.id === langId())?.espeak;
   if (!voice) return;
   const key = `${voice}|${rate}|${text}`;
   if (!spoken.has(key)) {
-    if (!espeakMod) { onEspeakDownload.fn?.(); espeakMod = import(ESPEAK).then(m => m.default); }
-    const es = await (await espeakMod)({ arguments: ['-w', '/out.wav', '-v', voice, '-s', String(Math.round(160 * rate)), text] });
+    const es = await ES.run(['-w', '/out.wav', '-v', voice, '-s', String(Math.round(160 * rate)), text]);
     spoken.set(key, URL.createObjectURL(new Blob([es.FS.readFile('/out.wav')], { type: 'audio/wav' })));
   }
   await playUrl(spoken.get(key));
@@ -65,7 +62,7 @@ async function localSpeak(text, rate) {
 
 const alive = new Set();
 export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
-  if (state.sound && text && !(await hasVoice())) return localSpeak(text, rate).catch(() => { espeakMod = null; });
+  if (state.sound && text && !(await hasVoice())) return localSpeak(text, rate).catch(() => {});
   return new Promise(resolve => {
     if (!canSpeak || !state.sound || !text) return resolve();
     const u = new SpeechSynthesisUtterance(text);

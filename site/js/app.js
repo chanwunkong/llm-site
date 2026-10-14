@@ -4,6 +4,7 @@ import { BASE } from './data/base.js';
 import { LANG_LIST, LANG_BY_ID } from './data/langs.js';
 import { importsOf } from './engine/importer.js';
 import { loadDemo, loadCore } from './engine/demo.js';
+import { addWordIPA } from './engine/phono.js';
 import { state, save, L, applyDecay, skipDay, resetAll, SIM, SHOW, enterSim, exitSim, takeSimRequest, refreshFeatures } from './engine/store.js';
 import { PRESETS, generate } from './engine/sim.js';
 import { syncUnlocks } from './engine/run.js';
@@ -27,7 +28,12 @@ const coreSource = id => (CORE[id]?.length ? [{ id: 'core', kind: '基元', titl
 const dataOf = id => ({ ...LANG_BY_ID[id], id, sources: [...coreSource(id), ...(DEMO[id] || []), ...importsOf(id)] });
 const DATA = Object.fromEntries(LANG_LIST.map(l => [l.id, l]));
 const built = {};
-const getLang = () => (built[state.lang] ||= buildLanguage(dataOf(state.lang), BASE[state.lang] || {}));
+// 匯入的文章附有在手機上產生的音標，載入語言時一起登記
+const getLang = () => (built[state.lang] ||= (() => {
+  const data = dataOf(state.lang);
+  for (const s of data.sources) if (s.ipa) addWordIPA(state.lang, s.ipa);
+  return buildLanguage(data, BASE[state.lang] || {});
+})());
 const rebuildLang = () => { delete built[state.lang]; };
 const $ = s => document.querySelector(s);
 

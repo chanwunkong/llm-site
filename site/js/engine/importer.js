@@ -4,6 +4,8 @@
 //   kuromoji 瀏覽器內的日文斷詞，再把日文詞類對應到 UD（對應規則與 decompose.py 相同）
 //   basic    瀏覽器內建的斷詞（Intl.Segmenter），沒有詞性；所有字都當成要學的字，規則不啟動
 // 匯入的內容只存在這個瀏覽器裡。
+import * as IPA from './ipa.js';
+
 const UDPIPE = 'https://lindat.mff.cuni.cz/services/udpipe/api/process';
 const KUROMOJI = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/';
 const STORE_KEY = 'word-territory-imports-v1';
@@ -159,7 +161,7 @@ function kuromojiSplit(tk, paras, progress) {
       if (t.pos === '助動詞' && ['特殊・ナイ', '特殊・ヌ'].includes(t.conjugated_type)) f.push('Polarity=Neg');
       if (JA_DEM.has(t.surface_form)) f.push('PronType=Dem');
       if (JA_INT.has(t.surface_form)) f.push('PronType=Int');
-      return { form: t.surface_form, lemma: t.basic_form && t.basic_form !== '*' ? t.basic_form : t.surface_form, upos, feats: f.join(';') };
+      return { form: t.surface_form, lemma: t.basic_form && t.basic_form !== '*' ? t.basic_form : t.surface_form, upos, feats: f.join(';'), reading: t.pronunciation && t.pronunciation !== '*' ? t.pronunciation : t.reading };
     }));
 }
 
@@ -229,7 +231,14 @@ export async function importText(lang, title, text, progress = () => {}) {
   const k = Math.max(1, Math.round(keep.length / SIT_SIZE)), size = Math.ceil(keep.length / k);
   const situations = Array.from({ length: k }, (_, i) => ({ title: k === 1 ? title : `${title}（${i + 1}/${k}）`, sentences: keep.slice(i * size, (i + 1) * size) }))
     .filter(s => s.sentences.length);
-  const src = { id: `imp-${Date.now().toString(36)}`, kind: '匯入', title, credit: `你匯入的內容・${keep.length} 句${keep.length < 10 ? '（內容較短，一局很快就會練完）' : ''}`, imported: true, situations };
+  // 每個字的音標：在手機上產生（日文用讀音轉換，其他語言用 eSpeak NG），讓匯入的文章也有難音標示、只差一個音的干擾選項
+  const words = pieces.flat().filter(w => !['PUNCT', 'SYM', 'X'].includes(w.upos));
+  let ipa = {};
+  try {
+    ipa = lang.tagger === 'kuromoji' ? IPA.forJapanese(words.map(w => [w.form, w.reading]))
+      : await IPA.forWords([...new Set(words.map(w => w.form.replace(/\u00a0/g, ' ')))], lang.id, progress);
+  } catch { /* 產生失敗時沒有音標，其他功能照常 */ }
+  const src = { id: `imp-${Date.now().toString(36)}`, kind: '匯入', ipa, title, credit: `你匯入的內容・${keep.length} 句${keep.length < 10 ? '（內容較短，一局很快就會練完）' : ''}`, imported: true, situations };
   saveImport(lang.id, src);
   return src;
 }

@@ -36,9 +36,12 @@ export function hardSounds(target) {
   return new Set(inventory(target).filter(s => soundStatus(s, target, ks) === 'hard'));
 }
 
+// 匯入的文章在手機上產生的音標（engine/ipa.js），和內建文章的音標一起查
+const RUNTIME = {};
+export function addWordIPA(langId, map) { Object.assign((RUNTIME[langId] ||= {}), map); }
 export function wordSegs(langId, surface) {
-  const w = WORD_IPA[langId] || {};
-  return w[surface] || w[surface.toLowerCase()] || null;
+  const w = WORD_IPA[langId] || {}, r = RUNTIME[langId] || {}, lc = surface.toLowerCase();
+  return w[surface] || w[lc] || r[lc] || null;
 }
 export const ipaOf = (langId, surface) => (wordSegs(langId, surface) || []).join('');
 
