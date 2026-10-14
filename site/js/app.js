@@ -12,7 +12,7 @@ import { LANGS } from './data/wals.js';
 import { esc } from './ui/sheet.js';
 import * as PR from './engine/pronounce.js';
 import * as T from './engine/territory.js';
-import { setVoiceLang, speak, onEspeakDownload, onPiperDownload } from './audio.js';
+import { setVoiceLang, speak, onEspeakDownload, onPiperDownload, voiceSubOf } from './audio.js';
 import { createHome } from './ui/home.js';
 import { createPlay } from './ui/play.js';
 import { createLand } from './ui/land.js';
@@ -114,12 +114,14 @@ $('#langBtn').onclick = () => openSheet(`<h2>學習語言</h2>
 
 $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
     <button class="btn ghost big" id="snd">${state.sound ? '聲音：開' : '聲音：關'}</button>
+    ${DATA[state.lang].subs ? `<button class="btn ghost big" id="voice">朗讀聲音：${esc(voiceName(state.lang))}</button>` : ''}
     <button class="btn ghost big" id="pron">發音評分服務${PR.configured() ? '：已設定' : ''}</button>
     <button class="btn ghost big" id="sim">${SIM ? '重新產生模擬進度' : '模擬模式（測試用）'}</button>
     <button class="btn ghost big" id="day">時間快轉 1 天（測試降級用）</button>
     <button class="btn ghost big" id="rst">${SIM ? '重置模擬進度' : '重置所有進度'}</button>
   </div><p class="muted">學習資料是依《小王子》劇情自行改寫的範例，詞性與詞元為人工標註。</p>`, {}, body => {
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
+  body.querySelector('#voice')?.addEventListener('click', voiceSheet);
   body.querySelector('#sim').onclick = simSheet;
   body.querySelector('#pron').onclick = pronSheet;
   body.querySelector('#day').onclick = () => { skipDay(); closeSheet(); enterLanguage(); views[tab].hide(); setTab(tab); toast('已快轉 1 天'); };
@@ -157,6 +159,29 @@ function simSheet() {
     }));
     body.querySelector('#auto').onclick = () => { req.autoSkills = !req.autoSkills; draw(body); };
     body.querySelector('#simGo').onclick = () => { body.querySelector('#simGo').textContent = '產生中…'; enterSim(req); };
+  };
+  openSheet('', {}, draw);
+}
+
+// 朗讀聲音：這個語言自己的聲音不好時，可以改用相近語言的聲音（文字先轉成那個語言的字母）
+const voiceName = (id, sub = voiceSubOf(id)) => (sub ? `用${DATA[sub].zh}的聲音` : `${DATA[id].zh}（預設）`);
+function voiceSheet() {
+  const id = state.lang, d = DATA[id];
+  // 試聽用這個語言的基元詞，含特殊字母的優先
+  const sample = (CORE[id] || []).map(p => p.key).sort((a, b) => /[өүңы]/i.test(b) - /[өүңы]/i.test(a)).slice(0, 6).join(', ');
+  const draw = body => {
+    const cur = voiceSubOf(id);
+    body.innerHTML = `<h2>朗讀聲音</h2>
+      <p class="muted">${esc(d.zh)}的預設聲音比較機械。可以改用相近語言的聲音：文字會先轉成那個語言的字母再唸，有些音只是近似。點選項會試聽。</p>
+      <div class="stack">${[null, ...d.subs].map(s => `<button class="choice${cur === s ? ' sel' : ''}" data-s="${s || ''}"><b>${esc(voiceName(id, s))}</b><small>${
+        !s ? '手機有這個語言的語音就用手機的，沒有就用 eSpeak' : s === 'tr' ? '同屬突厥語，母音和多數子音接近；ө ү ы 都有對應' : '直接讀西里爾字母；ө ү 用 ё ю 近似，ң 唸成 н；重音位置可能不對'
+      }</small></button>`).join('')}</div>`;
+    body.querySelectorAll('[data-s]').forEach(b => (b.onclick = () => {
+      state.voiceSub = { ...state.voiceSub, [id]: b.dataset.s || null };
+      save();
+      draw(body);
+      if (sample) speak(sample, { rate: 0.85 });
+    }));
   };
   openSheet('', {}, draw);
 }

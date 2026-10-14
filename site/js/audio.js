@@ -2,6 +2,7 @@
 import { state } from './engine/store.js';
 import { LANG_LIST } from './data/langs.js';
 import * as ES from './engine/espeak.js';
+import { convert } from './engine/translit.js';
 
 let voiceLang = 'en-US';
 export const setVoiceLang = l => { voiceLang = l; };
@@ -9,14 +10,14 @@ export const canSpeak = 'speechSynthesis' in window;
 const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
 export const canListen = !!Rec;
 
-const sameLang = v => v.lang.replace('_', '-').toLowerCase().startsWith(voiceLang.slice(0, 2).toLowerCase());
-function pickVoice(variety) {
+const sameLang = (v, code = voiceLang) => v.lang.replace('_', '-').toLowerCase().startsWith(code.slice(0, 2).toLowerCase());
+function pickVoice(variety, code = voiceLang) {
   const vs = speechSynthesis.getVoices();
   // 高變異度：從這個語言的所有語音中隨機挑一個（男聲、女聲、不同口音）
-  if (variety) { const all = vs.filter(sameLang); if (all.length) return all[(Math.random() * all.length) | 0]; }
-  return vs.find(v => v.lang === voiceLang) || vs.find(sameLang);
+  if (variety) { const all = vs.filter(v => sameLang(v, code)); if (all.length) return all[(Math.random() * all.length) | 0]; }
+  return vs.find(v => v.lang === code) || vs.find(v => sameLang(v, code));
 }
-export const voiceCount = () => (canSpeak ? speechSynthesis.getVoices().filter(sameLang).length : 0);
+export const voiceCount = () => (canSpeak ? speechSynthesis.getVoices().filter(v => sameLang(v)).length : 0);
 
 // 手機沒有這個語言的語音（例如 iPhone 沒有吉爾吉斯語）時，改在手機上用 eSpeak NG（WebAssembly）產生聲音，不連任何伺服器。
 // 語音清單可能還沒載入：最多等 1 秒（voiceschanged），再判斷有沒有這個語言的語音。
@@ -31,7 +32,7 @@ function voices() {
   });
   return voicesReady;
 }
-const hasVoice = async () => (await voices()).some(sameLang);
+const hasVoice = async code => (await voices()).some(v => sameLang(v, code));
 const langId = () => voiceLang.slice(0, 2).toLowerCase();
 
 // 播放錄音檔共用一個 <audio>：iPhone 只允許「使用者點過之後」播放，第一次點畫面時先用一段無聲音檔解鎖
@@ -84,8 +85,8 @@ async function piperSpeak(text, rate, lang) {
   if (audioEl) audioEl.playbackRate = 1;
 }
 
-async function localSpeak(text, rate) {
-  const voice = LANG_LIST.find(l => l.id === langId())?.espeak;
+async function localSpeak(text, rate, lang) {
+  const voice = lang?.espeak;
   if (!voice) return;
   const key = `${voice}|${rate}|${text}`;
   if (!spoken.has(key)) {
@@ -96,19 +97,23 @@ async function localSpeak(text, rate) {
 }
 
 const alive = new Set();
+// 替代聲音：使用者可以讓某些語言改用相近語言的聲音（設定 → 朗讀聲音），文字先轉成那個語言的字母
+export const voiceSubOf = id => (LANG_LIST.find(l => l.id === id)?.subs || []).includes(state.voiceSub?.[id]) ? state.voiceSub[id] : null;
 export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
+  let lang = LANG_LIST.find(l => l.id === langId()), code = voiceLang;
+  const sub = voiceSubOf(lang?.id);
+  if (sub) { text = convert(text, lang.id, sub); lang = LANG_LIST.find(l => l.id === sub); code = lang.bcp47; voice = null; }
   // 手機沒有這個語言的語音：先用 Piper；Piper 沒有這個語言或失敗時，用 eSpeak NG
-  if (state.sound && text && !(await hasVoice())) {
-    const lang = LANG_LIST.find(l => l.id === langId());
-    if (lang?.piper) return piperSpeak(text, rate, lang).catch(() => { piperSessions.delete(lang.piper); return localSpeak(text, rate); }).catch(() => {});
-    return localSpeak(text, rate).catch(() => {});
+  if (state.sound && text && !(await hasVoice(code))) {
+    if (lang?.piper) return piperSpeak(text, rate, lang).catch(() => { piperSessions.delete(lang.piper); return localSpeak(text, rate, lang); }).catch(() => {});
+    return localSpeak(text, rate, lang).catch(() => {});
   }
   return new Promise(resolve => {
     if (!canSpeak || !state.sound || !text) return resolve();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = voiceLang;
+    u.lang = code;
     u.rate = rate;
-    const v = voice || pickVoice(variety);
+    const v = voice || pickVoice(variety, code);
     if (v) u.voice = v;
     alive.add(u);
     const done = () => { alive.delete(u); clearTimeout(t); resolve(); };
