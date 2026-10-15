@@ -33,7 +33,6 @@ export function generate(req, getLang) {
     const run = R.buildRun(lang, src.id, 'ear');
     while (R.current(run)) {
       const q = R.makeQuestion(run, R.current(run));
-      if (q.mode === 'teach') { R.answer(run, q, null); continue; }
       const ok = Math.random() < 0.85;
       R.answer(run, q, q.mode === 'pick' ? (ok ? q.answer[0] : '') : q.mode === 'order' ? (ok ? q.answer : []) : (ok ? q.answerText : ''), { timeLeft: 0.5 });
       if (run.pendingChoice) { const c = R.choices(run); c.length ? R.choose(run, c[0]) : (run.pendingChoice = false); }

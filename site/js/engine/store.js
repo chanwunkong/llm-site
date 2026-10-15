@@ -57,7 +57,8 @@ export const RULES = {
   threshold: 4,                        // 3 級以上每級的熟練度門檻（Lv5 到門檻 = 精熟，之後只抽查）
   // 1 級是教學：先看教學卡，同一局再答對一次就到 2 級
   firstEncounterCorrect: 2,            // 2 → 3：同一局答對 2 次
-  newPerRun: [4, 3],                   // 每局最多教幾個新字：第一局、之後
+  newPerRun: [4, 3],
+  fastRatio: 0.5,                      // Lv5 快速答對：計時剩下一半以上                   // 每局最多教幾個新字：第一局、之後
   decayDays: { 3: 2, 4: 4, 5: 8 },     // 3～5 級：幾天沒練降一級；精熟的字改為隨機抽查
   dueRatio: 0.7,                       // 超過降級時間的 70% 視為「快要降級」
   envPoints: { speak: 3, ear: 2, mute: 1 },

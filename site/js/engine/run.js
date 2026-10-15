@@ -229,11 +229,10 @@ function buildCoreRun(lang, sourceId, env) {
   return newRun(lang, sourceId, sit, env, [...shuffle(first), ...shuffle(second)], null);
 }
 
-// 題型（基元和文章相同，只有提示不同）：Lv1 教學卡；Lv2 看提示選字；Lv3 四選一，干擾是意思相反或音、拼法相近的字；
+// 題型（基元和文章相同，只有提示不同）：Lv1 跟著做（看字、聽音，照著唸或拼）；Lv2 看提示選字；Lv3 四選一，干擾是意思相反或音、拼法相近的字；
 // Lv4 依序排出 2～3 個字；Lv5 說出或打出；精熟的字抽查用 Lv5 的題型。
-// Lv1 的字看過教學卡後，同一局再出一次 Lv2 的題型，答對就到 Lv2。
-const qType = (run, item, w) => (item.kind === 'spot' ? 5 : w.lv === 1 ? (run.taught.has(item.lemma) ? 2 : 1) : w.lv);
-// 看過的字：Lv2 以上，或這一局剛教過
+const qType = (run, item, w) => (item.kind === 'spot' ? 5 : w.lv);
+// 看過的字：Lv2 以上，或這一局跟著做過
 const seenWord = run => l => (L().words[l]?.lv || 1) >= 2 || run.taught.has(l);
 
 function makeCoreQuestion(run, item) {
@@ -241,7 +240,7 @@ function makeCoreQuestion(run, item) {
   const lv = qType(run, item, w);
   const opp = P.opposite ? lang.core.find(p => p.id === P.opposite) : null;
   const others = avoid => shuffle(lang.core.filter(p => p !== P && !avoid.includes(p)));
-  if (lv === 1) return teachQuestion(run, item, { core: true, icons: [P.icon], word: P.key, opp: opp && { icon: opp.icon, word: opp.key } });
+  if (lv === 1) return teachQuestion(run, item, { core: true, icons: [P.icon], word: P.key });
   let mode = 'pick', answer = [P.key], cards = [], icons = [P.icon], cardIcons = null, prompt = null, accept = P.words;
   if (lv === 2) {
     // 干擾選項只用看過的字，學習者可以用記憶排除，而不是猜
@@ -272,12 +271,20 @@ function makeCoreQuestion(run, item) {
 const isChallenge = (run, item, w) => item.kind !== 'spot' && w.lv >= 3 && !mastered(w) && !run.leveled.has(item.lemma) &&
   w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
 
-// 教學卡：不考試，只顯示字、音標、提示並朗讀；按「下一個」就過
+// Lv1 跟著做：顯示字、音標、圖示並朗讀，學習者照著唸或拼。卡片上只有目標語言，一張卡只教一個字
 function teachQuestion(run, item, extra) {
   return {
-    item, lv: 1, qt: 1, mode: 'teach', tokens: [], gap: [], answer: [extra.word], cards: [], challenge: false, timer: 0, neighbors: [], rules: [],
-    before: '', after: '', full: extra.word, answerText: extra.word, ...extra,
+    item, lv: 1, qt: 1, mode: 'teach', tokens: [], gap: [], answer: [extra.word], accept: [extra.word], cards: [], challenge: false, timer: 0, neighbors: [], rules: [],
+    before: '', after: '', full: extra.word, answerText: extra.word, letters: letterCards(run.lang, extra.word), ...extra,
   };
+}
+// 字母卡：這個字的字母（字素）打散，加 2～3 個這個語言裡其他字的字母
+const graphemes = w => [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(w)].map(x => x.segment);
+function letterCards(lang, w) {
+  const own = graphemes(w), lower = own.map(g => g.toLocaleLowerCase());
+  const pool = [...new Set([...lang.lemmas.keys(), ...(lang.core || []).map(p => p.key)].flatMap(x => graphemes(x.toLocaleLowerCase())))]
+    .filter(g => /\p{L}/u.test(g) && !lower.includes(g));
+  return shuffle([...own, ...pickN(pool, own.length > 6 ? 2 : 3)]);
 }
 
 // ---- 題目 ----
@@ -341,10 +348,9 @@ export function makeQuestion(run, item) {
   const lv = qType(run, item, w);
   let ti = s.tokens.findIndex(t => t.lemma === item.lemma && isTarget(t));
   if (ti < 0) ti = s.tokens.findIndex(t => t.lemma === item.lemma);
-  // 教學卡：整句朗讀，這個字標亮；有圖示或「我的理解」就一起顯示
+  // 跟著做：整句朗讀，這個字標亮；有圖示就一起顯示
   if (lv === 1) return teachQuestion(run, item, {
-    tokens: s.tokens, gap: [ti], word: s.tokens[ti].surface, image: lang.base[item.lemma] || null,
-    mineCue: !lang.base[item.lemma] ? w.mine?.at(-1)?.parts || null : null, full: joinTokens(s.tokens, lang.joiner),
+    tokens: s.tokens, gap: [ti], word: s.tokens[ti].surface, image: lang.base[item.lemma] || null, full: joinTokens(s.tokens, lang.joiner),
   });
   // Lv4 排序、Lv5 產出：目標字在語塊裡時，整個語塊挖空
   const formula = lv >= 4 ? formulaGap(lang, s, ti) : null;
@@ -385,13 +391,6 @@ export const current = run => run.queue[run.pos] || (run.boss && !run.bossDone ?
 // response：pick 為選中的字，order 為依序選的字陣列，produce 為輸入或辨識出的文字
 export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) {
   const item = q.item;
-  // 教學卡：不計分，記下這一局教過這個字
-  if (q.mode === 'teach') {
-    run.taught.add(item.lemma);
-    run.pos++;
-    save();
-    return { ok: true, teach: true, points: 0, rules: [], path: 0 };
-  }
   let ok;
   if (spoken) ok = [].concat(response).some(r => (q.accept || [q.answerText]).some(a => normalize(r).includes(normalize(a))));
   else if (q.mode === 'pick') ok = response === q.answer[0];
@@ -401,6 +400,7 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
   if (item.kind === 'chain') return answerChain(run, q, ok, timeLeft);
   if (item.kind === 'boss') return answerBoss(run, q, ok, timeLeft);
   const w = word(item.lemma);
+  if (q.mode === 'teach') run.taught.add(item.lemma);
   w.last = now();
   if (!w.home) w.home = item.home;
   const result = { ok, points: 0, gained: 0, levelUp: null, levelDown: null, rules: [], path: 0, newTile: null };
@@ -412,7 +412,7 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
     w.correct++;
     const comboMult = Math.min(3, 1 + 0.1 * (run.combo - 1));
     const speed = q.timer ? 0.5 * timeLeft : 0;
-    const active = activeRules(run, q);
+    const active = q.mode === 'teach' ? [] : activeRules(run, q);
     const contentLemmas = q.tokens.filter(isContent).map(t => t.lemma);
     const path = SHOW.path ? T.pathBonus(contentLemmas) : { bonus: 0, pairs: [] };
     for (const [a, b, st] of path.pairs) if (st >= 3) run.missed.set(`${a}|${b}`, { a, b, steps: st });
@@ -423,16 +423,19 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
     Object.assign(result, { points, rules: active, path: path.bonus, comboMult, chains: startChains(run, q, active) });
 
     const envPts = RULES.envPoints[spoken || run.env !== 'speak' ? run.env : 'ear'];
-    const gained = item.attempts ? Math.ceil(envPts / 2) : envPts;
+    // Lv5（說出或打出）：在計時的前一半答出才算快速答對；慢慢答對只加一半的熟練度，也不能升到精熟
+    const slow = q.qt === 5 && q.timer && timeLeft < RULES.fastRatio;
+    const gained = Math.ceil((item.attempts ? envPts / 2 : envPts) / (slow ? 2 : 1));
     result.gained = gained;
+    result.slow = slow;
     if (item.kind === 'spot') {
       // 抽查通過，維持精熟
-    } else if (w.lv === 1) {
-      // 教學後的確認題答對：到 Lv2
-      if (!run.leveled.has(item.lemma)) levelUp(run, item.lemma, w, result);
-    } else if (w.lv === 2) {
+    } else if (w.lv <= 2) {
+      // Lv1、Lv2：同一局答對 2 次升一級
       run.firstEncounter[item.lemma] = (run.firstEncounter[item.lemma] || 0) + 1;
       if (run.firstEncounter[item.lemma] >= RULES.firstEncounterCorrect && !run.leveled.has(item.lemma)) levelUp(run, item.lemma, w, result);
+    } else if (q.challenge && w.lv === 5 && slow) {
+      w.prof = RULES.threshold - 1;   // 答對但不夠快：下次還是精熟挑戰
     } else if (q.challenge) {
       levelUp(run, item.lemma, w, result);
     } else if (!mastered(w)) {

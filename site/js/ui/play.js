@@ -9,7 +9,7 @@ import * as P from '../engine/phono.js';
 import { G } from './glyph.js';
 import * as PR from '../engine/pronounce.js';
 
-const LV_NAME = ['', '教學', '選字', '辨識', '排序', '產出'];
+const LV_NAME = ['', '跟著做', '選字', '辨識', '排序', '產出'];
 const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
 
 // 星數：實心圓 = 拿到，空心 = 還沒拿到
@@ -17,6 +17,9 @@ export const starRow = (n, small) => `<span class="stars3${small ? ' sm' : ''}">
 
 export function createPlay(root, { onEnd, onSound, onCompose }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
+  // 跟著做：作答方式（null = 還沒選；'say' 唸；'spell' 字母卡；'type' 鍵盤）。prOk：發音評分服務支援這個語言；noRecog：手機語音辨識不支援的語言
+  let way = null, prOk = false;
+  const noRecog = new Set();
   const $ = s => root.querySelector(s);
   const audio = () => run.env !== 'mute';
   // 開口：瀏覽器能語音辨識，或（產出題）有設定發音評分服務
@@ -24,6 +27,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
 
   function start(lang, sourceId, env) {
     run = buildRun(lang, sourceId, env);
+    prOk = false;
+    if (PR.configured()) PR.supports(lang.id).then(v => { prOk = v; }).catch(() => {});
     document.body.classList.add('playing');
     root.hidden = false;
     root.innerHTML = `
@@ -44,6 +49,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     if (!item) return finish();
     q = makeQuestion(run, item);
     pron = null;
+    way = null;
     if (item.kind === 'boss') setTimeout(() => floatText('王關！', true), 50);
     answered = false;
     picked = [];
@@ -58,47 +64,73 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     else startTimer();
   }
 
-  // 教學卡：先唸這個字，再唸整句（基元：再唸意思相反的字）
+  // 跟著做：先唸這個字，文章題再唸整句
   // 基元題沒有句子：Lv3 唸出題目的字，其他等級不唸（答完才唸）
-  const playGap = () => (q.mode === 'teach' ? speak(q.word, { rate: 0.8 }).then(() => q.opp ? speak(q.opp.word, { rate: 0.8 }) : q.tokens.length ? speak(q.full, { rate: 0.9 }) : null)
+  const playGap = () => (q.mode === 'teach' ? speak(q.word, { rate: 0.8 }).then(() => (q.tokens.length ? speak(q.full, { rate: 0.9 }) : null))
     : q.core ? (q.prompt ? speak(q.prompt, { rate: 0.85 }) : Promise.resolve()) : speakGap(q.before, q.after, 0.9));
 
   // ---------- 畫面 ----------
-  // 教學卡：不考試。字、音標、圖示（或「我的理解」）、句子裡標亮這個字；按「下一個」就過
+  // 跟著做（Lv1）：字、音標、圖示，句子裡標亮這個字。卡片內容只有目標語言。學習者照著唸或拼
+  // 能唸 = 開口環境，而且程式能判斷（發音評分服務支援，或手機語音辨識沒有回報不支援）；不讓學習者自己判斷
+  const canSay = () => run.env === 'speak' && (prOk || (canListen && !noRecog.has(run.lang.id)));
   function teachHtml() {
     const ipa = w => { const x = P.ipaOf(run.lang.id, w); return x ? `<span class="ipa">/${esc(x)}/</span>` : ''; };
     const sentence = q.tokens.length ? `<div class="sentence teach-sent" dir="${run.lang.dir || 'ltr'}">${q.tokens.map((t, i) =>
       `${spaceBefore(q.tokens, i, run.lang.joiner)}<span class="ctx${i === q.gap[0] ? ' teach-hl' : ''}">${esc(t.surface)}</span>`).join('')}</div>` : '';
-    return `<div class="badges"><span class="badge lv">Lv1 教學</span><span class="badge">新字</span></div>
+    const w = way || (canSay() ? null : 'spell');
+    const spelled = picked.map(k => q.letters[k]).join('');
+    const answerArea = answered ? '' : !w ? `<div class="row teach-way"><button class="btn gold big" id="waySay">${G.mic()} 唸</button><button class="btn ghost big" id="waySpell">拼</button></div>`
+      : w === 'say' ? `<button class="btn gold mic" id="mic">${G.mic()} 照著唸</button><button class="linkish" id="waySpell">改用拼的</button>`
+      : w === 'spell' ? `<div class="spell-slot" dir="auto">${esc(spelled) || '　'}</div>
+          <div class="letters">${q.letters.map((g, i) => `<button class="letter${picked.includes(i) ? ' used' : ''}" data-l="${i}">${esc(g)}</button>`).join('')}</div>
+          <div class="row"><button class="btn ghost sm" id="back">刪除</button><button class="linkish" id="wayType">改用鍵盤</button></div>`
+      : `<div class="produce"><input id="inp" placeholder="照著打出這個字" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn gold" id="send">送出</button></div>`;
+    return `<div class="badges"><span class="badge lv">Lv1 跟著做</span><span class="badge" style="margin-left:auto">${ENV_NAME[run.env]}</span></div>
       <div class="qmain teach">
         ${q.icons ? `<div class="core-icon">${iconHtml(q.icons[0])}</div>` : q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
-        ${q.mineCue ? `<div class="mine-cue"><span class="muted">你的理解</span><div class="mine">${q.mineCue.map(p => `<span class="mchip">${run.lang.base[p] ? iconHtml(run.lang.base[p]) + ' ' : ''}${esc(p)}</span>`).join('<i>＋</i>')}</div></div>` : ''}
         <div class="teach-word" dir="auto">${esc(q.word)}</div>${ipa(q.word)}
         ${sentence}
-        ${q.opp ? `<div class="teach-opp"><span class="muted">相反</span><div class="core-row"><div class="core-icon sm">${iconHtml(q.opp.icon)}</div><span class="core-word sm" dir="auto">${esc(q.opp.word)}</span></div></div>` : ''}
         ${audio() ? `<div class="listen-row"><button class="btn sm" id="replay">${G.speaker()} 再聽一次</button></div>` : ''}
+        <div id="fb" class="feedback"></div>
       </div>
-      <button class="btn gold big" id="teachNext">下一個 ›</button>`;
+      <div class="teach-answer">${answerArea}</div>`;
+  }
+  function renderTeach() {
+    $('#qcard').classList.remove('chain', 'boss');
+    $('#qcard').innerHTML = teachHtml();
+    $('#replay') && ($('#replay').onclick = () => playGap());
+    $('#waySay') && ($('#waySay').onclick = () => { way = 'say'; renderTeach(); });
+    $('#waySpell') && ($('#waySpell').onclick = () => { way = 'spell'; picked = []; renderTeach(); });
+    $('#wayType') && ($('#wayType').onclick = () => { way = 'type'; renderTeach(); $('#inp')?.focus(); });
+    $('#mic') && ($('#mic').onclick = mic);
+    $('#back') && ($('#back').onclick = () => { picked.pop(); renderTeach(); });
+    root.querySelectorAll('.letter').forEach(b => (b.onclick = () => {
+      const i = +b.dataset.l;
+      if (answered || picked.includes(i)) return;
+      sfx('tap');
+      picked.push(i);
+      const target = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(q.word)].length;
+      if (picked.length === target) return submit(picked.map(k => q.letters[k]).join(''));
+      renderTeach();
+    }));
+    const inp = $('#inp');
+    if (inp) {
+      $('#send').onclick = () => submit(inp.value);
+      inp.onkeydown = e => { if (e.key === 'Enter') submit(inp.value); };
+    }
   }
 
   function renderQ() {
     const lg = L(), item = q.item;
-    if (q.mode === 'teach') {
-      $('#qcard').classList.remove('chain', 'boss');
-      $('#qcard').innerHTML = teachHtml();
-      $('#replay') && ($('#replay').onclick = () => playGap());
-      $('#teachNext').onclick = () => { if (answered) return; answered = true; answer(run, q, null); sfx('tap'); next(); };
-      return;
-    }
+    if (q.mode === 'teach') return renderTeach();
     const chain = item.kind === 'chain', boss = item.kind === 'boss';
-    const ruleOf = id => WALS.find(w => w.id === id);
     $('#qcard').classList.toggle('chain', chain);
     $('#qcard').classList.toggle('boss', boss);
     const cardMode = q.mode !== 'produce';
     const useMic = speakMode() && (cardMode ? !tapMode : !typeMode);
     $('#qcard').innerHTML = `
       <div class="badges">
-        ${boss ? '<span class="badge boss">王關</span><span class="badge">整段依序排好</span>' : chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule} ${esc(ruleOf(item.rule).name)}</span>`
+        ${boss ? '<span class="badge boss">王關</span><span class="badge">整段依序排好</span>' : chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule}</span>`
           : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.qt]}</span>${q.formula ? '<span class="badge chunk">語塊</span>' : ''}`}
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
         ${item.kind === 'spot' ? '<span class="badge spot">精熟抽查</span>' : ''}
@@ -150,8 +182,11 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   // 句子逐字畫出：空格換成字卡槽；規則透視的片段加底線與規則編號
   function sentenceHtml(result) {
     if (q.core) return coreHtml(result);
-    const marks = (q.marks ||= ruleMarks(run, q.tokens));
-    const trigger = marks.some(m => m.idx.every(i => q.gap.includes(i)));
+    const all = (q.marks ||= ruleMarks(run, q.tokens));
+    const inGap = m => m.idx.every(i => q.gap.includes(i));
+    const trigger = all.some(inGap);
+    // 規則提示隨等級減少：Lv2、Lv3 作答時顯示底線；Lv4、Lv5、抽查、連鎖、王關作答時只保留空格的標示，答完才顯示
+    const marks = result || q.qt <= 3 ? all : all.filter(inGap);
     const slots = q.answer.map((a, i) => {
       if (result) {
         const mine = result.mine?.[i];
@@ -247,7 +282,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   // ---------- 作答 ----------
   async function mic() {
     // 產出題：有設定發音評分服務、而且這個語言可以評分時，改用服務逐音評分
-    if (q.mode === 'produce' && PR.configured() && await PR.supports(run.lang.id)) return scoredMic();
+    if ((q.mode === 'produce' || q.mode === 'teach') && PR.configured() && await PR.supports(run.lang.id)) return scoredMic();
     const btn = $('#mic');
     btn.disabled = true;
     btn.textContent = '聆聽中…';
@@ -255,9 +290,11 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       const alts = await listen();
       if (!alts.length) { toast('沒有聽到聲音，再試一次'); btn.disabled = false; btn.textContent = '再說一次'; return; }
       submit(alts, { spoken: true });
-    } catch {
-      toast('語音辨識無法使用，已改用點選');
-      q.mode === 'produce' ? (typeMode = true) : (tapMode = true);
+    } catch (e) {
+      if (e?.error === 'language-not-supported') noRecog.add(run.lang.id);
+      toast(q.mode === 'teach' ? '語音辨識無法使用，已改用拼的' : '語音辨識無法使用，已改用點選');
+      if (q.mode === 'teach') way = 'spell';
+      else q.mode === 'produce' ? (typeMode = true) : (tapMode = true);
       renderQ();
     }
   }
@@ -298,6 +335,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
 
   function submit(response, { spoken = false, timeout = false } = {}) {
     if (answered) return;
+    if (q.mode === 'teach') return submitTeach(response, spoken);
     answered = true;
     stopTimer();
     const res = answer(run, q, response, { timeLeft, spoken });
@@ -338,7 +376,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
         res.path > 0 && `領土路徑 +${Math.round(res.path * 100)}%`,
       ].filter(Boolean).join('　');
       fb.className = 'feedback ok';
-      fb.innerHTML = `正確 +${res.points}${extra ? `<br><small>${extra}</small>` : ''}`;
+      fb.innerHTML = `正確 +${res.points}${extra ? `<br><small>${extra}</small>` : ''}${res.slow ? '<br><small>答對了，再快一點：在時間的前一半答出，熟練度才會全部加上</small>' : ''}`;
       floatText(`+${res.points}`);
       if (res.chains?.length) { sent.classList.add('fire'); setTimeout(() => floatText(`連鎖！${res.chains.map(c => c.rule).join(' ＋ ')}`, true), 250); }
       const c = $('.combo');
@@ -377,6 +415,27 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     const token = qToken;
     if (res.ok) (audio() ? speak(q.full) : new Promise(r => setTimeout(r, 900))).then(() => setTimeout(() => token === qToken && !sheetOpen() && next(), 350));
     else if (audio()) speak(q.full);
+  }
+
+  function submitTeach(response, spoken) {
+    answered = true;
+    const res = answer(run, q, response, { spoken });
+    renderTeach();
+    const fb = $('#fb');
+    fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;
+    if (res.ok) { sfx('good'); fb.innerHTML = `正確 +${res.points}`; floatText(`+${res.points}`); }
+    else { sfx('bad'); fb.innerHTML = `${spoken ? '沒有聽出這個字' : `你拼的是<span class="ans">${esc(String(response || ''))}</span>`}<small>${q.item.attempts < 3 ? '這題稍後會再出現' : '這題本局先跳過，下一局再練'}</small>`; }
+    if (pron) fb.insertAdjacentHTML('beforeend', pronHtml());
+    if (res.levelUp) { sfx('level'); setTimeout(() => floatText(`${q.item.lemma} 升到 Lv${res.levelUp}`, true), 250); }
+    hud();
+    const cont = document.createElement('button');
+    cont.className = `btn ${res.ok ? 'green' : 'gold'} big`;
+    cont.textContent = '繼續 ›';
+    cont.onclick = next;
+    $('.teach-answer').appendChild(cont);
+    const token = qToken;
+    if (res.ok) (audio() ? speak(q.word, { rate: 0.85 }) : new Promise(r => setTimeout(r, 700))).then(() => setTimeout(() => token === qToken && !sheetOpen() && next(), 350));
+    else if (audio()) speak(q.word, { rate: 0.8 });
   }
 
   function floatText(text, big) {
