@@ -1,7 +1,7 @@
 // 內層：一局的出題、作答判定、計分與結算。
 // 規則只依賴詞元、UD 詞性與單字等級，對任何語言都相同。
 import { isContent, isTarget, isWord, isFunction, joinTokens } from './content.js';
-import { L, word, save, now, RULES, isDue, decayProgress, state, SHOW, vocabCount, stageReached } from './store.js';
+import { L, word, save, now, RULES, isDue, decayProgress, state, SHOW, vocabCount, stageReached, mastered } from './store.js';
 import * as T from './territory.js';
 import { FEATURES, VALUES } from '../data/wals.js';
 import * as P from './phono.js';
@@ -137,7 +137,7 @@ export function currentSituation(lang, sourceId) {
 
 export function situationProgress(lang, sit) {
   const content = [...sit.lemmas].filter(l => lang.lemmas.get(l).content);
-  const done = content.filter(l => (L().words[l]?.lv || 1) >= 3).length;
+  const done = content.filter(l => (L().words[l]?.lv || 1) >= 4).length;
   return { done, total: content.length, ratio: content.length ? done / content.length : 0 };
 }
 
@@ -150,10 +150,11 @@ export function buildRun(lang, sourceId, env) {
   // 最一開始的學習資料是 NSM 65 個語意基元：同一級裡，基元先出
   const prime = l => (lang.base[l]?.tier === 1 ? 1 : 0);
 
-  // 當前情境：依等級分組，同級從最不熟的開始；5 級只靠抽查
-  const cands = [...sit.lemmas].filter(l => lang.lemmas.get(l).target && lv(l) < 5);
-  const byLevel = [1, 2, 3, 4].map(n => cands.filter(l => lv(l) === n).sort((a, b) =>
+  // 當前情境：依等級分組，同級從最不熟的開始；精熟的字只靠抽查。新字（Lv1）每局最多教幾個
+  const cands = [...sit.lemmas].filter(l => lang.lemmas.get(l).target && !mastered(lg.words[l]));
+  const byLevel = [1, 2, 3, 4, 5].map(n => cands.filter(l => lv(l) === n).sort((a, b) =>
     prime(b) - prime(a) || prof(a) - prof(b) || (lang.base[b] ? 1 : 0) - (lang.base[a] ? 1 : 0) || lang.lemmas.get(b).freq - lang.lemmas.get(a).freq));
+  byLevel[0] = byLevel[0].slice(0, newCap(lg));
   const mainCount = lg.runs === 0 ? 7 : 9;
   const main = [];
   for (let round = 0; round < 5 && main.length < mainCount; round++)
@@ -164,11 +165,11 @@ export function buildRun(lang, sourceId, env) {
   // 複習：不在當前情境、快要降級或最近降過級的字
   const inSit = new Set(sit.lemmas);
   const review = Object.entries(lg.words)
-    .filter(([l, w]) => !inSit.has(l) && lang.lemmas.get(l)?.target && w.lv < 5 && (isDue(w) || (w.decayedAt && now() - w.decayedAt < 7 * 86400000)))
+    .filter(([l, w]) => !inSit.has(l) && lang.lemmas.get(l)?.target && w.lv >= 3 && !mastered(w) && (isDue(w) || (w.decayedAt && now() - w.decayedAt < 7 * 86400000)))
     .sort((a, b) => decayProgress(b[1]) - decayProgress(a[1]))
     .slice(0, 3).map(([l]) => l);
-  // 5 級隨機抽查
-  const spot = pickN(Object.entries(lg.words).filter(([l, w]) => w.lv === 5 && lang.lemmas.get(l)).map(([l]) => l), 2);
+  // 精熟的字隨機抽查
+  const spot = pickN(Object.entries(lg.words).filter(([l, w]) => mastered(w) && lang.lemmas.get(l)).map(([l]) => l), 2);
 
   const items = [];
   const add = (lemma, kind, times) => {
@@ -190,6 +191,8 @@ export function buildRun(lang, sourceId, env) {
   return newRun(lang, sourceId, sit, env, queue, pickBoss(lang, sit, main));
 }
 
+const newCap = lg => RULES.newPerRun[lg.runs === 0 ? 0 : 1];
+
 function newRun(lang, sourceId, sit, env, queue, boss) {
   const lg = L();
   return {
@@ -197,24 +200,25 @@ function newRun(lang, sourceId, sit, env, queue, boss) {
     score: 0, combo: 0, maxCombo: 0, correct: 0, wrong: 0,
     skills: state.sim?.autoSkills ? Object.fromEntries(lg.unlocked.filter(id => WALS.some(r => r.id === id && applicable(r, lang))).map(id => [id, 1])) : {},
     pendingChoice: false, chainUsed: new Set(), maxChain: 0, chainLinks: 0,
-    firstEncounter: {}, leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
+    firstEncounter: {}, taught: new Set(), leveled: new Set(), levelUps: [], levelDowns: [], newTiles: [],
     ruleHits: {}, pathTotal: 0, missed: new Map(), log: [],
     boss, bossDone: false, bossOk: false,
   };
 }
 
 // ---- 「基元 65」：沒有句子，直接用圖示和字出題 ----
-// 選字方式和文章相同：依等級分組、同級從最不熟的開始，每個字出 2 次；加上快要降級的基元與 Lv5 抽查
+// 選字方式和文章相同：依等級分組、同級從最不熟的開始，每個字出 2 次；加上快要降級的基元與精熟抽查
 function buildCoreRun(lang, sourceId, env) {
   const lg = L(), sit = currentSituation(lang, sourceId);
   const lv = k => lg.words[k]?.lv || 1, prof = k => lg.words[k]?.prof || 0;
   const keys = lang.core.map(p => p.key);
-  const byLevel = [1, 2, 3, 4].map(n => keys.filter(k => lv(k) === n).sort((a, b) => prof(a) - prof(b) || keys.indexOf(a) - keys.indexOf(b)));
+  const byLevel = [1, 2, 3, 4, 5].map(n => keys.filter(k => lv(k) === n && !mastered(lg.words[k])).sort((a, b) => prof(a) - prof(b) || keys.indexOf(a) - keys.indexOf(b)));
+  byLevel[0] = byLevel[0].slice(0, newCap(lg));
   const mainCount = lg.runs === 0 ? 7 : 9, main = [];
   for (let round = 0; round < 9 && main.length < mainCount; round++)
     for (const group of byLevel) if (group[round] && main.length < mainCount) main.push(group[round]);
-  const review = keys.filter(k => lg.words[k] && lv(k) < 5 && !main.includes(k) && isDue(lg.words[k])).slice(0, 3);
-  const spot = pickN(keys.filter(k => lv(k) === 5), 2);
+  const review = keys.filter(k => lg.words[k] && !main.includes(k) && isDue(lg.words[k])).slice(0, 3);
+  const spot = pickN(keys.filter(k => mastered(lg.words[k])), 2);
   const items = [];
   const add = (lemma, kind, times) => { for (let i = 0; i < times; i++) items.push({ lemma, kind, core: true, attempts: 0 }); };
   main.forEach(k => add(k, 'main', 2));
@@ -225,34 +229,54 @@ function buildCoreRun(lang, sourceId, env) {
   return newRun(lang, sourceId, sit, env, [...shuffle(first), ...shuffle(second)], null);
 }
 
-// Lv1 看圖選字；Lv2 看字（或聽字）選圖，干擾選項含意思相對的基元；Lv3 一對相對的圖，依序選出兩個字；Lv4 看圖說出或打出
+// 題型（基元和文章相同，只有提示不同）：Lv1 教學卡；Lv2 看提示選字；Lv3 四選一，干擾是意思相反或音、拼法相近的字；
+// Lv4 依序排出 2～3 個字；Lv5 說出或打出；精熟的字抽查用 Lv5 的題型。
+// Lv1 的字看過教學卡後，同一局再出一次 Lv2 的題型，答對就到 Lv2。
+const qType = (run, item, w) => (item.kind === 'spot' ? 5 : w.lv === 1 ? (run.taught.has(item.lemma) ? 2 : 1) : w.lv);
+// 看過的字：Lv2 以上，或這一局剛教過
+const seenWord = run => l => (L().words[l]?.lv || 1) >= 2 || run.taught.has(l);
+
 function makeCoreQuestion(run, item) {
   const { lang } = run, P = lang.coreByKey.get(item.lemma), w = word(item.lemma);
-  const lv = item.kind === 'spot' ? 5 : w.lv;
+  const lv = qType(run, item, w);
   const opp = P.opposite ? lang.core.find(p => p.id === P.opposite) : null;
   const others = avoid => shuffle(lang.core.filter(p => p !== P && !avoid.includes(p)));
+  if (lv === 1) return teachQuestion(run, item, { core: true, icons: [P.icon], word: P.key, opp: opp && { icon: opp.icon, word: opp.key } });
   let mode = 'pick', answer = [P.key], cards = [], icons = [P.icon], cardIcons = null, prompt = null, accept = P.words;
-  if (lv === 1) {
-    cards = shuffle([P.key, ...others([]).slice(0, 3).map(p => p.key)]);
-  } else if (lv === 2) {
+  if (lv === 2) {
+    // 干擾選項只用看過的字，學習者可以用記憶排除，而不是猜
+    const seen = seenWord(run), pool = others([]);
+    cards = shuffle([P.key, ...[...pool.filter(p => seen(p.key)), ...pool.filter(p => !seen(p.key))].slice(0, 3).map(p => p.key)]);
+  } else if (lv === 3) {
     const ds = [opp, ...others([opp])].filter(Boolean).slice(0, 3);
     cards = shuffle([P, ...ds].map(p => p.key));
     cardIcons = Object.fromEntries([P, ...ds].map(p => [p.key, p.icon]));
     icons = []; prompt = P.key;
-  } else if (lv === 3) {
+  } else if (lv === 4) {
     const B = opp || others([])[0];
     mode = 'order'; answer = [P.key, B.key]; icons = [P.icon, B.icon]; accept = null;
     cards = shuffle([P.key, B.key, ...others([B]).slice(0, 2).map(p => p.key)]);
   } else {
     mode = 'produce';
   }
-  const challenge = item.kind !== 'spot' && lv >= 2 && lv < 5 && !run.leveled.has(item.lemma) &&
-    w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
+  const challenge = isChallenge(run, item, w);
   const text = answer.join(' ');
   return {
-    item, lv, mode, core: true, tokens: [], gap: [], answer, cards, cardIcons, icons, prompt, accept, challenge,
-    timer: lv <= 2 ? 0 : lv === 3 ? 15 : 12, neighbors: [], image: null, rules: [],
+    item, lv: w.lv, qt: lv, mode, core: true, tokens: [], gap: [], answer, cards, cardIcons, icons, prompt, accept, challenge,
+    timer: lv <= 3 ? 0 : lv === 4 ? 15 : 12, neighbors: [], image: null, rules: [],
     before: '', after: '', full: text, answerText: text,
+  };
+}
+
+// 這題答對就會達到門檻時，這題就是升級挑戰（Lv3 以上；Lv5 達到門檻 = 精熟）
+const isChallenge = (run, item, w) => item.kind !== 'spot' && w.lv >= 3 && !mastered(w) && !run.leveled.has(item.lemma) &&
+  w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
+
+// 教學卡：不考試，只顯示字、音標、提示並朗讀；按「下一個」就過
+function teachQuestion(run, item, extra) {
+  return {
+    item, lv: 1, qt: 1, mode: 'teach', tokens: [], gap: [], answer: [extra.word], cards: [], challenge: false, timer: 0, neighbors: [], rules: [],
+    before: '', after: '', full: extra.word, answerText: extra.word, ...extra,
   };
 }
 
@@ -279,13 +303,15 @@ function gapIndices(tokens, ti, lv, prof) {
   return cands.sort((a, b) => score(b) - score(a))[0];
 }
 
-function distractors(lang, lemma, upos, exclude, n, allowForms) {
+// seen：只想用看過的字當干擾時傳入（看過的字排前面，不夠才用其他字）
+function distractors(lang, lemma, upos, exclude, n, allowForms, seen = null) {
   const out = [];
   const formsOf = x => x.midForms.size ? [...x.midForms] : [...x.forms].map(f => f.toLocaleLowerCase() === x.lemma ? x.lemma : f);
   if (allowForms) for (const f of shuffle(formsOf(lang.lemmas.get(lemma)))) if (!exclude.has(f) && out.length < n) out.push(f), exclude.add(f);
   const pool = [...lang.lemmas.values()].filter(x => x.target && x.lemma !== lemma);
   const same = shuffle(pool.filter(x => x.upos === upos)), other = shuffle(pool.filter(x => x.upos !== upos));
-  for (const x of [...same, ...other]) {
+  const order = seen ? [...same.filter(x => seen(x.lemma)), ...other.filter(x => seen(x.lemma)), ...same.filter(x => !seen(x.lemma)), ...other.filter(x => !seen(x.lemma))] : [...same, ...other];
+  for (const x of order) {
     if (out.length >= n) break;
     const f = shuffle(formsOf(x))[0];
     if (!exclude.has(f)) { out.push(f); exclude.add(f); }
@@ -293,7 +319,7 @@ function distractors(lang, lemma, upos, exclude, n, allowForms) {
   return out;
 }
 
-// 2 → 3 級：有聲音的環境挑「只差一個音」的字（含難音的優先），靜音環境挑拼字相近的字
+// Lv3：有聲音的環境挑「只差一個音」的字（含難音的優先），靜音環境挑拼字相近的字
 function neighborCards(run, lemma, surface, n) {
   const { lang } = run;
   const cands = [...new Set([...lang.lemmas.values()].filter(x => x.target && x.lemma !== lemma)
@@ -312,35 +338,38 @@ export function makeQuestion(run, item) {
   const { lang } = run;
   const s = lang.sentences[item.sentence];
   const w = word(item.lemma);
-  const lv = item.kind === 'spot' ? 5 : w.lv;
+  const lv = qType(run, item, w);
   let ti = s.tokens.findIndex(t => t.lemma === item.lemma && isTarget(t));
   if (ti < 0) ti = s.tokens.findIndex(t => t.lemma === item.lemma);
-  // Lv3 排序、Lv4 產出：目標字在語塊裡時，整個語塊挖空
-  const formula = lv >= 3 ? formulaGap(lang, s, ti) : null;
-  const gap = formula || gapIndices(s.tokens, ti, Math.min(lv, 4), profileOf(lang));
+  // 教學卡：整句朗讀，這個字標亮；有圖示或「我的理解」就一起顯示
+  if (lv === 1) return teachQuestion(run, item, {
+    tokens: s.tokens, gap: [ti], word: s.tokens[ti].surface, image: lang.base[item.lemma] || null,
+    mineCue: !lang.base[item.lemma] ? w.mine?.at(-1)?.parts || null : null, full: joinTokens(s.tokens, lang.joiner),
+  });
+  // Lv4 排序、Lv5 產出：目標字在語塊裡時，整個語塊挖空
+  const formula = lv >= 4 ? formulaGap(lang, s, ti) : null;
+  const gap = formula || gapIndices(s.tokens, ti, Math.min(lv - 1, 4), profileOf(lang));
   const gapTokens = gap.map(i => s.tokens[i]);
   // 句首的字在字卡上用句中的寫法（例如 The → the），避免大小寫洩漏答案
   const display = (t, i) => i === 0 && t.surface.toLocaleLowerCase() !== t.surface && lang.lemmas.get(t.lemma)?.forms.has(t.surface.toLocaleLowerCase()) || (i === 0 && t.surface.toLocaleLowerCase() === t.lemma)
     ? t.surface.toLocaleLowerCase() : t.surface;
   const answer = gap.map(i => display(s.tokens[i], i));
-  const mode = lv <= 2 ? 'pick' : lv === 3 ? 'order' : 'produce';
+  const mode = lv <= 3 ? 'pick' : lv === 4 ? 'order' : 'produce';
   const target = s.tokens[ti];
   let cards = [];
   let neighbors = [];
-  if (mode === 'pick' && lv === 2) neighbors = neighborCards(run, item.lemma, answer[0], 2);
+  if (mode === 'pick' && lv === 3) neighbors = neighborCards(run, item.lemma, answer[0], 2);
   if (mode === 'pick') cards = shuffle([answer[0], ...neighbors.map(x => x.word),
-    ...distractors(lang, item.lemma, target.upos, new Set([...answer, ...neighbors.map(x => x.word)]), 3 - neighbors.length, false)]);
+    ...distractors(lang, item.lemma, target.upos, new Set([...answer, ...neighbors.map(x => x.word)]), 3 - neighbors.length, false, lv === 2 ? seenWord(run) : null)]);
   if (mode === 'order') cards = shuffle([...answer, ...distractors(lang, item.lemma, target.upos, new Set(answer), 2, true)]);
-  // 這題答對就會達到門檻時，這題就是升級挑戰
-  const challenge = item.kind !== 'spot' && lv >= 2 && lv < 5 && !run.leveled.has(item.lemma) &&
-    w.prof + (item.attempts ? Math.ceil(RULES.envPoints[run.env] / 2) : RULES.envPoints[run.env]) >= RULES.threshold;
+  const challenge = isChallenge(run, item, w);
   // 計時依空格長度加長：每多一個字多 3 秒
-  const timer = lv <= 2 ? 0 : (lv === 3 ? 15 : 12) + 3 * Math.max(0, gap.length - (lv === 3 ? 2 : 3));
+  const timer = lv <= 3 ? 0 : (lv === 4 ? 15 : 12) + 3 * Math.max(0, gap.length - (lv === 4 ? 2 : 3));
   return {
-    item, lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors, formula: !!formula,
-    image: lv === 1 ? lang.base[item.lemma] : null,
-    // 沒有圖示的字：Lv1、Lv2 用學習者自己寫的「我的理解」當提示
-    mineCue: lv <= 2 && !lang.base[item.lemma] ? w.mine?.at(-1)?.parts || null : null,
+    item, lv: w.lv, qt: lv, mode, tokens: s.tokens, gap, answer, cards, challenge, timer, neighbors, formula: !!formula,
+    image: lv === 2 ? lang.base[item.lemma] : null,
+    // 沒有圖示的字：Lv2、Lv3 用學習者自己寫的「我的理解」當提示
+    mineCue: lv <= 3 && !lang.base[item.lemma] ? w.mine?.at(-1)?.parts || null : null,
     rules: rulesIn(gapTokens, profileOf(lang)),
     before: joinTokens(s.tokens.slice(0, gap[0]), lang.joiner),
     after: joinTokens(s.tokens.slice(gap.at(-1) + 1), lang.joiner),
@@ -356,6 +385,13 @@ export const current = run => run.queue[run.pos] || (run.boss && !run.bossDone ?
 // response：pick 為選中的字，order 為依序選的字陣列，produce 為輸入或辨識出的文字
 export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) {
   const item = q.item;
+  // 教學卡：不計分，記下這一局教過這個字
+  if (q.mode === 'teach') {
+    run.taught.add(item.lemma);
+    run.pos++;
+    save();
+    return { ok: true, teach: true, points: 0, rules: [], path: 0 };
+  }
   let ok;
   if (spoken) ok = [].concat(response).some(r => (q.accept || [q.answerText]).some(a => normalize(r).includes(normalize(a))));
   else if (q.mode === 'pick') ok = response === q.answer[0];
@@ -390,13 +426,16 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
     const gained = item.attempts ? Math.ceil(envPts / 2) : envPts;
     result.gained = gained;
     if (item.kind === 'spot') {
-      // 5 級抽查通過，維持 5 級
+      // 抽查通過，維持精熟
     } else if (w.lv === 1) {
+      // 教學後的確認題答對：到 Lv2
+      if (!run.leveled.has(item.lemma)) levelUp(run, item.lemma, w, result);
+    } else if (w.lv === 2) {
       run.firstEncounter[item.lemma] = (run.firstEncounter[item.lemma] || 0) + 1;
       if (run.firstEncounter[item.lemma] >= RULES.firstEncounterCorrect && !run.leveled.has(item.lemma)) levelUp(run, item.lemma, w, result);
     } else if (q.challenge) {
       levelUp(run, item.lemma, w, result);
-    } else if (w.lv < 5) {
+    } else if (!mastered(w)) {
       w.prof = Math.min(RULES.threshold, w.prof + gained);
     }
     if (run.correct % 5 === 0) run.pendingChoice = true;
@@ -406,10 +445,11 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
     w.wrong++;
     item.attempts++;
     if (q.challenge) w.prof = Math.min(w.prof, Math.floor(RULES.threshold / 2));
-    if (item.kind === 'spot' && w.lv === 5) {
-      w.lv = 4; w.prof = 0;
+    // 抽查沒過：回到 Lv5 練習
+    if (item.kind === 'spot' && mastered(w)) {
+      w.master = false; w.prof = 0; w.last = now();
       run.levelDowns.push(item.lemma);
-      result.levelDown = 4;
+      result.levelDown = 5;
     }
     // 同一題最多練習 3 次：排到幾題之後再出
     if (item.attempts < 3) run.queue.splice(Math.min(run.pos + 4, run.queue.length), 0, item);
@@ -421,12 +461,14 @@ export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) 
 }
 
 function levelUp(run, lemma, w, result) {
-  w.lv++;
+  if (w.lv === 5) w.master = true;
+  else w.lv++;
   w.prof = 0;
   delete w.decayedAt;
   run.leveled.add(lemma);
-  run.levelUps.push({ lemma, lv: w.lv });
+  run.levelUps.push({ lemma, lv: w.lv, master: !!w.master });
   result.levelUp = w.lv;
+  result.master = !!w.master;
   // 基元全部算進領土（包括 I、this、not 這類功能詞）
   if (w.lv === 2 && (run.lang.lemmas.get(lemma)?.content || run.lang.coreByKey?.has(lemma))) run.newTiles.push(lemma);
 }
@@ -598,10 +640,10 @@ function answerBoss(run, q, ok, timeLeft) {
   return result;
 }
 
-// 情境完成時的回顧：這段學會的字（Lv3 以上）、出現的語塊
+// 情境完成時的回顧：這段學會的字（Lv4 以上）、出現的語塊
 function sitSummary(lang, sit) {
   const lg = L();
-  const words = [...sit.lemmas].filter(l => lang.lemmas.get(l).content && (lg.words[l]?.lv || 1) >= 3);
+  const words = [...sit.lemmas].filter(l => lang.lemmas.get(l).content && (lg.words[l]?.lv || 1) >= 4);
   const seen = new Set(), chunks = [];
   for (const id of sit.sentences)
     for (const idx of lang.formulaSpans?.get(id) || []) {

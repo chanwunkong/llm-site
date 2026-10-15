@@ -54,26 +54,37 @@ export function refreshFeatures() {
 
 
 export const RULES = {
-  threshold: 4,                        // 2 級以上每級的熟練度門檻
-  firstEncounterCorrect: 2,            // 1 → 2：同一局答對 2 次
-  decayDays: { 2: 2, 3: 4, 4: 8 },     // 2～4 級：幾天沒練降一級；5 級改為隨機抽查
+  threshold: 4,                        // 3 級以上每級的熟練度門檻（Lv5 到門檻 = 精熟，之後只抽查）
+  // 1 級是教學：先看教學卡，同一局再答對一次就到 2 級
+  firstEncounterCorrect: 2,            // 2 → 3：同一局答對 2 次
+  newPerRun: [4, 3],                   // 每局最多教幾個新字：第一局、之後
+  decayDays: { 3: 2, 4: 4, 5: 8 },     // 3～5 級：幾天沒練降一級；精熟的字改為隨機抽查
   dueRatio: 0.7,                       // 超過降級時間的 70% 視為「快要降級」
   envPoints: { speak: 3, ear: 2, mute: 1 },
   backpackSize: 10,
   moveCost: 20,
   walsCost: 100,
-  completeRatio: 0.6,                  // 情境完成：60% 實詞達 3 級
+  completeRatio: 0.6,                  // 情境完成：60% 實詞達 4 級
   wordsPerRule: 8,                     // 規則自動開放：詞彙量每 8 個開放一條
 };
 
 function freshLang() {
-  return { words: {}, territory: {}, backpack: [], gold: 0, unlocked: [], progress: {}, runs: 0, lastReport: null };
+  return { words: {}, territory: {}, backpack: [], gold: 0, unlocked: [], progress: {}, runs: 0, lastReport: null, lvV2: true };
 }
 
+// 2026-10-15 等級往後移一級（新的 Lv1 是教學）：舊的 2～4 級加 1；舊的 5 級 = Lv5 精熟；舊的 1 級還沒學會，留在 Lv1 從教學開始
+function shiftLevels(lg) {
+  if (lg.lvV2) return;
+  for (const w of Object.values(lg.words || {})) {
+    if (w.lv === 5) w.master = true;
+    else if (w.lv >= 2) w.lv++;
+  }
+  lg.lvV2 = true;
+}
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && s.langs) return s;
+    if (s && s.langs) { Object.values(s.langs).forEach(shiftLevels); return s; }
   } catch {}
   return { lang: 'en', env: 'ear', sound: true, timeOffset: 0, langs: {}, known: ['mnd'] };
 }
@@ -106,13 +117,16 @@ export function decayProgress(w) {
   if (!d || !w.last) return 0;
   return Math.min(1, (now() - w.last) / (d * DAY));
 }
-export const isDue = w => w.lv >= 2 && w.lv <= 4 && decayProgress(w) >= RULES.dueRatio;
+// 精熟：Lv5 練到門檻，之後只抽查、不因時間降級
+export const mastered = w => !!w && w.lv === 5 && !!w.master;
+const decays = w => w.lv >= 3 && w.lv <= 5 && !w.master;
+export const isDue = w => decays(w) && decayProgress(w) >= RULES.dueRatio;
 
-// 依經過時間套用降級；5 級只靠抽查降級
+// 依經過時間套用降級；精熟的字只靠抽查
 export function applyDecay() {
   const dropped = [];
   for (const [lemma, w] of Object.entries(L().words)) {
-    while (w.lv >= 2 && w.lv <= 4 && w.last) {
+    while (decays(w) && w.last) {
       const d = RULES.decayDays[w.lv] * DAY;
       if (now() - w.last < d) break;
       w.last += d;

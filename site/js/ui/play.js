@@ -9,7 +9,7 @@ import * as P from '../engine/phono.js';
 import { G } from './glyph.js';
 import * as PR from '../engine/pronounce.js';
 
-const LV_NAME = ['', '初遇', '辨識', '排序', '產出', '抽查'];
+const LV_NAME = ['', '教學', '選字', '辨識', '排序', '產出'];
 const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
 
 // 星數：實心圓 = 拿到，空心 = 還沒拿到
@@ -58,12 +58,38 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     else startTimer();
   }
 
-  // 基元題沒有句子：Lv2 唸出題目的字，其他等級不唸（答完才唸）
-  const playGap = () => (q.core ? (q.prompt ? speak(q.prompt, { rate: 0.85 }) : Promise.resolve()) : speakGap(q.before, q.after, 0.9));
+  // 教學卡：先唸這個字，再唸整句（基元：再唸意思相反的字）
+  // 基元題沒有句子：Lv3 唸出題目的字，其他等級不唸（答完才唸）
+  const playGap = () => (q.mode === 'teach' ? speak(q.word, { rate: 0.8 }).then(() => q.opp ? speak(q.opp.word, { rate: 0.8 }) : q.tokens.length ? speak(q.full, { rate: 0.9 }) : null)
+    : q.core ? (q.prompt ? speak(q.prompt, { rate: 0.85 }) : Promise.resolve()) : speakGap(q.before, q.after, 0.9));
 
   // ---------- 畫面 ----------
+  // 教學卡：不考試。字、音標、圖示（或「我的理解」）、句子裡標亮這個字；按「下一個」就過
+  function teachHtml() {
+    const ipa = w => { const x = P.ipaOf(run.lang.id, w); return x ? `<span class="ipa">/${esc(x)}/</span>` : ''; };
+    const sentence = q.tokens.length ? `<div class="sentence teach-sent" dir="${run.lang.dir || 'ltr'}">${q.tokens.map((t, i) =>
+      `${spaceBefore(q.tokens, i, run.lang.joiner)}<span class="ctx${i === q.gap[0] ? ' teach-hl' : ''}">${esc(t.surface)}</span>`).join('')}</div>` : '';
+    return `<div class="badges"><span class="badge lv">Lv1 教學</span><span class="badge">新字</span></div>
+      <div class="qmain teach">
+        ${q.icons ? `<div class="core-icon">${iconHtml(q.icons[0])}</div>` : q.image ? `<div class="pic">${iconHtml(q.image)}</div>` : ''}
+        ${q.mineCue ? `<div class="mine-cue"><span class="muted">你的理解</span><div class="mine">${q.mineCue.map(p => `<span class="mchip">${run.lang.base[p] ? iconHtml(run.lang.base[p]) + ' ' : ''}${esc(p)}</span>`).join('<i>＋</i>')}</div></div>` : ''}
+        <div class="teach-word" dir="auto">${esc(q.word)}</div>${ipa(q.word)}
+        ${sentence}
+        ${q.opp ? `<div class="teach-opp"><span class="muted">相反</span><div class="core-row"><div class="core-icon sm">${iconHtml(q.opp.icon)}</div><span class="core-word sm" dir="auto">${esc(q.opp.word)}</span></div></div>` : ''}
+        ${audio() ? `<div class="listen-row"><button class="btn sm" id="replay">${G.speaker()} 再聽一次</button></div>` : ''}
+      </div>
+      <button class="btn gold big" id="teachNext">下一個 ›</button>`;
+  }
+
   function renderQ() {
     const lg = L(), item = q.item;
+    if (q.mode === 'teach') {
+      $('#qcard').classList.remove('chain', 'boss');
+      $('#qcard').innerHTML = teachHtml();
+      $('#replay') && ($('#replay').onclick = () => playGap());
+      $('#teachNext').onclick = () => { if (answered) return; answered = true; answer(run, q, null); sfx('tap'); next(); };
+      return;
+    }
     const chain = item.kind === 'chain', boss = item.kind === 'boss';
     const ruleOf = id => WALS.find(w => w.id === id);
     $('#qcard').classList.toggle('chain', chain);
@@ -73,9 +99,9 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     $('#qcard').innerHTML = `
       <div class="badges">
         ${boss ? '<span class="badge boss">王關</span><span class="badge">整段依序排好</span>' : chain ? `<span class="badge chain">連鎖 ${item.link}/${item.of}</span><span class="badge rule-b">${item.rule} ${esc(ruleOf(item.rule).name)}</span>`
-          : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.lv]}</span>${q.formula ? '<span class="badge chunk">語塊</span>' : ''}`}
+          : `<span class="badge lv">Lv${q.lv} ${LV_NAME[q.qt]}</span>${q.formula ? '<span class="badge chunk">語塊</span>' : ''}`}
         ${item.kind === 'review' ? '<span class="badge review">複習</span>' : ''}
-        ${item.kind === 'spot' ? '<span class="badge spot">5 級抽查</span>' : ''}
+        ${item.kind === 'spot' ? '<span class="badge spot">精熟抽查</span>' : ''}
         ${q.challenge ? '<span class="badge challenge">升級挑戰</span>' : ''}
         <span class="badge" style="margin-left:auto">${ENV_NAME[run.env]}</span>
       </div>
@@ -137,7 +163,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     return markedHtml(q.tokens, marks, q.gap, slots, trigger);
   }
 
-  // 基元題：圖示（或題目的字）＋字卡槽。Lv2 的字卡是圖示，槽裡也放圖示
+  // 基元題：圖示（或題目的字）＋字卡槽。Lv3 的字卡是圖示，槽裡也放圖示
   function coreHtml(result) {
     const show = k => (q.cardIcons ? iconHtml(q.cardIcons[k]) : esc(k));
     const slot = i => {
@@ -339,8 +365,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     }
     // 點難音：打開發音面板（單音錄音、和相近的音比較）
     fb.querySelectorAll('[data-hs]').forEach(b => (b.onclick = () => { stopTimer(); onSound?.(b.dataset.hs); }));
-    if (res.levelUp) { sfx('level'); setTimeout(() => floatText(`${q.item.lemma} 升到 Lv${res.levelUp}`, true), 250); }
-    if (res.levelDown) floatText(`${q.item.lemma} 降到 Lv${res.levelDown}`, true);
+    if (res.levelUp) { sfx('level'); setTimeout(() => floatText(res.master ? `${q.item.lemma} 精熟` : `${q.item.lemma} 升到 Lv${res.levelUp}`, true), 250); }
+    if (res.levelDown) floatText(`${q.item.lemma} 抽查沒過，回到 Lv5 練習`, true);
     hud();
 
     const cont = document.createElement('button');
@@ -420,7 +446,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       </div>
       ${SHOW.gold ? `<h3>金幣 +${rep.score + rep.produced}</h3>
       <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : ''}</p>` : ''}
-      ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>Lv${u.lv}</em></span>`).join('')}</div>` : ''}
+      ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>${u.master ? '精熟' : `Lv${u.lv}`}</em></span>`).join('')}</div>` : ''}
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
       ${rep.newTiles.length ? `<h3>${SHOW.backpack ? '新詞元進背包' : '新字加入領土'}</h3>
         <p class="muted">點一個字，用學過的字寫下你對它的理解（可以略過）。</p>

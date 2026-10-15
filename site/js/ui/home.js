@@ -56,7 +56,7 @@ export function createHome(root, { getLang, onStart, onSourcesChanged }) {
             ${src.credit ? `<small class="credit">${esc(src.credit)}</small>` : ''}
             ${src.imported ? `<span class="linkish" data-del="${src.id}">刪除</span>` : ''}
             <div class="bar"><i style="width:${Math.min(100, (p.done / need) * 100)}%"></i></div>
-            <small>完成本段：${p.done} / ${need} 個實詞達到 Lv3</small>
+            <small>完成本段：${p.done} / ${need} 個實詞達到 Lv4</small>
           </div></button>`;
       }).join('')}
 

@@ -393,3 +393,13 @@ body.playing #simBar { display: none; }
 .pron-close { color: var(--ink); text-decoration: underline dashed; }
 .pron-bad { color: var(--red); }
 .pron b { text-decoration: underline; cursor: pointer; }
+
+/* ---- 教學卡（Lv1）：不考試，只看、只聽 ---- */
+.qmain.teach { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.teach-word { font-size: 40px; font-weight: 800; line-height: 1.2; }
+.teach-sent { font-size: 18px; }
+.teach-hl { background: var(--yellow); padding: 0 3px; font-weight: 800; }
+.teach-opp { border-top: var(--b); padding-top: 10px; width: 100%; }
+.core-icon.sm { font-size: 40px; }
+.core-word.sm { font-size: 24px; }
+#teachNext { margin-top: 14px; width: 100%; }

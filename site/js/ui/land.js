@@ -286,7 +286,7 @@ export function createLand(root, { getLang, onChange }) {
     const isPrime = lang.base[lemma]?.tier === 1 || lang.coreByKey?.has(lemma);
     const icon = lang.base[lemma] || lang.coreByKey?.get(lemma)?.icon;
     const days = RULES.decayDays[w.lv];
-    const status = w.lv === 5 ? '5 級：不會因時間降級，但會被隨機抽查'
+    const status = w.master ? '精熟：不會因時間降級，但會被隨機抽查'
       : days ? `${isDue(w) ? '快要降級，' : ''}${Math.max(0, Math.ceil(days * (1 - decayProgress(w))))} 天內沒練習會降到 Lv${w.lv - 1}` : '';
     const chunks = lang.chunks.filter(c => c.lemmas.includes(lemma));
     const mine = SHOW.mine ? w.mine?.at(-1) : null;
@@ -298,7 +298,7 @@ export function createLand(root, { getLang, onChange }) {
     openSheet(`
       <h2>${icon ? iconHtml(icon) + ' ' : ''}${esc(lemma)} ${levelBlocks(w.lv)}</h2>
       ${isDue(w) ? mineBlock : ''}
-      <p class="muted">Lv${w.lv}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>${info ? `寫法：${[...info.forms].map(esc).join('、')}` : ''}</p>
+      <p class="muted">Lv${w.lv}${w.master ? ' 精熟' : ''}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>${info ? `寫法：${[...info.forms].map(esc).join('、')}` : ''}</p>
       ${isDue(w) ? '' : mineBlock}
       ${SHOW.chunks && chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
       ${isPrime ? '<p class="muted prime-note">這是基元：最基本的意思，不能再拆開。它是用來解釋其他字的材料。</p>'
