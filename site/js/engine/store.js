@@ -4,7 +4,8 @@ import { STAGES } from '../data/wals.js';
 // 模擬模式用另一份存檔，真正的進度不會被覆蓋
 const MODE_KEY = 'word-territory-mode', SIM_REQ = 'word-territory-sim-req';
 export const SIM = (() => { try { return localStorage.getItem(MODE_KEY) === 'sim'; } catch { return false; } })();
-const KEY = SIM ? 'word-territory-sim' : 'word-territory-v1';
+// 新版（最小可行系統）用新的存檔；舊版的進度保留在 word-territory-v1，不覆蓋
+const KEY = SIM ? 'word-territory-sim' : 'word-territory-v2';
 export function enterSim(req) {
   try { localStorage.setItem(MODE_KEY, 'sim'); localStorage.setItem(SIM_REQ, JSON.stringify(req)); } catch {}
   location.reload();
@@ -42,14 +43,9 @@ export const UNLOCKS = [
 ];
 // 檢查有沒有新開放的功能，更新 SHOW；回傳這次新開放的項目（給畫面顯示說明卡）
 export function refreshFeatures() {
-  const lg = L(), fresh = [];
-  lg.features ||= [];
-  for (const u of UNLOCKS) if (!lg.features.includes(u.id) && u.test(lg)) { lg.features.push(u.id); fresh.push(u); }
-  for (const u of UNLOCKS) for (const f of u.flags) SHOW[f] = lg.features.includes(u.id);
-  SHOW.mine = true;
-  SHOW.soundsTab = true;
-  if (fresh.length) save();
-  return fresh;
+  // 最小可行系統：舊的逐步開放停用，舊功能隱藏（文法頁、路徑、金幣、語塊）；擺放由玩家自己決定，所以一開始就能移動格子
+  Object.assign(SHOW, { skillsTab: false, path: false, gold: false, chunks: false, move: true, mine: true, soundsTab: true });
+  return [];
 }
 
 
@@ -59,7 +55,7 @@ export const RULES = {
   firstEncounterCorrect: 2,            // 2 → 3：同一局答對 2 次
   newPerRun: [4, 3],
   fastRatio: 0.5,                      // Lv5 快速答對：計時剩下一半以上                   // 每局最多教幾個新字：第一局、之後
-  decayDays: { 3: 2, 4: 4, 5: 8 },     // 3～5 級：幾天沒練降一級；精熟的字改為隨機抽查
+  decayDays: { 3: 3, 4: 7, 5: 14 },    // 3～5 級：幾天沒練降一級（docs/design.md 第 3 節）
   dueRatio: 0.7,                       // 超過降級時間的 70% 視為「快要降級」
   envPoints: { speak: 3, ear: 2, mute: 1 },
   backpackSize: 10,
@@ -134,6 +130,7 @@ export function applyDecay() {
       w.lv--;
       w.prof = 0;
       w.decayedAt = now();
+      delete w.okDay;
       dropped.push(lemma);
     }
   }

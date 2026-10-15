@@ -13,8 +13,9 @@ import { esc } from './ui/sheet.js';
 import * as PR from './engine/pronounce.js';
 import * as T from './engine/territory.js';
 import { setVoiceLang, speak, onEspeakDownload, onPiperDownload, voiceSubOf } from './audio.js';
-import { createHome } from './ui/home.js';
-import { createPlay } from './ui/play.js';
+// 最小可行系統（docs/design.md）：新的首頁與內層；舊的 home.js、play.js 保留但不使用
+import { createHome } from './ui/home2.js';
+import { createPlay } from './ui/play2.js';
 import { createLand } from './ui/land.js';
 import { createSkills } from './ui/skills.js';
 import { createSounds } from './ui/sounds.js';
@@ -56,7 +57,7 @@ function refreshTop() {
 }
 
 const views = {
-  home: createHome($('#view-home'), { getLang, onStart: (src, env) => play.start(getLang(), src, env), onSourcesChanged: () => { rebuildLang(); refreshTop(); } }),
+  home: createHome($('#view-home'), { getLang, onStart: src => play.start(getLang(), src), onSourcesChanged: () => { rebuildLang(); refreshTop(); } }),
   land: createLand($('#view-land'), { getLang, onChange: refreshTop }),
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
   sounds: createSounds($('#view-sounds'), { getLang }),
@@ -89,7 +90,6 @@ function enterLanguage() {
   setVoiceLang(DATA[state.lang].bcp47);
   getLang();
   T.receive([]);          // 背包關閉時，把舊存檔背包裡的字放到領土上
-  syncUnlocks(getLang());
   const fresh = refreshFeatures();
   if (fresh.length) setTimeout(() => announce(fresh), 300);
   const dropped = applyDecay();
@@ -116,13 +116,11 @@ $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
     <button class="btn ghost big" id="snd">${state.sound ? '聲音：開' : '聲音：關'}</button>
     ${DATA[state.lang].subs ? `<button class="btn ghost big" id="voice">朗讀聲音：${esc(voiceName(state.lang))}</button>` : ''}
     <button class="btn ghost big" id="pron">發音評分服務${PR.configured() ? '：已設定' : ''}</button>
-    <button class="btn ghost big" id="sim">${SIM ? '重新產生模擬進度' : '模擬模式（測試用）'}</button>
     <button class="btn ghost big" id="day">時間快轉 1 天（測試降級用）</button>
     <button class="btn ghost big" id="rst">${SIM ? '重置模擬進度' : '重置所有進度'}</button>
-  </div><p class="muted">學習資料是依《小王子》劇情自行改寫的範例，詞性與詞元為人工標註。</p>`, {}, body => {
+  </div>`, {}, body => {
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
   body.querySelector('#voice')?.addEventListener('click', voiceSheet);
-  body.querySelector('#sim').onclick = simSheet;
   body.querySelector('#pron').onclick = pronSheet;
   body.querySelector('#day').onclick = () => { skipDay(); closeSheet(); enterLanguage(); views[tab].hide(); setTab(tab); toast('已快轉 1 天'); };
   body.querySelector('#rst').onclick = () => openSheet(`<h2>確定重置？</h2><p class="muted">所有語言的單字、領土、金幣都會清除。</p>

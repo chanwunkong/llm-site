@@ -6,6 +6,8 @@ import * as T from '../engine/territory.js';
 import { speak, sfx } from '../audio.js';
 import { openSheet, closeSheet, toast, esc, stars } from './sheet.js';
 import { iconHtml } from './icon.js';
+import { mountComposer, partsHtml } from './compose.js';
+import { saveUnderstanding, LV_NAME, today } from '../engine/v2.js';
 import { G, levelBlocks } from './glyph.js';
 
 // 地形圖的高度色階（1 級最淺，5 級最深）
@@ -277,13 +279,13 @@ export function createLand(root, { getLang, onChange }) {
   // ---------- 格子資訊 ----------
   // ---------- 我的理解：用學過的其他字組合出對這個字的解釋（不判斷對錯、不計分） ----------
   const chip = (lang, l, attr = '') => { const ic = lang.base[l] || lang.coreByKey?.get(l)?.icon; return `<button class="mchip" ${attr}>${ic ? iconHtml(ic) + ' ' : ''}${esc(l)}</button>`; };
-  const mineHtml = (lang, parts) => `<div class="mine">${parts.map(p => chip(lang, p, 'disabled')).join('<i>＋</i>')}</div>`;
+  const mineHtml = (lang, parts) => `<div class="mine">${partsHtml(parts)}</div>`;
 
   function tileSheet(k) {
     const lang = getLang(), lg = L(), lemma = lg.territory[k], w = word(lemma);
     const info = lang.lemmas.get(lemma);
-    // 基元不可分割：不能寫「我的理解」，只當作解釋其他字的材料
-    const isPrime = lang.base[lemma]?.tier === 1 || lang.coreByKey?.has(lemma);
+    // 所有字都一樣：都可以寫理解（docs/design.md 原則 4）
+    const isPrime = false;
     const icon = lang.base[lemma] || lang.coreByKey?.get(lemma)?.icon;
     const days = RULES.decayDays[w.lv];
     const status = w.master ? '精熟：不會因時間降級，但會被隨機抽查'
@@ -298,7 +300,7 @@ export function createLand(root, { getLang, onChange }) {
     openSheet(`
       <h2>${icon ? iconHtml(icon) + ' ' : ''}${esc(lemma)} ${levelBlocks(w.lv)}</h2>
       ${isDue(w) ? mineBlock : ''}
-      <p class="muted">Lv${w.lv}${w.master ? ' 精熟' : ''}　熟練度 ${w.prof} / ${RULES.threshold}　答對 ${w.correct} 次<br>${status}<br>${info ? `寫法：${[...info.forms].map(esc).join('、')}` : ''}</p>
+      <p class="muted">Lv${w.lv} ${LV_NAME[w.lv] || ''}${w.master ? '・精熟' : ''}${w.okDay != null ? `<br>${w.okDay < today() ? '今天再答對一次就升級' : '今天答對了，明天以後再答對一次就升級'}` : ''}<br>${status}<br>${info ? `寫法：${[...info.forms].map(esc).join('、')}` : ''}</p>
       ${isDue(w) ? '' : mineBlock}
       ${SHOW.chunks && chunks.length ? `<h3>相關語塊</h3><div class="chips">${chunks.map(c => `<span>${T.chunkComplete(c) ? '完成・' : ''}${esc(c.lemmas.join('＋'))}</span>`).join('')}</div>` : ''}
       ${isPrime ? '<p class="muted prime-note">這是基元：最基本的意思，不能再拆開。它是用來解釋其他字的材料。</p>'
@@ -324,41 +326,16 @@ export function createLand(root, { getLang, onChange }) {
 
   function composeSheet(k) {
     const lang = getLang(), lg = L(), lemma = lg.territory[k], w = word(lemma);
-    let parts = [...(w.mine?.at(-1)?.parts || [])], filter = '';
-    // 材料：學過（Lv2 以上）的其他字；NSM 基元排前面
-    const materials = Object.entries(lg.words).filter(([l, x]) => x.lv >= 2 && l !== lemma && (lang.lemmas.get(l) || lang.coreByKey?.has(l))).map(([l]) => l)
-      .sort((a, b) => (lang.base[b]?.tier === 1) - (lang.base[a]?.tier === 1) || a.localeCompare(b));
-    const exs = (lang.lemmas.get(lemma)?.sentences || []).slice(0, 3).map(id => joinTokens(lang.sentences[id].tokens, lang.joiner));
-    openSheet(`<h2>我對「${esc(lemma)}」的理解</h2>
-      <p class="muted">用你學過的字，組合出你對這個字的理解。沒有標準答案，只給你自己看。</p>
-      <div class="stack">${exs.map((t, i) => `<button class="ex-row" data-ex="${i}">${esc(t)} ${G.speaker(14)}</button>`).join('')}</div>
-      <h3>我的組合</h3><div class="mine compose" id="parts"></div>
-      <input id="filter" class="filter" placeholder="搜尋學過的字" autocomplete="off" autocapitalize="off">
-      <div class="materials" id="mats"></div>
-      <div class="row" style="margin-top:12px"><button class="btn ghost big" id="cancel">取消</button><button class="btn gold big" id="saveMine">儲存</button></div>`,
-      {}, body => {
-        const draw = () => {
-          body.querySelector('#parts').innerHTML = parts.length
-            ? parts.map((p, i) => chip(lang, p, `data-rm="${i}"`)).join('<i>＋</i>')
-            : '<span class="muted">從下面點字加入</span>';
-          const list = materials.filter(l => !filter || l.toLowerCase().includes(filter.toLowerCase()));
-          body.querySelector('#mats').innerHTML = list.map(l => chip(lang, l, `data-add="${esc(l)}"`)).join('') ||
-            `<span class="muted">${materials.length ? '找不到這個字' : '還沒有其他學過的字，先去冒險練習吧'}</span>`;
-          body.querySelectorAll('[data-rm]').forEach(b => (b.onclick = () => { parts.splice(+b.dataset.rm, 1); draw(); }));
-          body.querySelectorAll('[data-add]').forEach(b => (b.onclick = () => { parts.push(b.dataset.add); sfx('tap'); speak(b.dataset.add, { rate: 0.85 }); draw(); }));
-        };
-        draw();
-        body.querySelectorAll('[data-ex]').forEach(b => (b.onclick = () => speak(exs[+b.dataset.ex], { rate: 0.85 })));
-        body.querySelector('#filter').oninput = e => { filter = e.target.value.trim(); draw(); };
-        body.querySelector('#cancel').onclick = () => tileSheet(k);
-        body.querySelector('#saveMine').onclick = () => {
-          if (!parts.length) return toast('至少選一個字');
-          w.mine = [...(w.mine || []), { t: now(), parts }];
-          save();
-          sfx('place');
-          tileSheet(k);
-        };
-      });
+    openSheet(`<h2>我對「${esc(lemma)}」的理解</h2><p class="muted">用圖示和你會的字組合。沒有標準答案，只給你自己看。</p><div id="cmp"></div>
+      <button class="btn ghost big" id="cancel" style="margin-top:8px">取消</button>`, {}, body => {
+      mountComposer(body.querySelector('#cmp'), { lang, lemma, initial: w.mine?.at(-1)?.parts || [], suggest: lang.coreByKey?.get(lemma)?.icon || lang.base[lemma], onSave: parts => {
+        saveUnderstanding(null, lemma, parts);
+        sfx('place');
+        rebuild();
+        tileSheet(k);
+      } });
+      body.querySelector('#cancel').onclick = () => tileSheet(k);
+    });
   }
 
   if ($('#missedBtn')) $('#missedBtn').onclick = () => {
