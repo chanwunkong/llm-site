@@ -405,3 +405,16 @@ body.playing #simBar { display: none; }
 .letters { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .letter { min-width: 46px; height: 50px; border: var(--b); background: var(--white); font-size: 24px; font-weight: 700; }
 .letter.used { opacity: .25; }
+
+/* ---- 我的發音紀錄 ---- */
+.ipa-s.acc { position: relative; }
+.ipa-s.acc::after { content: ''; position: absolute; left: 2px; right: 2px; bottom: -6px; height: 3px; }
+.ipa-s.acc-good::after { background: var(--blue); }
+.ipa-s.acc-close::after { background: var(--yellow); }
+.ipa-s.acc-bad::after { background: var(--red); }
+.rec-row { flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; box-sizing: border-box; }
+.rec-last { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 6px; }
+.rec-last i { width: 9px; height: 9px; border: 1.5px solid var(--ink); }
+.rec-last i.pron-good { background: var(--blue); }
+.rec-last i.pron-close { background: var(--yellow); }
+.rec-last i.pron-bad { background: var(--red); }

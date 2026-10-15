@@ -8,6 +8,7 @@ import { iconHtml } from './icon.js';
 import * as P from '../engine/phono.js';
 import { G } from './glyph.js';
 import * as PR from '../engine/pronounce.js';
+import * as PL from '../engine/pronlog.js';
 
 const LV_NAME = ['', '跟著做', '選字', '辨識', '排序', '產出'];
 const ENV_NAME = { speak: '開口', ear: '耳機', mute: '靜音' };
@@ -19,6 +20,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   let run, q, answered, picked, showText, tapMode, typeMode, raf, tStart, timeLeft, qToken = 0;
   // 跟著做：作答方式（null = 還沒選；'say' 唸；'spell' 字母卡；'type' 鍵盤）。prOk：發音評分服務支援這個語言；noRecog：手機語音辨識不支援的語言
   let way = null, prOk = false;
+  // 這一局每個音的發音結果（結算時顯示唸錯最多的音）
+  let runPron = {};
   const noRecog = new Set();
   const $ = s => root.querySelector(s);
   const audio = () => run.env !== 'mute';
@@ -27,6 +30,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
 
   function start(lang, sourceId, env) {
     run = buildRun(lang, sourceId, env);
+    runPron = {};
     prOk = false;
     if (PR.configured()) PR.supports(lang.id).then(v => { prOk = v; }).catch(() => {});
     document.body.classList.add('playing');
@@ -345,6 +349,15 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       if (keep.length && r.chosen === undefined) throw new Error('服務版本太舊，請更新到 1.1.0 以上');
       const chosen = r.chosen || 0;
       pron = chosen ? null : { ...r, ipa: ph.ipa, k };
+      // 發音紀錄：一次錄音一筆，照順序存每個音的結果
+      if (!chosen && r.per_phone) {
+        PL.add({ lang: run.lang.id, word: q.answerText, phones: ph.ipa, per: r.per_phone }).catch(() => {});
+        for (const x of r.per_phone) if (x) {
+          const e = (runPron[P.norm(x.ph)] ||= { n: 0, bad: 0, like: {} });
+          e.n++;
+          if (x.level !== 'good') { e.bad++; if (P.norm(x.heard) !== P.norm(x.ph)) e.like[x.heard] = (e.like[x.heard] || 0) + 1; }
+        }
+      }
       const right = q.mode === 'order' ? q.answer : q.mode === 'pick' ? q.answer[0] : [q.answerText];
       submit(chosen ? keep[chosen - 1].resp : right, { spoken: true, verdict: chosen === 0 });
     } catch (e) {
@@ -355,12 +368,21 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   }
   function pronHtml() {
     const r = pron;
-    if (!r.level) return `<div class="pron"><small>發音評分：唸對了這個字</small></div>`;
+    if (!r.level && !r.per_phone) return `<div class="pron"><small>發音評分：唸對了這個字</small></div>`;
+    if (!r.level) {
+      const bad = r.per_phone.filter(x => x && x.level !== 'good' && x.heard !== x.ph);
+      return `<div class="pron"><span class="ipa">/${r.ipa.map((s, i) => { const x = r.per_phone[i]; return x ? `<b class="pron-${x.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s); }).join('')}/</span>
+        <small>${bad.length ? bad.slice(0, 3).map(x => (x.heard === '∅' ? `/${esc(x.ph)}/ 好像漏掉了` : `/${esc(x.ph)}/ 像 /${esc(x.heard)}/`)).join('、') : '每個音都唸對了'}</small></div>`;
+    }
     const you = r.top[0]?.ph, t = r.target;
-    const ipa = r.ipa.map((s, i) => (i === r.k ? `<b class="pron-${r.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s))).join('');
+    // 每個音都上色（服務 1.2 起有 per_phone）；沒有時只標目標音
+    const ipa = r.per_phone ? r.ipa.map((s, i) => { const x = r.per_phone[i]; return x ? `<b class="pron-${x.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s); }).join('')
+      : r.ipa.map((s, i) => (i === r.k ? `<b class="pron-${r.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s))).join('');
+    const others = (r.per_phone || []).filter((x, i) => x && i !== r.k && x.level !== 'good' && x.heard !== x.ph)
+      .map(x => (x.heard === '∅' ? `/${esc(x.ph)}/ 好像漏掉了` : `/${esc(x.ph)}/ 像 /${esc(x.heard)}/`));
     const line = r.level === 'good' ? `/${esc(t)}/ 唸對了` : you === '∅' ? `/${esc(t)}/ 好像漏掉了`
       : you === t ? `接近了，也有點像 /${esc(r.top[1]?.ph || '?')}/` : `你的 /${esc(t)}/ 比較像 /${esc(you)}/`;
-    return `<div class="pron"><span class="ipa">/${ipa}/</span><span class="pron-line pron-${r.level}">${line}</span>
+    return `<div class="pron"><span class="ipa">/${ipa}/</span><span class="pron-line pron-${r.level}">${line}</span>${others.length ? `<small>其他的音：${others.slice(0, 3).join('、')}</small>` : ''}
       <small>${r.top.slice(0, 3).map(c => `/${esc(c.ph)}/ ${Math.round(c.p * 100)}%`).join('　')}（點紅字可以聽、可以和相近的音比較）</small></div>`;
   }
 
@@ -469,6 +491,16 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     else if (audio()) speak(q.word, { rate: 0.8 });
   }
 
+  // 結算：這局唸錯最多的 1～2 個音，以及聽起來像什麼
+  function pronSummary() {
+    const top = Object.entries(runPron).filter(([, e]) => e.bad).sort((a, b) => b[1].bad - a[1].bad).slice(0, 2);
+    if (!top.length) return '';
+    return `<h3>這局要注意的音</h3><div class="stack">${top.map(([ph, e]) => {
+      const like = Object.entries(e.like).sort((a, b) => b[1] - a[1])[0];
+      return `<p class="muted">/${esc(ph)}/：${e.n} 次裡 ${e.bad} 次不夠準${like ? `，最常像 /${esc(like[0])}/` : ''}</p>`;
+    }).join('')}</div>`;
+  }
+
   function floatText(text, big) {
     const d = document.createElement('div');
     d.className = 'float';
@@ -536,6 +568,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       </div>
       ${SHOW.gold ? `<h3>金幣 +${rep.score + rep.produced}</h3>
       <p class="muted">得分 ${rep.score}${rep.produced ? `　＋　語塊產出 ${rep.produced}（${rep.production.map(p => `${p.chunks.map(c => esc(c.join('＋'))).join(' · ')}${p.chunks.length > 1 ? ` 網絡×${p.mult}` : ''}`).join('、')}）` : ''}</p>` : ''}
+      ${pronSummary()}
       ${rep.levelUps.length ? `<h3>升級</h3><div class="chips">${rep.levelUps.map(u => `<span>${esc(u.lemma)}<em>${u.master ? '精熟' : `Lv${u.lv}`}</em></span>`).join('')}</div>` : ''}
       ${rep.levelDowns.length ? `<h3>抽查未過</h3><div class="chips">${rep.levelDowns.map(l => `<span>${esc(l)}<em>Lv4</em></span>`).join('')}</div>` : ''}
       ${rep.newTiles.length ? `<h3>${SHOW.backpack ? '新詞元進背包' : '新字加入領土'}</h3>

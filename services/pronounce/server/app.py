@@ -35,7 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import onnxruntime as ort
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 MODEL_NAME = "facebook/wav2vec2-xlsr-53-espeak-cv-ft (ONNX int8)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.environ.get("MODEL", "/model/model.int8.onnx")
@@ -208,6 +208,58 @@ def edit_distance(a, b):
     return d[-1]
 
 
+PER_PHONE_K = int(os.environ.get("PER_PHONE_K", "15"))
+
+
+def heard_tokens(lp, k=PER_PHONE_K):
+    """The plain IPA tokens the model heard most clearly anywhere in this recording (highest frame posterior)."""
+    best = lp.max(axis=0)
+    ids = [VOCAB[t] for t in CANDIDATES]
+    return [INV[i] for i in sorted(ids, key=lambda i: -best[i])[:k]]
+
+
+def slot_probs(lp, phones, k, names):
+    """Open slot k: keep every other phone fixed, try each name (or dropped) there. Returns {display IPA: probability},
+    with length variants and eSpeak ASCII names merged into one sound."""
+    expected = [VOCAB[p] for p in phones]
+    tried, lls = [], []
+    for ph in names + [DROPPED]:
+        seq = expected[:k] + ([] if ph == DROPPED else [VOCAB[ph]]) + expected[k + 1:]
+        if seq:
+            tried.append(ph)
+            lls.append(ctc_loglik(lp, seq))
+    lls = np.array(lls) / TEMP
+    probs = np.exp(lls - lls.max())
+    probs /= probs.sum()
+    target = ipa(phones[k])
+    short = lambda ph: ipa(ph).replace("ː", "")
+    merged = {}
+    for ph, pr in zip(tried, probs):
+        key = target if short(ph) == short(target) else short(ph)
+        merged[key] = merged.get(key, 0.0) + float(pr)
+    return merged
+
+
+def level_of(p):
+    return "good" if p >= GOOD else "close" if p >= CLOSE else "bad"
+
+
+def per_phone(lp, phones):
+    """Every position scored (1.2.0): open each slot in turn, compared with the sounds heard in this recording.
+    Positions that cannot be a target (tone or pinyin spellings) are null."""
+    cands = heard_tokens(lp)
+    out = []
+    for i, p in enumerate(phones):
+        if not plain_ipa(p):
+            out.append(None)
+            continue
+        merged = slot_probs(lp, phones, i, list(dict.fromkeys(cands + [p])))
+        heard = max(merged, key=merged.get)
+        pe = merged.get(ipa(p), 0.0)
+        out.append({"ph": ipa(p), "heard": heard, "p": round(pe, 3), "level": level_of(pe)})
+    return out
+
+
 def pick_choice(lp, phones, choices):
     """Which candidate was said: the expected phones (index 0) or one of the other choices (1..n).
     Same CTC likelihood as the slot scoring, one pass over the audio. Choices equal to the expected phones are ignored."""
@@ -244,7 +296,8 @@ def score(phones, k, audio, tag="", choices=None):
         ms = int((time.time() - t0) * 1000)
         if mismatch > 1.0:
             return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
-        return {"ok": True, "chosen": 0, "level": None, "match": round(max(0.0, 1 - mismatch), 3), "ms": ms}
+        return {"ok": True, "chosen": 0, "level": None, "match": round(max(0.0, 1 - mismatch), 3),
+                "per_phone": per_phone(lp, phones), "ms": int((time.time() - t0) * 1000)}
     # open only the target slot; every other phone stays fixed
     names, lls = [], []
     for ph in CANDIDATES + [DROPPED]:
@@ -275,9 +328,9 @@ def score(phones, k, audio, tag="", choices=None):
     # free decoding is only a sanity check that this was the right word at all
     if mismatch > 1.0:
         return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
-    level = "good" if p_target >= GOOD else "close" if p_target >= CLOSE else "bad"
+    level = level_of(p_target)
     return {"ok": True, "chosen": 0, "level": level, "target": target, "target_p": round(p_target, 3),
-            "top": top, "score": round(p_target * 100), "ms": ms}
+            "top": top, "score": round(p_target * 100), "per_phone": per_phone(lp, phones), "ms": int((time.time() - t0) * 1000)}
 
 
 # ---- protection ----

@@ -10,6 +10,7 @@ import { editKnown, knownRow, langName } from './known.js';
 import { G } from './glyph.js';
 import { PLACES, MANNERS, HEIGHTS, BACKS, position, base } from '../engine/ipa-chart.js';
 import { known } from '../engine/store.js';
+import * as PL from '../engine/pronlog.js';
 
 
 export function createSounds(root, { getLang }) {
@@ -119,6 +120,7 @@ export function createSounds(root, { getLang }) {
         <div class="stage-head"><b>${esc(langName(t))}的音</b><span class="muted">共 ${mine.length} 個</span></div>
         <div class="stage-sum"><span><b class="hardc">${hardN}</b> 難音</span><span><b>${mine.length - hardN}</b> 已經會</span></div>
       </div>
+      <div id="myPron"></div>
       <div class="legend"><span class="ipa-s hard">難音</span><span class="ipa-s known">已經會</span><span class="ipa-s absent">只有你會的語言有</span></div>
       <p class="muted">位置相鄰的音，發音方式也相近。看難音旁邊有哪些你已經會的音，就知道要調整哪裡。點一個音可以聽例字。</p>
       <div class="row-between"><span></span><button class="btn ghost sm" id="emptyBtn">${hideEmpty ? '隱藏空欄位 ●' : '顯示空欄位 ○'}</button></div>
@@ -154,6 +156,43 @@ export function createSounds(root, { getLang }) {
       drawArrows();
     };
     drawArrows();
+    paintRecords();
+  }
+
+  // ---- 我的發音紀錄（發音評分服務的結果）----
+  // 一行：最近 5 次（對／接近／錯）、最近 10 次的平均、全部
+  const pct = x => `${Math.round(x * 100)}%`;
+  const recLine = v => `<span class="rec-last">${v.last5.map(l => `<i class="pron-${l}"></i>`).join('')}</span>
+    最近 10 次 <b>${pct(v.avg10)}</b>　全部 ${v.n} 次 <b>${pct(v.all)}</b>${v.rising ? '　<span class="tag ok">進步中</span>' : ''}`;
+  // 表格上依自己的正確率加一條色帶；上方列出最需要注意的 3 個音
+  async function paintRecords() {
+    const st = await PL.stats(getLang().id);
+    const weak = PL.weakest(st.phones);
+    const box = root.querySelector('#myPron');
+    if (box && weak.length) box.innerHTML = `<div class="panel"><b>你的發音：最需要注意的音</b>${weak.map(([ph, v]) =>
+      `<button class="ex-row rec-row" data-r="${esc(ph)}"><span><b>/${esc(ph)}/</b>${v.like ? `　常像 /${esc(v.like)}/` : ''}</span><small>${recLine(v)}</small></button>`).join('')}</div>`;
+    box?.querySelectorAll('[data-r]').forEach(b => (b.onclick = () => detail(lastAll.find(x => P.norm(x.seg) === b.dataset.r)?.seg || b.dataset.r)));
+    root.querySelectorAll('.ipa-s[data-s]').forEach(b => {
+      const v = PL.view(st.phones[P.norm(b.dataset.s)]);
+      if (v && v.n >= 3) b.classList.add('acc', `acc-${PL.levelOf(v.all)}`);
+    });
+  }
+  // 單音面板裡的三層紀錄：這個音、容易錯的排列、含有這個音的字（字的音標逐位置上色）
+  async function recordHtml(seg) {
+    const st = await PL.stats(getLang().id), k = P.norm(seg), v = PL.view(st.phones[k]);
+    if (!v) return '<h3>我的發音紀錄</h3><p class="muted">還沒有。設定發音評分服務後，在開口環境唸出答案就會記錄。</p>';
+    const ctx = Object.entries(st.ctx).filter(([key, e]) => key.startsWith(`${k}|`) && e.n >= PL.MIN_CTX)
+      .map(([key, e]) => [key.split('|')[1], PL.view(e)]).filter(([, c]) => c.all < v.all - 0.1).sort((a, b) => a[1].all - b[1].all).slice(0, 3);
+    const words = Object.entries(st.words).map(([w, e]) => {
+      const pos = e.pos.map(x => ({ ...x, v: PL.view(x) }));
+      const mine = pos.filter(x => P.norm(x.ph) === k && x.v);
+      return mine.length ? { w, pos, score: Math.min(...mine.map(x => x.v.all)) } : null;
+    }).filter(Boolean).sort((a, b) => a.score - b.score).slice(0, 3);
+    return `<h3>我的發音紀錄</h3>
+      <p class="muted">${recLine(v)}${v.like ? `<br>不夠準的時候，最常像 /${esc(v.like)}/（${v.likeN} 次）` : ''}</p>
+      ${ctx.length ? `<h3>容易錯的排列</h3>${ctx.map(([key, c]) => `<p class="muted">${esc(PL.ctxText(key))}：${pct(c.all)}（整體 ${pct(v.all)}，${c.n} 次）</p>`).join('')}` : ''}
+      ${words.length ? `<h3>含有這個音的字</h3><div class="stack">${words.map(x => `<button class="ex-row" data-w="${esc(x.w)}"><span>${esc(x.w)}　<span class="ipa">/${x.pos.map(p =>
+        p.v ? `<b class="pron-${PL.levelOf(p.v.all)}">${esc(p.ph)}</b>` : esc(p.ph)).join('')}/</span></span>${G.speaker(14)}</button>`).join('')}</div>` : ''}`;
   }
 
   // 從選取的起點畫出箭頭（三合母音畫成折線），終點旁放標籤
@@ -238,6 +277,7 @@ export function createSounds(root, { getLang }) {
     const TAG = { hard: '<span class="tag hard">難音</span>', known: '<span class="tag ok">已經會</span>', absent: `<span class="tag">${esc(langName(t))}沒有這個音</span>` };
     openSheet(`
       <h2 class="snd-title">${esc(disp(seg))} ${TAG[status]}</h2>
+      <div id="myRec"></div>
       ${disp(seg) !== seg ? `<p class="muted">PHOIBLE 原始寫法：${esc(seg)}</p>` : ''}
       ${rec(seg) ? `<button class="btn gold sm" id="one">${G.speaker(14).replaceAll('#111111', '#FFFFFF')} 聽這個音</button>` : '<p class="muted">這個音沒有單獨的錄音。</p>'}
       ${rec(seg) && near.length ? `<h3>和相近的音比較 <small>（連續播放兩個音）</small></h3>
@@ -255,6 +295,7 @@ export function createSounds(root, { getLang }) {
       ${credit ? `<p class="muted credit">單音錄音：維基共享資源（${[...new Set(credit.map(c => c.license))].join('、')}）${credit.map(c => `<a href="${esc(c.source)}" target="_blank" rel="noopener">${esc(c.sym)}</a>`).join(' ')}</p>` : ''}
     `, {}, body => {
       if (rec(seg)) playFiles([url(seg)]);
+      recordHtml(seg).then(h => { const box = body.querySelector('#myRec'); if (box) { box.innerHTML = h; box.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => speak(b.dataset.w, { rate: 0.8 }))); } });
       body.querySelector('#one')?.addEventListener('click', () => playFiles([url(seg)]));
       body.querySelectorAll('[data-b]').forEach(b => (b.onclick = () => playFiles([url(seg), url(b.dataset.b)])));
       body.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => speak(b.dataset.w, { rate: 0.8 })));
