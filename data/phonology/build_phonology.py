@@ -107,6 +107,26 @@ for lang, wid, voice in [('en', 'eng', 'en-us'), ('ja', 'jpn', None)]:
         ipa = espeak(w, voice) if voice else openjtalk(w)
         WORDS[lang][w] = segment(ipa, INV[wid])
 
+# ---- 「基元 65」每個字的音標：寫進 site/data/core/<語言>.json 的 ipa 欄位（資料檔，不寫進程式）----
+# 要在 data/concepts/build_base.py 之後執行（build_base 重新產生資料檔時不保留 ipa）
+LANGS = re.findall(r"id: '(\w+)'.*?wals: '(\w+)'.*?espeak: '([\w-]+)'", open(os.path.join(ROOT, 'site', 'js', 'data', 'langs.js'), encoding='utf-8').read())
+core_dir = os.path.join(ROOT, 'site', 'data', 'core')
+for lang, wid, voice in LANGS:
+    path = os.path.join(core_dir, f'{lang}.json')
+    if not os.path.exists(path) or wid not in INV: continue
+    data = json.load(open(path, encoding='utf-8'))
+    words = sorted({w.lower() for p in data['primes'] for w in p['words']})
+    ipa = {}
+    for w in words:
+        try:
+            segs = segment(openjtalk(w) if lang == 'ja' else espeak(w, voice), INV[wid])
+        except Exception as e:
+            print('skip', lang, w, e); continue
+        if segs: ipa[w] = segs
+    data['ipa'] = ipa
+    json.dump(data, open(path, 'w', encoding='utf-8'), ensure_ascii=False, indent=0)
+    print('core', lang, f'{len(ipa)}/{len(words)}')
+
 js = ('// 自動產生（data/phonology/build_phonology.py），請勿手動修改。\n'
       '// 音位清單：Moran, Steven & McCloy, Daniel (eds.) 2019. PHOIBLE 2.0. Jena: Max Planck Institute for the Science of Human History. (CC BY-SA 3.0)\n'
       '// 字的發音：eSpeak NG（英文）、pyopenjtalk（日文）。\n'

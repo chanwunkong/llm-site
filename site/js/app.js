@@ -23,7 +23,7 @@ import { openSheet, closeSheet, toast } from './ui/sheet.js';
 // 內建示範來源（資料檔，見 engine/demo.js）；20 種語言都可以匯入自己的文章
 const [DEMO, CORE] = await Promise.all([loadDemo(), loadCore()]);
 // 每種語言的第一個來源是「基元 65」：沒有文章也能直接練
-const coreSource = id => (CORE[id]?.length ? [{ id: 'core', kind: '基元', title: '基元 65', core: true, primes: CORE[id],
+const coreSource = id => (CORE[id]?.primes?.length ? [{ id: 'core', kind: '基元', title: '基元 65', core: true, primes: CORE[id].primes, ipa: CORE[id].ipa,
   credit: 'NSM 語意基元（Goddard & Wierzbicka）', situations: [{ title: '基元 65', sentences: [] }] }] : []);
 const dataOf = id => ({ ...LANG_BY_ID[id], id, sources: [...coreSource(id), ...(DEMO[id] || []), ...importsOf(id)] });
 const DATA = Object.fromEntries(LANG_LIST.map(l => [l.id, l]));
@@ -168,7 +168,7 @@ const voiceName = (id, sub = voiceSubOf(id)) => (sub ? `用${DATA[sub].zh}的聲
 function voiceSheet() {
   const id = state.lang, d = DATA[id];
   // 試聽用這個語言的基元詞，含特殊字母的優先
-  const sample = (CORE[id] || []).map(p => p.key).sort((a, b) => /[өүңы]/i.test(b) - /[өүңы]/i.test(a)).slice(0, 6).join(', ');
+  const sample = (CORE[id]?.primes || []).map(p => p.key).sort((a, b) => /[өүңы]/i.test(b) - /[өүңы]/i.test(a)).slice(0, 6).join(', ');
   const draw = body => {
     const cur = voiceSubOf(id);
     body.innerHTML = `<h2>朗讀聲音</h2>

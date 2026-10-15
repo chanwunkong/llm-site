@@ -74,7 +74,9 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   // 能唸 = 開口環境，而且程式能判斷（發音評分服務支援，或手機語音辨識沒有回報不支援）；不讓學習者自己判斷
   const canSay = () => run.env === 'speak' && (prOk || (canListen && !noRecog.has(run.lang.id)));
   function teachHtml() {
-    const ipa = w => { const x = P.ipaOf(run.lang.id, w); return x ? `<span class="ipa">/${esc(x)}/</span>` : ''; };
+    // 音標：難音（目標語言有、我會的語言都沒有的音）標紅色，點一下打開發音面板
+    const hard = P.hardSounds(run.lang.wals);
+    const ipa = w => { const sg = P.wordSegs(run.lang.id, w); return sg ? `<span class="ipa">/${sg.map(x => hard.has(x) ? `<b class="hs" data-hs="${esc(x)}">${esc(x)}</b>` : esc(x)).join('')}/</span>` : ''; };
     const sentence = q.tokens.length ? `<div class="sentence teach-sent" dir="${run.lang.dir || 'ltr'}">${q.tokens.map((t, i) =>
       `${spaceBefore(q.tokens, i, run.lang.joiner)}<span class="ctx${i === q.gap[0] ? ' teach-hl' : ''}">${esc(t.surface)}</span>`).join('')}</div>` : '';
     const w = way || (canSay() ? null : 'spell');
@@ -99,6 +101,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     $('#qcard').classList.remove('chain', 'boss');
     $('#qcard').innerHTML = teachHtml();
     $('#replay') && ($('#replay').onclick = () => playGap());
+    root.querySelectorAll('.qmain.teach [data-hs]').forEach(b => (b.onclick = () => onSound?.(b.dataset.hs)));
     $('#waySay') && ($('#waySay').onclick = () => { way = 'say'; renderTeach(); });
     $('#waySpell') && ($('#waySpell').onclick = () => { way = 'spell'; picked = []; renderTeach(); });
     $('#wayType') && ($('#wayType').onclick = () => { way = 'type'; renderTeach(); $('#inp')?.focus(); });
