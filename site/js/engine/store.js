@@ -4,8 +4,8 @@ import { STAGES } from '../data/wals.js';
 // 模擬模式用另一份存檔，真正的進度不會被覆蓋
 const MODE_KEY = 'word-territory-mode', SIM_REQ = 'word-territory-sim-req';
 export const SIM = (() => { try { return localStorage.getItem(MODE_KEY) === 'sim'; } catch { return false; } })();
-// 新版（最小可行系統）用新的存檔；舊版的進度保留在 word-territory-v1，不覆蓋
-const KEY = SIM ? 'word-territory-sim' : 'word-territory-v2';
+// 最小可行模型用新的存檔；舊的進度保留在 word-territory-v1、v2，不覆蓋
+const KEY = SIM ? 'word-territory-sim' : 'word-territory-v3';
 export function enterSim(req) {
   try { localStorage.setItem(MODE_KEY, 'sim'); localStorage.setItem(SIM_REQ, JSON.stringify(req)); } catch {}
   location.reload();
@@ -21,15 +21,15 @@ const DAY = 86400000;
 
 // 收斂後的核心循環：答題 → 升級 → 連鎖 → 領土長大。以下功能的程式保留，先不顯示（true = 打開）
 export const SHOW = {
-  rulePurchase: false, // 花金幣解鎖規則（不再開放：規則依詞彙量自動開放）
-  backpack: false,     // 背包介面（不再開放：新字自動放在領土邊緣）
-  skillsTab: false,    // 階段 1：文法頁
-  soundsTab: true,     // 發音頁（IPA 表）：從一開始就開放
-  move: false,         // 階段 3：手動移動格子
-  path: false,         // 階段 3：路徑加成、錯過的連結
-  gold: false,         // 階段 4：金幣（移動格子要付金幣）
-  chunks: false,       // 階段 4：領土語塊與產出
-  mine: true,          // 我的理解（合成詞註解）：從一開始就開放
+  rulePurchase: false, // 花金幣解鎖規則（不再開放）
+  backpack: true,      // 箱子：通過的字先放這裡，玩家自己擺到領土上（最小可行模型）
+  skillsTab: false,    // 文法頁（隱藏）
+  soundsTab: false,    // 發音頁（隱藏）
+  move: false,         // 移動已放好的格子（隱藏）
+  path: false,         // 路徑加成、錯過的連結（隱藏）
+  gold: false,         // 金幣（隱藏）
+  chunks: false,       // 領土語塊與產出（隱藏）
+  mine: false,         // 我的理解（隱藏）
 };
 
 // 逐步開放：每個語言各自記錄已開放的功能（開放後不會再關閉）
@@ -43,8 +43,8 @@ export const UNLOCKS = [
 ];
 // 檢查有沒有新開放的功能，更新 SHOW；回傳這次新開放的項目（給畫面顯示說明卡）
 export function refreshFeatures() {
-  // 最小可行系統：舊的逐步開放停用，舊功能隱藏（文法頁、路徑、金幣、語塊）；擺放由玩家自己決定，所以一開始就能移動格子
-  Object.assign(SHOW, { skillsTab: false, path: false, gold: false, chunks: false, move: true, mine: true, soundsTab: true });
+  // 最小可行模型：只有「冒險」和「領土」；通過的字放進箱子（背包），自己擺；其他功能全部隱藏
+  Object.assign(SHOW, { skillsTab: false, soundsTab: false, path: false, gold: false, chunks: false, move: false, mine: false, backpack: true });
   return [];
 }
 

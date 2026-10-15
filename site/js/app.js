@@ -13,9 +13,9 @@ import { esc } from './ui/sheet.js';
 import * as PR from './engine/pronounce.js';
 import * as T from './engine/territory.js';
 import { setVoiceLang, speak, onEspeakDownload, onPiperDownload, voiceSubOf } from './audio.js';
-// 最小可行系統（docs/design.md）：新的首頁與內層；舊的 home.js、play.js 保留但不使用
-import { createHome } from './ui/home2.js';
-import { createPlay } from './ui/play2.js';
+// 最小可行模型（docs/design.md）：基元 65 的第一級；舊的 home.js、play.js 保留但不使用
+import { createHome } from './ui/home-lv1.js';
+import { createPlay } from './ui/play-lv1.js';
 import { createLand } from './ui/land.js';
 import { createSkills } from './ui/skills.js';
 import { createSounds } from './ui/sounds.js';
@@ -57,7 +57,7 @@ function refreshTop() {
 }
 
 const views = {
-  home: createHome($('#view-home'), { getLang, onStart: src => play.start(getLang(), src), onSourcesChanged: () => { rebuildLang(); refreshTop(); } }),
+  home: createHome($('#view-home'), { getLang, onStart: () => play.start(getLang()), onSettings: () => $('#setBtn').click(), onSourcesChanged: () => { rebuildLang(); refreshTop(); } }),
   land: createLand($('#view-land'), { getLang, onChange: refreshTop }),
   skills: createSkills($('#view-skills'), { getLang, onChange: refreshTop }),
   sounds: createSounds($('#view-sounds'), { getLang }),
@@ -116,13 +116,11 @@ $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
     <button class="btn ghost big" id="snd">${state.sound ? '聲音：開' : '聲音：關'}</button>
     ${DATA[state.lang].subs ? `<button class="btn ghost big" id="voice">朗讀聲音：${esc(voiceName(state.lang))}</button>` : ''}
     <button class="btn ghost big" id="pron">發音評分服務${PR.configured() ? '：已設定' : ''}</button>
-    <button class="btn ghost big" id="day">時間快轉 1 天（測試降級用）</button>
     <button class="btn ghost big" id="rst">${SIM ? '重置模擬進度' : '重置所有進度'}</button>
   </div>`, {}, body => {
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
   body.querySelector('#voice')?.addEventListener('click', voiceSheet);
   body.querySelector('#pron').onclick = pronSheet;
-  body.querySelector('#day').onclick = () => { skipDay(); closeSheet(); enterLanguage(); views[tab].hide(); setTab(tab); toast('已快轉 1 天'); };
   body.querySelector('#rst').onclick = () => openSheet(`<h2>確定重置？</h2><p class="muted">所有語言的單字、領土、金幣都會清除。</p>
     <div class="row"><button class="btn ghost big" id="no">取消</button><button class="btn gold big" id="yes">重置</button></div>`, {}, b2 => {
     b2.querySelector('#no').onclick = closeSheet;
@@ -133,7 +131,7 @@ $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
 enterLanguage();
 const h = location.hash.slice(1);
 setTab(views[h] ? h : 'home');
-if (h === 'play' && getLang().sources.length) play.start(getLang(), L().source || getLang().sources[0].id, state.env);
+if (h === 'play') play.start(getLang());
 $('#loading').remove();
 
 // 模擬模式設定：預設進度、目標語言、我會的語言、開局自帶規則

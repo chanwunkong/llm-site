@@ -35,7 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import onnxruntime as ort
 
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 MODEL_NAME = "facebook/wav2vec2-xlsr-53-espeak-cv-ft (ONNX int8)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.environ.get("MODEL", "/model/model.int8.onnx")
@@ -117,17 +117,19 @@ OJT = {"a": "a", "i": "i", "u": "ɯ", "e": "e", "o": "o", "A": "a", "I": "i", "U
 
 
 def to_tokens(text_ipa):
-    """Split an IPA string into model tokens by greedy longest match; None if something does not map."""
-    out, i = [], 0
-    while i < len(text_ipa):
-        for n in (4, 3, 2, 1):
-            if text_ipa[i:i + n] in VOCAB:
-                out.append(text_ipa[i:i + n])
-                i += n
-                break
-        else:
-            return None
-    return out
+    """Split an IPA string into model tokens: the split with the fewest tokens (longest pieces), backing off when
+    a greedy choice leaves a piece that does not map (juː: "ju" + "ː" fails, "j" + "uː" works). None if no split exists."""
+    n = len(text_ipa)
+    best = [None] * (n + 1)   # best[i] = token list for text_ipa[:i]
+    best[0] = []
+    for i in range(n):
+        if best[i] is None:
+            continue
+        for k in (4, 3, 2, 1):
+            piece = text_ipa[i:i + k]
+            if len(piece) == k and piece in VOCAB and (best[i + k] is None or len(best[i]) + 1 < len(best[i + k])):
+                best[i + k] = best[i] + [piece]
+    return best[n]
 
 
 def phonemize(text, lang):
@@ -244,13 +246,18 @@ def level_of(p):
     return "good" if p >= GOOD else "close" if p >= CLOSE else "bad"
 
 
+def slot_ok(tok):
+    """A position that can be scored in per_phone: anything except special tokens and tone or pinyin spellings."""
+    return not tok.startswith("<") and not any(c.isdigit() or c in ".?^[:\"!" for c in tok) and not tok[0].isupper()
+
+
 def per_phone(lp, phones):
     """Every position scored (1.2.0): open each slot in turn, compared with the sounds heard in this recording.
     Positions that cannot be a target (tone or pinyin spellings) are null."""
     cands = heard_tokens(lp)
     out = []
     for i, p in enumerate(phones):
-        if not plain_ipa(p):
+        if not slot_ok(p):
             out.append(None)
             continue
         merged = slot_probs(lp, phones, i, list(dict.fromkeys(cands + [p])))
@@ -258,6 +265,33 @@ def per_phone(lp, phones):
         pe = merged.get(ipa(p), 0.0)
         out.append({"ph": ipa(p), "heard": heard, "p": round(pe, 3), "level": level_of(pe)})
     return out
+
+
+def insertions(heard, expected):
+    """How many extra sounds the free decoding has compared with the expected phones (edit-distance alignment)."""
+    n, m = len(heard), len(expected)
+    d = [[(0, 0)] * (m + 1) for _ in range(n + 1)]   # (cost, insertions)
+    for i in range(1, n + 1):
+        d[i][0] = (i, i)
+    for j in range(1, m + 1):
+        d[0][j] = (j, 0)
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            sub = (d[i - 1][j - 1][0] + (heard[i - 1] != expected[j - 1]), d[i - 1][j - 1][1])
+            ins = (d[i - 1][j][0] + 1, d[i - 1][j][1] + 1)     # heard has an extra sound
+            dele = (d[i][j - 1][0] + 1, d[i][j - 1][1])         # an expected sound is missing
+            d[i][j] = min(sub, ins, dele)
+    return d[n][m][1]
+
+
+def total_score(per, heard, phones):
+    """Total 0-100 (1.3.0): sum of each expected sound's probability / (expected sounds + extra sounds).
+    A missing sound has a probability near 0; an extra sound makes the denominator larger."""
+    scored = [x for x in per if x]
+    if not scored:
+        return None, 0
+    extra = insertions(heard, phones)
+    return round(100 * sum(x["p"] for x in scored) / (len(scored) + extra)), extra
 
 
 def pick_choice(lp, phones, choices):
@@ -300,8 +334,10 @@ def score(phones, k, audio, tag="", choices=None):
             print(json.dumps({"tag": tag, "expected": "".join(phones), "heard": "".join(heard), "mismatch": round(mismatch, 2), "ms": ms}, ensure_ascii=False), flush=True)
         if mismatch > 1.0:
             return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
+        pp = per_phone(lp, phones)
+        total, extra = total_score(pp, heard, phones)
         return {"ok": True, "chosen": 0, "level": None, "match": round(max(0.0, 1 - mismatch), 3),
-                "per_phone": per_phone(lp, phones), "ms": int((time.time() - t0) * 1000)}
+                "per_phone": pp, "total": total, "extra": extra, "ms": int((time.time() - t0) * 1000)}
     # open only the target slot; every other phone stays fixed
     names, lls = [], []
     for ph in CANDIDATES + [DROPPED]:
@@ -334,7 +370,8 @@ def score(phones, k, audio, tag="", choices=None):
         return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
     level = level_of(p_target)
     return {"ok": True, "chosen": 0, "level": level, "target": target, "target_p": round(p_target, 3),
-            "top": top, "score": round(p_target * 100), "per_phone": per_phone(lp, phones), "ms": int((time.time() - t0) * 1000)}
+            "top": top, "score": round(p_target * 100), "per_phone": (pp := per_phone(lp, phones)),
+            "total": total_score(pp, heard, phones)[0], "extra": total_score(pp, heard, phones)[1], "ms": int((time.time() - t0) * 1000)}
 
 
 # ---- protection ----

@@ -22,7 +22,8 @@ function neighbors(k) {
 // 可以放下新格子的位置：空的、而且和領土相鄰（領土為空時只有原點）
 export function placeable() {
   const t = tiles();
-  if (!Object.keys(t).length) return [key(0, 0)];
+  // 第一格一定是「我」（通過時自動放在中心），所以空的領土沒有可以放的位置
+  if (!Object.keys(t).length) return [];
   const out = new Set();
   for (const k of Object.keys(t)) for (const n of neighbors(k)) if (!t[n]) out.add(n);
   return [...out];
