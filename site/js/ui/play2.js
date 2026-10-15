@@ -166,7 +166,8 @@ export function createPlay(root, { onEnd, onSound }) {
     btn.disabled = true; btn.textContent = '聆聽中…';
     try {
       const alts = await listen();
-      if (!alts.length) { toast('沒有聽到聲音，再試一次'); btn.disabled = false; btn.innerHTML = `${G.mic()} 再說一次`; return; }
+      if (!alts.length) return retryPanel('沒有聽到聲音');
+      if (!V.check(q, alts)) return retryPanel(`聽到的是「${alts[0]}」`);
       submit(alts, { spoken: true });
     } catch (e) {
       if (e?.error === 'language-not-supported') noRecog.add(run.lang.id);
@@ -174,30 +175,63 @@ export function createPlay(root, { onEnd, onSound }) {
       way = 'spell'; render();
     }
   }
-  // 發音評分：拿拼法最接近的 3 個字一起比較（唸了別的字不算），唸對時每個音都評分
+  // 拿來比較的其他字：拼法相近（或包含答案，例如 some → something）的**別的字**。
+  // 不用答案的一部分（pe、ple）、不用同一個字的其他形式（people／peoples），它們太像，真人聲音會被它們搶走
+  function nearWords(q) {
+    const a = q.answer.toLocaleLowerCase(), max = Math.max(1, Math.floor([...a].length / 3));
+    const same = new Set([...(run.lang.lemmas.get(q.lemma)?.forms || [])].map(w => w.toLocaleLowerCase()));
+    const pool = [...new Set([...run.lang.lemmas.values()].flatMap(x => [...x.forms]).map(w => w.toLocaleLowerCase()))]
+      .filter(w => w !== a && !same.has(w) && !a.includes(w) && [...w].length >= 2);
+    return pool.map(w => [w, w.includes(a) ? 0 : P.editDistance(a, w)]).filter(([, d]) => d <= max)
+      .sort((x, y) => x[1] - y[1]).slice(0, 3).map(([w]) => w);
+  }
+  // 發音評分：和拼法相近的字一起比較（唸了別的字不算），每個音都評分
   async function scoredMic() {
     const btn = $('#mic');
     btn.disabled = true;
     try {
-      const a = q.answer.toLocaleLowerCase();
-      const pool = [...new Set([...run.lang.lemmas.values()].flatMap(x => [...x.forms]).map(w => w.toLocaleLowerCase()))].filter(w => w !== a && w.length > 1);
-      const near = pool.map(w => [w, (w.includes(a) || a.includes(w) ? 0 : 1000) + P.editDistance(a, w)]).sort((x, y) => x[1] - y[1]).slice(0, 3).map(([w]) => w);
+      const near = nearWords(q);
       const [ph, ...aph] = await Promise.all([q.answer, ...near].map(t => PR.phonemize(t, run.lang.id)));
       if (!ph.ok) throw new Error(ph.msg);
       const choices = aph.filter(x => x.ok).map(x => x.phones);
       const pcm = await PR.record(st => { btn.textContent = st === 'listening' ? '請說…' : st === 'heard' ? '聽到了…' : '評分中…'; });
       const r = await PR.score(pcm, ph.phones, -1, run.lang.id, choices);
-      if (!r.ok) { toast(r.msg || '請再說一次'); btn.disabled = false; btn.innerHTML = `${G.mic()} 再說一次`; return; }
+      if (!r.ok) return retryPanel(r.msg || '沒有聽清楚');
       const ok = !r.chosen;
-      if (ok && r.per_phone) {
-        pron = { ipa: ph.ipa, per: r.per_phone };
-        PL.add({ lang: run.lang.id, word: q.answer, phones: ph.ipa, per: r.per_phone }).catch(() => {});
+      if (r.per_phone) PL.add({ lang: run.lang.id, word: q.answer, phones: ph.ipa, per: r.per_phone }).catch(() => {});
+      if (!ok) {
+        // 唸得比較像別的字：告訴使用者哪裡不一樣，讓他馬上再說一次（這次先不算）
+        const like = near.filter((x, i) => aph[i].ok)[r.chosen - 1];
+        return retryPanel(`聽起來比較像「${like}」`, r.per_phone ? { ipa: ph.ipa, per: r.per_phone } : null);
       }
-      submit(ok ? [q.answer] : [], { spoken: true, verdict: ok });
+      // 沒有相近的字可以比較時，服務只粗略確認是不是這個字；超過一半的音明顯不對，就不算唸了這個字
+      const scored = (r.per_phone || []).filter(Boolean), bad = scored.filter(x => x.level === 'bad').length;
+      if (scored.length && bad / scored.length > 0.5) return retryPanel('有好幾個音和這個字不一樣', { ipa: ph.ipa, per: r.per_phone });
+      if (r.per_phone) pron = { ipa: ph.ipa, per: r.per_phone };
+      submit([q.answer], { spoken: true, verdict: true });
     } catch (e) {
       toast(`發音評分無法使用（${e.message || '連線失敗'}）`);
       btn.disabled = false; btn.innerHTML = `${G.mic()} 再說一次`;
     }
+  }
+
+  // 說的結果和答案不一樣：顯示聽到的、每個音的顏色，可以再說一次；按「這題先跳過」才算答錯
+  function pronLine(p, ok = false) {
+    const bad = p.per.filter(x => x && x.level !== 'good' && x.heard !== x.ph);
+    return `<div class="pron"><span class="ipa">/${p.ipa.map((s, i) => { const x = p.per[i]; return x ? `<b class="pron-${x.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s); }).join('')}/</span>
+      <small>${bad.length ? bad.slice(0, 3).map(x => (x.heard === '∅' ? `/${esc(x.ph)}/ 好像漏掉了` : `/${esc(x.ph)}/ 像 /${esc(x.heard)}/`)).join('、') : (ok ? '每個音都唸對了' : '每個音都接近了，再清楚地說一次')}</small></div>`;
+  }
+  function retryPanel(msg, p = null) {
+    const fb = $('#fb');
+    fb.className = 'feedback no';
+    fb.innerHTML = `${esc(msg)}${p ? pronLine(p) : ''}<small>紅色和虛線的音可以點開來聽</small>`;
+    fb.querySelectorAll('[data-hs]').forEach(b => (b.onclick = () => onSound?.(b.dataset.hs)));
+    $('.teach-answer').innerHTML = `<button class="btn gold mic" id="mic">${G.mic()} 再說一次</button>
+      <div class="row"><button class="linkish" id="waySpell">改用寫的</button><button class="linkish" id="skip">這題先跳過</button></div>`;
+    $('#mic').onclick = mic;
+    $('#waySpell').onclick = () => { way = 'spell'; picked = []; render(); };
+    $('#skip').onclick = () => submit([], { spoken: true, verdict: false });
+    speak(q.answer, { rate: 0.8 });
   }
 
   // ---------- 作答結果 ----------
@@ -218,14 +252,12 @@ export function createPlay(root, { onEnd, onSound }) {
       else if (res.pending) lines.push(`<small>明天以後再答對一次，就升到 Lv${q.lv === 5 ? '5 精熟' : q.lv + 1}</small>`);
     } else {
       sfx('bad');
-      lines.push(`${spoken ? '這次不算' : `你寫的是<span class="ans" dir="auto">${esc([].concat(response)[0] || '')}</span>`}　正確答案<span class="ans" dir="auto">${esc(q.answer)}</span>`);
+      lines.push(`${spoken ? '這題先跳過' : `你寫的是<span class="ans" dir="auto">${esc([].concat(response)[0] || '')}</span>`}　正確答案<span class="ans" dir="auto">${esc(q.answer)}</span>`);
       lines.push('<small>這一局稍後會再出一次</small>');
     }
     fb.innerHTML = lines.join('<br>');
     if (pron) {
-      const bad = pron.per.filter(x => x && x.level !== 'good' && x.heard !== x.ph);
-      fb.insertAdjacentHTML('beforeend', `<div class="pron"><span class="ipa">/${pron.ipa.map((s, i) => { const x = pron.per[i]; return x ? `<b class="pron-${x.level}" data-hs="${esc(s)}">${esc(s)}</b>` : esc(s); }).join('')}/</span>
-        <small>${bad.length ? bad.slice(0, 3).map(x => (x.heard === '∅' ? `/${esc(x.ph)}/ 好像漏掉了` : `/${esc(x.ph)}/ 像 /${esc(x.heard)}/`)).join('、') : '每個音都唸對了'}</small></div>`);
+      fb.insertAdjacentHTML('beforeend', pronLine(pron, true));
       fb.querySelectorAll('[data-hs]').forEach(b => (b.onclick = () => onSound?.(b.dataset.hs)));
     }
     const cont = document.createElement('button');

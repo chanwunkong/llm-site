@@ -96,7 +96,8 @@ export function makeQuestion(run, lemma, extra = false) {
   const base = { lemma, lv, extra };
   if (lv === 1) {
     // 認識：第一次遇見，照著說或寫。文章的字附上句子（這個字標亮）
-    const s = sentencesOf(lang, lemma).find(x => run.sourceId === x.sit.split('#')[0]) || sentencesOf(lang, lemma)[0];
+    // 練文章時附上這篇文章裡的句子；練「基元 65」時不附句子（同一個來源的畫面一致）
+    const s = sentencesOf(lang, lemma).find(x => run.sourceId === x.sit.split('#')[0]) || null;
     const ti = s ? tokenIndex(s, lemma) : -1;
     const form = ti >= 0 ? s.tokens[ti].surface : P?.key || lemma;
     return { ...base, kind: 'copy', answer: form, accept: [form], sentence: s || null, hl: ti, icon: P?.icon || lang.base[lemma] || null, full: s ? joinTokens(s.tokens, lang.joiner) : form };

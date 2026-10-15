@@ -35,7 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import onnxruntime as ort
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 MODEL_NAME = "facebook/wav2vec2-xlsr-53-espeak-cv-ft (ONNX int8)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.environ.get("MODEL", "/model/model.int8.onnx")
@@ -284,16 +284,20 @@ def score(phones, k, audio, tag="", choices=None):
     lp = log_probs(audio)
     if choices:
         chosen, choice_p = pick_choice(lp, phones, choices)
-        if chosen:   # another candidate was said: no slot scoring for the expected phones
+        if chosen:   # another candidate was said: still score every position of the expected phones, so the learner sees what went wrong
+            pp = per_phone(lp, phones)
             ms = int((time.time() - t0) * 1000)
             if LOG_ATTEMPTS:
-                print(json.dumps({"tag": tag, "chosen": chosen, "choice_p": choice_p, "ms": ms}), flush=True)
-            return {"ok": True, "chosen": chosen, "choice_p": choice_p, "level": None, "ms": ms}
+                print(json.dumps({"tag": tag, "chosen": chosen, "choice_p": choice_p, "expected": "".join(phones),
+                                  "won": "".join(choices[chosen - 1]), "ms": ms}, ensure_ascii=False), flush=True)
+            return {"ok": True, "chosen": chosen, "choice_p": choice_p, "level": None, "per_phone": pp, "ms": ms}
     expected = [VOCAB[p] for p in phones]
     heard = greedy(lp)
     if k < 0:
         mismatch = edit_distance(heard, phones) / len(phones)
         ms = int((time.time() - t0) * 1000)
+        if LOG_ATTEMPTS:
+            print(json.dumps({"tag": tag, "expected": "".join(phones), "heard": "".join(heard), "mismatch": round(mismatch, 2), "ms": ms}, ensure_ascii=False), flush=True)
         if mismatch > 1.0:
             return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
         return {"ok": True, "chosen": 0, "level": None, "match": round(max(0.0, 1 - mismatch), 3),
