@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 產生 docs/curriculum.md：讀取 wals-stages.json 與 site/js/data/wals.js（中文名稱）
+# 產生 docs/archive/curriculum.md（舊版，封存）：讀取 wals-stages.json 與 site/js/data/wals.js（中文名稱）
 import json, re
 stages = json.load(open('wals-stages.json', encoding='utf-8'))['stages']
 js = open('../../site/js/data/wals.js', encoding='utf-8').read()
@@ -53,5 +53,5 @@ doc = f"""# 課綱
 2. **分級讀物的涵蓋比例沒有核對**：需要實際文本才能計算，而這些書大多仍受著作權保護。讀物只作為建議，由使用者匯入自己的版本。
 3. **CEFR 和 WALS 本來沒有對應關係**：CEFR 描述的是溝通能力，WALS 描述的是語言的結構特徵。把 WALS 章節分配到 CEFR 階段，是這個專案自己的教學設計。
 """
-open('../../docs/curriculum.md', 'w', encoding='utf-8').write(doc)
+open('../../docs/archive/curriculum.md', 'w', encoding='utf-8').write(doc)
 print('ok', len(out))

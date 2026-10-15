@@ -96,7 +96,7 @@ export function createSkills(root, { getLang, onChange }) {
           ${items.map(x => `<button class="cmp-row" data-f="${x.fid}"><span class="tag">${x.s}</span><b>${esc(FEATURES[x.fid].zh)}</b> ${TAG[verdict(x.fid)]}</button>`).join('') || '<p class="muted">沒有差異</p>'}
         </details>`;
       }).join('')}` : ''}
-      <p class="muted">資料來源：Dryer & Haspelmath (eds.) 2013, <i>The World Atlas of Language Structures Online</i>（CC BY 4.0）。課綱分級見 docs/curriculum.md。</p>
+      <p class="muted">資料來源：Dryer & Haspelmath (eds.) 2013, <i>The World Atlas of Language Structures Online</i>（CC BY 4.0）。課綱分級見 docs/archive/curriculum.md。</p>
     </div>`;
 
     root.querySelectorAll('[data-unlock]').forEach(b => (b.onclick = e => {

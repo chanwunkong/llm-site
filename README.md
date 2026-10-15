@@ -3,7 +3,7 @@
 以《弓箭傳說》內外兩層架構設計的通用語言學習遊戲（demo）。
 
 - Demo: https://chanwunkong.github.io/llm-site/
-- 設計文件：[docs/design.md](docs/design.md)
+- 設計文件：[docs/design.md](docs/design.md)（舊版文件在 [docs/archive/](docs/archive/)）
 - 範例學習資料：依《小王子》劇情自行改寫的英文、日文簡易版本（非原文或現有譯本），詞元與 UD 詞性為人工標註。
 - 測試用：`seed.html?runs=8&lang=en&go=%23land` 會**清除進度**並模擬玩過 8 局，方便直接查看領土。
 
