@@ -42,8 +42,10 @@ export async function phonemize(text, lang) {
   return j;
 }
 
-export async function score(pcm, phones, target, lang) {
+// choices：其他候選（例如另外三張字卡）的音；回傳的 chosen 是唸了哪一個（0 = 正確答案，i = choices[i-1]）
+export async function score(pcm, phones, target, lang, choices = []) {
   const q = new URLSearchParams({ lang, phones: JSON.stringify(phones), target: String(target) });
+  if (choices.length) q.set('choices', JSON.stringify(choices));
   const r = await fetch(`${base()}/v1/score?${q}`, { method: 'POST', headers: { ...auth(), 'Content-Type': 'application/octet-stream' }, body: pcm.buffer });
   return r.json();
 }

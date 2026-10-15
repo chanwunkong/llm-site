@@ -35,7 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import onnxruntime as ort
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MODEL_NAME = "facebook/wav2vec2-xlsr-53-espeak-cv-ft (ONNX int8)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.environ.get("MODEL", "/model/model.int8.onnx")
@@ -208,13 +208,35 @@ def edit_distance(a, b):
     return d[-1]
 
 
-def score(phones, k, audio, tag=""):
-    """phones: expected model tokens; k: index of the target phone, or -1 to only check the word."""
+def pick_choice(lp, phones, choices):
+    """Which candidate was said: the expected phones (index 0) or one of the other choices (1..n).
+    Same CTC likelihood as the slot scoring, one pass over the audio. Choices equal to the expected phones are ignored."""
+    seqs = [phones] + [c for c in choices if c != phones]
+    lls = np.array([ctc_loglik(lp, [VOCAB[p] for p in c]) for c in seqs])
+    probs = np.exp(lls - lls.max())
+    probs /= probs.sum()
+    # the expected phones count as said when they are at least "close" (same threshold as the slot level):
+    # a weak hard sound (θ heard partly as f) is feedback, not a wrong answer
+    best = 0 if probs[0] >= CLOSE else int(np.argmax(probs))
+    # report the index in the caller's list (0 = expected, i = choices[i-1])
+    return (0 if best == 0 else choices.index(seqs[best]) + 1), [round(float(p), 3) for p in probs]
+
+
+def score(phones, k, audio, tag="", choices=None):
+    """phones: expected model tokens; k: index of the target phone, or -1 to only check the word.
+    choices: other candidate token lists (for example the other answer cards); the answer says which one was said."""
     t0 = time.time()
     audio = trim(audio)
     if len(audio) < 0.25 * SR:
         return {"ok": False, "code": "no_speech", "msg": "沒有聽到聲音，請靠近一點再唸一次"}
     lp = log_probs(audio)
+    if choices:
+        chosen, choice_p = pick_choice(lp, phones, choices)
+        if chosen:   # another candidate was said: no slot scoring for the expected phones
+            ms = int((time.time() - t0) * 1000)
+            if LOG_ATTEMPTS:
+                print(json.dumps({"tag": tag, "chosen": chosen, "choice_p": choice_p, "ms": ms}), flush=True)
+            return {"ok": True, "chosen": chosen, "choice_p": choice_p, "level": None, "ms": ms}
     expected = [VOCAB[p] for p in phones]
     heard = greedy(lp)
     if k < 0:
@@ -222,7 +244,7 @@ def score(phones, k, audio, tag=""):
         ms = int((time.time() - t0) * 1000)
         if mismatch > 1.0:
             return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
-        return {"ok": True, "level": None, "match": round(max(0.0, 1 - mismatch), 3), "ms": ms}
+        return {"ok": True, "chosen": 0, "level": None, "match": round(max(0.0, 1 - mismatch), 3), "ms": ms}
     # open only the target slot; every other phone stays fixed
     names, lls = [], []
     for ph in CANDIDATES + [DROPPED]:
@@ -254,7 +276,7 @@ def score(phones, k, audio, tag=""):
     if mismatch > 1.0:
         return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
     level = "good" if p_target >= GOOD else "close" if p_target >= CLOSE else "bad"
-    return {"ok": True, "level": level, "target": target, "target_p": round(p_target, 3),
+    return {"ok": True, "chosen": 0, "level": level, "target": target, "target_p": round(p_target, 3),
             "top": top, "score": round(p_target * 100), "ms": ms}
 
 
@@ -377,15 +399,19 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 phones = json.loads(q.get("phones", ["[]"])[0])
                 k = int(q.get("target", ["-1"])[0])
+                choices = json.loads(q.get("choices", ["[]"])[0])
             except ValueError:
                 return self.json({"ok": False, "code": "bad_request", "msg": "格式錯誤"}, 400)
+            if not isinstance(choices, list) or len(choices) > 6 or not all(
+                    isinstance(c, list) and c and all(isinstance(t, str) and t in VOCAB for t in c) for c in choices):
+                return self.json({"ok": False, "code": "bad_request", "msg": "候選資料不正確"}, 400)
             if not phones or not all(isinstance(t, str) and t in VOCAB for t in phones) or not -1 <= k < len(phones) \
                     or (k >= 0 and not plain_ipa(phones[k])):
                 return self.json({"ok": False, "code": "bad_request", "msg": "音標資料不正確"}, 400)
             body = self.read_body(SR * 4 * MAX_SECONDS)
             if body is None:
                 return self.json({"ok": False, "code": "too_long", "msg": "錄音太長了"}, 413)
-            return self.json(score(phones, k, np.frombuffer(body, dtype="<f4"), q.get("lang", [""])[0]))
+            return self.json(score(phones, k, np.frombuffer(body, dtype="<f4"), q.get("lang", [""])[0], choices))
         if LEGACY and p.path == "/score":
             item = ITEMS.get(q.get("id", [""])[0])
             if not item:

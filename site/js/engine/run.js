@@ -389,10 +389,12 @@ export const current = run => run.queue[run.pos] || (run.boss && !run.bossDone ?
 
 // ---- 作答 ----
 // response：pick 為選中的字，order 為依序選的字陣列，produce 為輸入或辨識出的文字
-export function answer(run, q, response, { timeLeft = 0, spoken = false } = {}) {
+// verdict：評分服務已經判斷過對錯時直接用（唸了哪一個候選）
+export function answer(run, q, response, { timeLeft = 0, spoken = false, verdict } = {}) {
   const item = q.item;
   let ok;
-  if (spoken) ok = [].concat(response).some(r => (q.accept || [q.answerText]).some(a => normalize(r).includes(normalize(a))));
+  if (verdict !== undefined) ok = verdict;
+  else if (spoken) ok = [].concat(response).some(r => (q.accept || [q.answerText]).some(a => normalize(r).includes(normalize(a))));
   else if (q.mode === 'pick') ok = response === q.answer[0];
   else if (q.mode === 'order') ok = response.join('\u0000') === q.answer.join('\u0000');
   else ok = (q.accept || [q.answerText]).some(a => normalize(response) === normalize(a));

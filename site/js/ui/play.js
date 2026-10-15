@@ -22,8 +22,8 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   const noRecog = new Set();
   const $ = s => root.querySelector(s);
   const audio = () => run.env !== 'mute';
-  // 開口：瀏覽器能語音辨識，或（產出題）有設定發音評分服務
-  const speakMode = () => run.env === 'speak' && (canListen || (q?.mode === 'produce' && PR.configured()));
+  // 開口：所有等級的口說作答都由發音評分服務判斷；還沒有設定服務時，暫時用手機的語音辨識（只判斷對錯，不記錄）
+  const speakMode = () => run.env === 'speak' && (prOk || canListen);
 
   function start(lang, sourceId, env) {
     run = buildRun(lang, sourceId, env);
@@ -285,7 +285,7 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
   // ---------- 作答 ----------
   async function mic() {
     // 產出題：有設定發音評分服務、而且這個語言可以評分時，改用服務逐音評分
-    if ((q.mode === 'produce' || q.mode === 'teach') && PR.configured() && await PR.supports(run.lang.id)) return scoredMic();
+    if (PR.configured() && await PR.supports(run.lang.id)) return scoredMic();
     const btn = $('#mic');
     btn.disabled = true;
     btn.textContent = '聆聽中…';
@@ -304,25 +304,53 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
 
   // 發音評分：錄音 → 服務確認唸的是這個字，並判斷難音唸成了哪個音
   let pron = null;
+  // 其他候選：四選一 = 另外三張字卡；排序 = 錯誤的順序、換掉一個字。resp 是唸了這個候選時要交出的答案
+  function candidates() {
+    if (q.mode === 'pick') return q.cards.filter(c => c !== q.answer[0]).map(c => ({ text: c, resp: c }));
+    // 只有一個答案的題目（跟著做、說出來）：拿拼法最接近的 3 個字比較（包含或被包含的字優先，例如 some／something），唸了別的字就不算
+    if (q.mode !== 'order') {
+      const a = q.answerText.toLocaleLowerCase();
+      const pool = q.core ? run.lang.core.flatMap(p => p.words) : [...run.lang.lemmas.values()].flatMap(x => [...x.forms]);
+      const near = [...new Set(pool.map(w => w.toLocaleLowerCase()))].filter(w => w !== a && w.length > 1)
+        .map(w => [w, (w.includes(a) || a.includes(w) ? 0 : 1000) + P.editDistance(a, w)]).sort((x, y) => x[1] - y[1]).slice(0, 3);
+      return near.map(([w]) => ({ text: w, resp: [w] }));
+    }
+    const A = q.answer, j = q.core ? ' ' : run.lang.joiner, out = [];
+    if (A.length >= 2) out.push([...A].reverse());
+    if (A.length >= 3) out.push([A[1], A[0], ...A.slice(2)]);
+    for (const d of q.cards.filter(c => !A.includes(c)).slice(0, 2)) {
+      const i = (Math.random() * A.length) | 0;
+      out.push(A.map((w, x) => (x === i ? d : w)));
+    }
+    const seen = new Set([A.join('\u0000')]);
+    return out.filter(ws => !seen.has(ws.join('\u0000')) && seen.add(ws.join('\u0000'))).slice(0, 3).map(ws => ({ text: ws.join(j), resp: ws }));
+  }
+
+  // 發音評分：錄音 → 服務判斷唸的是哪一個候選；唸的是正確答案時，再判斷難音唸成了哪個音
   async function scoredMic() {
     const btn = $('#mic');
     btn.disabled = true;
     stopTimer();
     try {
-      const ph = await PR.phonemize(q.answerText, run.lang.id);
+      const alts = candidates();
+      const [ph, ...aph] = await Promise.all([q.answerText, ...alts.map(a => a.text)].map(t => PR.phonemize(t, run.lang.id)));
       if (!ph.ok) throw new Error(ph.msg);
+      const keep = alts.map((a, i) => ({ ...a, phones: aph[i].ok ? aph[i].phones : null })).filter(a => a.phones);
       // 目標音：學習者的第一個難音（和「你會的語言」比較）；沒有難音時只確認是不是唸了這個字
       const hard = new Set([...P.hardSounds(run.lang.wals)].map(P.norm));
       const k = ph.ipa.findIndex((s, i) => ph.scorable[i] && hard.has(P.norm(s)));
       const pcm = await PR.record(st => { btn.textContent = st === 'listening' ? '請說…' : st === 'heard' ? '聽到了…' : '評分中…'; });
-      const r = await PR.score(pcm, ph.phones, k, run.lang.id);
-      if (!r.ok) { toast(r.msg || '請再說一次'); btn.disabled = false; btn.textContent = `${G.mic()} 再說一次`; return; }
-      pron = { ...r, ipa: ph.ipa, k };
-      submit([q.answerText], { spoken: true });
+      const r = await PR.score(pcm, ph.phones, k, run.lang.id, keep.map(a => a.phones));
+      if (!r.ok) { toast(r.msg || '請再說一次'); btn.disabled = false; btn.innerHTML = `${G.mic()} 再說一次`; return; }
+      if (keep.length && r.chosen === undefined) throw new Error('服務版本太舊，請更新到 1.1.0 以上');
+      const chosen = r.chosen || 0;
+      pron = chosen ? null : { ...r, ipa: ph.ipa, k };
+      const right = q.mode === 'order' ? q.answer : q.mode === 'pick' ? q.answer[0] : [q.answerText];
+      submit(chosen ? keep[chosen - 1].resp : right, { spoken: true, verdict: chosen === 0 });
     } catch (e) {
-      toast(`發音評分無法使用（${e.message || '連線失敗'}），改用語音辨識`);
+      toast(`發音評分無法使用（${e.message || '連線失敗'}）`);
       btn.disabled = false;
-      btn.innerHTML = `${G.mic()} 說出整段`;
+      btn.innerHTML = `${G.mic()} 再說一次`;
     }
   }
   function pronHtml() {
@@ -336,12 +364,12 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
       <small>${r.top.slice(0, 3).map(c => `/${esc(c.ph)}/ ${Math.round(c.p * 100)}%`).join('　')}（點紅字可以聽、可以和相近的音比較）</small></div>`;
   }
 
-  function submit(response, { spoken = false, timeout = false } = {}) {
+  function submit(response, { spoken = false, timeout = false, verdict } = {}) {
     if (answered) return;
-    if (q.mode === 'teach') return submitTeach(response, spoken);
+    if (q.mode === 'teach') return submitTeach(response, spoken, verdict);
     answered = true;
     stopTimer();
-    const res = answer(run, q, response, { timeLeft, spoken });
+    const res = answer(run, q, response, { timeLeft, spoken, verdict });
     showText = true;
     const mine = q.mode === 'order' ? response : q.mode === 'pick' ? [response] : [spoken ? response[0] : response];
     const sent = $('#sent');
@@ -420,9 +448,9 @@ export function createPlay(root, { onEnd, onSound, onCompose }) {
     else if (audio()) speak(q.full);
   }
 
-  function submitTeach(response, spoken) {
+  function submitTeach(response, spoken, verdict) {
     answered = true;
-    const res = answer(run, q, response, { spoken });
+    const res = answer(run, q, response, { spoken, verdict });
     renderTeach();
     const fb = $('#fb');
     fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;

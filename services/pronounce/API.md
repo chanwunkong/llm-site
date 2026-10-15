@@ -39,10 +39,11 @@
 - `ipa`：給畫面用的 IPA（模型的特殊寫法換成標準 IPA，例如 `ts.h` → `ʈʂʰ`）。
 - `scorable`：這個位置能不能當目標音。
 
-## POST /v1/score?lang=&phones=&target=
+## POST /v1/score?lang=&phones=&target=&choices=
 
-- `phones`：`/v1/phonemize` 回傳的 `phones`，JSON 字串（網址編碼）。
+- `phones`：`/v1/phonemize` 回傳的 `phones`，JSON 字串（網址編碼）。這是正確答案。
 - `target`：目標音的位置（從 0 算）；`-1` 只確認是不是唸了這個字。
+- `choices`（選填，1.1.0 起）：其他候選，JSON 字串，例如四選一的另外三張字卡、排序題的錯誤順序：`[["s","ɪ","ŋ","k"], …]`，最多 6 個。服務只分析一次錄音，用同樣的 CTC 計算判斷唸的是哪一個候選。正確答案的機率 ≥ 0.25（和 `close` 相同的門檻）就算唸了正確答案：難音不夠準是回饋，不算答錯。
 - 內容：錄音，float32 little-endian PCM，16 kHz 單聲道，最長 10 秒。瀏覽器端解碼與重新取樣。
 
 ```json
@@ -50,6 +51,7 @@
  "top": [{"ph": "f", "p": 0.42}, {"ph": "θ", "p": 0.25}], "score": 25, "ms": 140}
 ```
 
+- `chosen`：唸的是哪一個候選。`0` = 正確答案（`phones`）；`i` = `choices[i-1]`，這時只回傳 `{"ok": true, "chosen": i, "choice_p": […], "level": null}`，不做目標音判斷。`choice_p`：各候選的機率（順序同上；和正確答案相同的候選不計）。
 - `level`：`good`（目標音機率 ≥ 0.6）、`close`（≥ 0.25）、`bad`。
 - `top`：模型認為最像的前 5 個音（`∅` 表示漏掉）。
 - 聽不出是這個字時：`{"ok": false, "code": "not_the_word"}`；沒有聲音：`code: "no_speech"`。
