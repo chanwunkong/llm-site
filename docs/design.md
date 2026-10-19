@@ -65,7 +65,8 @@
 
 ### 5.3 朗讀（全部在手機上完成，不連語音伺服器）
 - 順序：1) 手機有這個語言的語音就用；2) Piper（神經網路語音，聲音檔第一次從官方 Hugging Face 庫 rhasspy/piper-voices 下載，每種語言約 60～73 MB，存在 OPFS；17 種語言）；3) eSpeak NG（WebAssembly，GPL-3.0，`site/vendor/espeak-ng/`）。
-- 替代聲音：設定 → 朗讀聲音，吉爾吉斯文可以改用土耳其文或俄文的聲音（文字先轉寫，`js/engine/translit.js`）。
+- 替代聲音：設定 → 朗讀聲音，吉爾吉斯文可以改用**哈薩克文**（Piper `kk_KZ-issai-high`，約 128 MB；同屬突厥語、更接近，哈薩克文本來就有 ң ө ү ы，不用轉寫）、土耳其文或俄文的聲音（後兩者文字先轉寫，`js/engine/translit.js`）。只當替代聲音用的語言放在 `langs.js` 的 `VOICE_ONLY`。
+- Piper 官方聲音庫（2026-10-19）：53 種語言、177 個聲音。我們的語言裡，泰米爾、吉爾吉斯沒有；中文只有大陸口音；日文、泰文的聲音需要非 eSpeak 的音標工具，網頁程式庫不支援，所以不用。
 
 ### 5.4 音標
 - 各語言的音位清單：PHOIBLE 2.0（CC BY-SA 3.0）。內建資料的字用 eSpeak NG（英文等）、pyopenjtalk（日文）產生 IPA。

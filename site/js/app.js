@@ -1,7 +1,7 @@
 // 主程式：語言切換、分頁、頂部列、設定
 import { buildLanguage } from './engine/content.js';
 import { BASE } from './data/base.js';
-import { LANG_LIST, LANG_BY_ID } from './data/langs.js';
+import { LANG_LIST, LANG_BY_ID, voiceLangOf } from './data/langs.js';
 import { importsOf } from './engine/importer.js';
 import { loadDemo, loadCore } from './engine/demo.js';
 import { addWordIPA } from './engine/phono.js';
@@ -160,7 +160,12 @@ function simSheet() {
 }
 
 // 朗讀聲音：這個語言自己的聲音不好時，可以改用相近語言的聲音（文字先轉成那個語言的字母）
-const voiceName = (id, sub = voiceSubOf(id)) => (sub ? `用${DATA[sub].zh}的聲音` : `${DATA[id].zh}（預設）`);
+const voiceName = (id, sub = voiceSubOf(id)) => (sub ? `用${voiceLangOf(sub).zh}的聲音` : `${DATA[id].zh}（預設）`);
+const SUB_NOTE = {
+  kk: '同屬突厥語，比土耳其語更接近；哈薩克文本來就有 ң ө ү ы，直接唸、不用轉寫。第一次要下載約 128 MB',
+  tr: '同屬突厥語，母音和多數子音接近；ө ү ы 都有對應',
+  ru: '直接讀西里爾字母；ө ү 用 ё ю 近似，ң 唸成 н；重音位置可能不對',
+};
 function voiceSheet() {
   const id = state.lang, d = DATA[id];
   // 試聽用這個語言的基元詞，含特殊字母的優先
@@ -168,9 +173,9 @@ function voiceSheet() {
   const draw = body => {
     const cur = voiceSubOf(id);
     body.innerHTML = `<h2>朗讀聲音</h2>
-      <p class="muted">${esc(d.zh)}的預設聲音比較機械。可以改用相近語言的聲音：文字會先轉成那個語言的字母再唸，有些音只是近似。點選項會試聽。</p>
+      <p class="muted">${esc(d.zh)}的預設聲音比較機械。可以改用相近語言的聲音：需要時文字會先轉成那個語言的字母再唸，有些音只是近似。點選項會試聽。</p>
       <div class="stack">${[null, ...d.subs].map(s => `<button class="choice${cur === s ? ' sel' : ''}" data-s="${s || ''}"><b>${esc(voiceName(id, s))}</b><small>${
-        !s ? '手機有這個語言的語音就用手機的，沒有就用 eSpeak' : s === 'tr' ? '同屬突厥語，母音和多數子音接近；ө ү ы 都有對應' : '直接讀西里爾字母；ө ү 用 ё ю 近似，ң 唸成 н；重音位置可能不對'
+        !s ? '手機有這個語言的語音就用手機的，沒有就用 eSpeak' : SUB_NOTE[s] || ''
       }</small></button>`).join('')}</div>`;
     body.querySelectorAll('[data-s]').forEach(b => (b.onclick = () => {
       state.voiceSub = { ...state.voiceSub, [id]: b.dataset.s || null };

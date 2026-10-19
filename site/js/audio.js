@@ -1,6 +1,6 @@
 // 聲音：朗讀（語音合成）、空格提示音、語音辨識、音效。全部依語言設定檔的 BCP-47 代碼運作。
 import { state } from './engine/store.js';
-import { LANG_LIST } from './data/langs.js';
+import { LANG_LIST, voiceLangOf } from './data/langs.js';
 import * as ES from './engine/espeak.js';
 import { convert } from './engine/translit.js';
 
@@ -102,7 +102,7 @@ export const voiceSubOf = id => (LANG_LIST.find(l => l.id === id)?.subs || []).i
 export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
   let lang = LANG_LIST.find(l => l.id === langId()), code = voiceLang;
   const sub = voiceSubOf(lang?.id);
-  if (sub) { text = convert(text, lang.id, sub); lang = LANG_LIST.find(l => l.id === sub); code = lang.bcp47; voice = null; }
+  if (sub) { text = convert(text, lang.id, sub); lang = voiceLangOf(sub); code = lang.bcp47; voice = null; }
   // 手機沒有這個語言的語音：先用 Piper；Piper 沒有這個語言或失敗時，用 eSpeak NG
   if (state.sound && text && !(await hasVoice(code))) {
     if (lang?.piper) return piperSpeak(text, rate, lang).catch(() => { piperSessions.delete(lang.piper); return localSpeak(text, rate, lang); }).catch(() => {});

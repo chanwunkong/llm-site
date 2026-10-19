@@ -24,6 +24,11 @@ export const LANG_LIST = [
   { id: 'id', name: 'Bahasa Indonesia', zh: '印尼語', wals: 'ind', bcp47: 'id-ID', joiner: ' ', tagger: 'udpipe', model: 'indonesian', espeak: 'id', piper: 'id_ID-news_tts-medium', piperMB: 60 },
   { id: 'th', name: 'ไทย', zh: '泰語', wals: 'tha', bcp47: 'th-TH', joiner: '', tagger: 'udpipe', model: 'thai', weak: true, espeak: 'th' },
   { id: 'sw', name: 'Kiswahili', zh: '史瓦希里語', wals: 'swa', bcp47: 'sw-KE', joiner: ' ', tagger: 'basic', espeak: 'sw', piper: 'sw_CD-lanfrica-medium', piperMB: 60 },
-  { id: 'ky', name: 'Кыргызча', zh: '吉爾吉斯語', wals: 'kgz', bcp47: 'ky-KG', joiner: ' ', tagger: 'udpipe', model: 'kyrgyz', espeak: 'ky', subs: ['tr', 'ru'] },
+  { id: 'ky', name: 'Кыргызча', zh: '吉爾吉斯語', wals: 'kgz', bcp47: 'ky-KG', joiner: ' ', tagger: 'udpipe', model: 'kyrgyz', espeak: 'ky', subs: ['kk', 'tr', 'ru'] },
 ];
 export const LANG_BY_ID = Object.fromEntries(LANG_LIST.map(l => [l.id, l]));
+// 只當作替代聲音用的語言（不是學習語言）：哈薩克語和吉爾吉斯語同屬突厥語、更接近，而且哈薩克文本來就有 ң ө ү ы，吉爾吉斯文可以直接唸
+export const VOICE_ONLY = [
+  { id: 'kk', name: 'Қазақша', zh: '哈薩克語', bcp47: 'kk-KZ', espeak: 'kk', piper: 'kk_KZ-issai-high', piperMB: 128 },
+];
+export const voiceLangOf = id => LANG_BY_ID[id] || VOICE_ONLY.find(l => l.id === id);
