@@ -13,7 +13,11 @@ import * as P from '../engine/phono.js';
 // 包浩斯配色：單一藍色由淺到深表示等級；語塊邊為紅、選取為黃
 const FILL = [null, '#E8E4DA', '#C9D3E6', '#93A9D0', '#5A7BB8', '#1F4FA3'];
 const DIM = [null, '#E2DFD8', '#D3D6DC', '#B8C0CF', '#98A5BE', '#7D8DAD'];
-const INK = '#111111', RED = '#D7262E', YELLOW = '#F2C12E';
+const INK = '#2F2B26', RED = '#D7262E', YELLOW = '#F2C12E';
+// 粉彩微縮島：湖水藍的海、沙色的側面、由淺到深的綠色頂面（越熟越深）、珊瑚色選取
+const SEA = ['#9ED4D2', '#6FB6BA'], SIDE = '#E3CFA6', CORAL = '#E2734F';
+const TOP = ['#CFE3B0', '#B5D69A', '#97C482', '#79AE6E', '#5E955E'];
+const TILT = 0.62;
 const SQ3 = Math.sqrt(3);
 // 尖頂六角形：第 i 條邊（角 i 到角 i+1）面對 T.DIRS[i] 的鄰居
 const corner = (cx, cy, s, i) => {
@@ -47,10 +51,11 @@ export function createLand(root, { getLang, onChange }) {
   let selected = null, focus = null, running = false, raf = 0, highlight = new Set();
 
   // ---------- 座標 ----------
-  const hexToPx = (q, r) => [cam.s * SQ3 * (q + r / 2), cam.s * 1.5 * r];
+  // 斜看的鏡頭：縱向壓扁成 TILT，看起來像從斜上方看微縮島
+  const hexToPx = (q, r) => [cam.s * SQ3 * (q + r / 2), cam.s * 1.5 * r * TILT];
   const toScreen = (q, r) => { const [x, y] = hexToPx(q, r); return [W / 2 + x - cam.x, H / 2 + y - cam.y]; };
   function screenToHex(sx, sy) {
-    const x = sx - W / 2 + cam.x, y = sy - H / 2 + cam.y;
+    const x = sx - W / 2 + cam.x, y = (sy - H / 2 + cam.y) / TILT;
     let q = ((SQ3 / 3) * x - y / 3) / cam.s, r = ((2 / 3) * y) / cam.s, z = -q - r;
     let rq = Math.round(q), rr = Math.round(r), rz = Math.round(z);
     const dq = Math.abs(rq - q), dr = Math.abs(rr - r), dz = Math.abs(rz - z);
@@ -69,101 +74,89 @@ export function createLand(root, { getLang, onChange }) {
   new ResizeObserver(resize).observe(box);
 
   // ---------- 繪圖 ----------
+  // 斜看的六角形：角的縱向座標乘上 TILT
+  const tcorner = (cx, cy, s, i) => { const [x, y] = corner(0, 0, s, i); return [cx + x, cy + y * TILT]; };
   function hexPath(cx, cy, s) {
     ctx.beginPath();
-    for (let i = 0; i < 6; i++) { const [x, y] = corner(cx, cy, s, i); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    for (let i = 0; i < 6; i++) { const [x, y] = tcorner(cx, cy, s, i); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
     ctx.closePath();
+  }
+  // 地磚的高度：熟練度越高越高（最小模型：通過的字都是 1）
+  const tileLevel = lemma => L().words[lemma]?.level || 1;
+  const heightOf = (lv, s) => s * (0.28 + 0.16 * (lv - 1));
+  // 螢幕上的一點落在哪一格的頂面或側面：從最前面的格子開始找
+  let drawn = [];
+  function pickTile(sx, sy) {
+    for (let j = drawn.length - 1; j >= 0; j--) {
+      const c = drawn[j];
+      hexPath(c.x, c.y - c.h, c.s);
+      if (ctx.isPointInPath(sx * dpr, sy * dpr)) return c.k;
+      // 側面：頂面和底面之間
+      if (Math.abs(sx - c.x) < c.s * SQ3 / 2 && sy > c.y - c.h && sy < c.y + c.s * TILT * 0.5) return c.k;
+    }
+    return null;
   }
 
   function draw() {
     if (!W) return;
     const lang = getLang(), lg = L(), t = lg.territory, s = cam.s;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#F3EFE6';
+    // 1. 海：上淺下深的湖水藍，加幾道淡淡的波紋
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, SEA[0]); g.addColorStop(1, SEA[1]);
+    ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
-    const cells = Object.entries(t).map(([k, lemma]) => {
-      const [q, r] = T.parse(k);
-      return { k, q, r, lemma, lv: 2, due: false };
-    });
-    const lvAt = k => (t[k] ? 2 : 0);
-
-    // 1. 底色
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5;
+    for (let y = ((-cam.y) % 46 + 46) % 46; y < H; y += 46) for (let x = ((-cam.x) % 120 + 120) % 120 - 120; x < W; x += 120) {
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 15, y - 5, x + 30, y); ctx.stroke();
+    }
+    // 2. 地磚：由後往前畫，前面的格子蓋住後面格子的側面；緊密相接沒有縫隙
+    const cells = Object.entries(t).map(([k, lemma]) => { const [q, r] = T.parse(k); return { k, q, r, lemma, lv: tileLevel(lemma) }; })
+      .sort((a, b) => a.r - b.r || a.q - b.q);
+    drawn = [];
     for (const c of cells) {
-      const [x, y] = toScreen(c.q, c.r);
-      if (x < -s * 2 || y < -s * 2 || x > W + s * 2 || y > H + s * 2) continue;
-      hexPath(x, y, s);
-      ctx.fillStyle = (c.due ? DIM : FILL)[c.lv];
+      const [x, y] = toScreen(c.q, c.r), h = heightOf(c.lv, s);
+      if (x < -s * 2 || y < -s * 3 || x > W + s * 2 || y > H + s * 2) continue;
+      drawn.push({ k: c.k, x, y, h, s });
+      // 側面：看得到的四條邊（右、右下、左下、左），往下延伸 h
+      ctx.beginPath();
+      const top = [0, 1, 2, 3, 4].map(i => tcorner(x, y - h, s, i)), bot = [4, 3, 2, 1, 0].map(i => tcorner(x, y, s, i));
+      [...top, ...bot].forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+      ctx.closePath();
+      ctx.fillStyle = SIDE; ctx.fill();
+      // 側面下緣的陰影線，讓地磚看起來浮在水上
+      ctx.strokeStyle = 'rgba(40,70,80,0.18)'; ctx.lineWidth = 1; ctx.stroke();
+      // 頂面
+      hexPath(x, y - h, s);
+      ctx.fillStyle = TOP[Math.min(TOP.length - 1, c.lv - 1)];
       ctx.fill();
-      if (c.due) {             // 快要降級：淡淡的斜線
-        ctx.save(); ctx.clip();
-        ctx.strokeStyle = '#00000014'; ctx.lineWidth = 1;
-        for (let d = -s * 2; d < s * 2; d += 5) { ctx.beginPath(); ctx.moveTo(x + d, y - s); ctx.lineTo(x + d + s * 1.2, y + s); ctx.stroke(); }
-        ctx.restore();
-      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = Math.max(1, s / 22); ctx.stroke();
     }
-    // 2. 等高線：每條邊依兩側的等級差畫線；領土邊界最粗
-    ctx.lineCap = 'round';
-    for (const c of cells) {
-      const [x, y] = toScreen(c.q, c.r);
-      if (x < -s * 2 || y < -s * 2 || x > W + s * 2 || y > H + s * 2) continue;
-      T.DIRS.forEach(([dq, dr], i) => {
-        const n = lvAt(T.key(c.q + dq, c.r + dr));
-        const diff = c.lv - n;
-        if (diff <= 0) return;           // 只由較高的一側畫，避免重複
-        const [x1, y1] = corner(x, y, s, i), [x2, y2] = corner(x, y, s, (i + 1) % 6);
-        ctx.strokeStyle = n === 0 ? INK : `rgba(17,17,17,${0.3 + 0.15 * diff})`;
-        ctx.lineWidth = n === 0 ? Math.max(1.5, s / 14) : Math.max(0.8, (s / 30) * diff);
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      });
-    }
-    // 3. 完成的語塊：相鄰兩格共用的那條邊畫成紅色
-    if (SHOW.chunks) {
-    ctx.strokeStyle = RED;
-    ctx.lineWidth = Math.max(3, s / 6);
-    for (const ch of lang.chunks.filter(T.chunkComplete)) {
-      const cs = ch.lemmas.map(l => T.parse(T.cellOf(l)));
-      for (let j = 0; j + 1 < cs.length; j++) {
-        const [q, r] = cs[j], [q2, r2] = cs[j + 1];
-        const i = T.DIRS.findIndex(([dq, dr]) => q + dq === q2 && r + dr === r2);
-        const [x, y] = toScreen(q, r);
-        const [x1, y1] = corner(x, y, s, i), [x2, y2] = corner(x, y, s, (i + 1) % 6);
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      }
-    }
-    }
-    // 4. 可以放下的位置（虛線）
+    // 3. 可以放下的位置：海面上發光的虛線六角形
     if (selected) {
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 260);
-      ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = `rgba(215,38,46,${0.4 + 0.5 * pulse})`;
-      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = `rgba(255,255,255,${0.55 + 0.45 * pulse})`;
+      ctx.lineWidth = 2.5;
       for (const k of T.placeable()) { const [x, y] = toScreen(...T.parse(k)); hexPath(x, y, s * 0.9); ctx.stroke(); }
       ctx.setLineDash([]);
     }
-    // 5. 選取與標示
-    for (const k of [focus, ...highlight].filter(Boolean)) {
-      if (!t[k]) continue;
-      const [x, y] = toScreen(...T.parse(k));
-      hexPath(x, y, s * 0.88);
-      ctx.strokeStyle = k === focus ? INK : YELLOW;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    }
-    // 6. 文字：放大時顯示，縮小時只剩色塊
-    if (s >= 22) {
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      for (const c of cells) {
-        const [x, y] = toScreen(c.q, c.r);
-        if (x < -s || y < -s || x > W + s || y > H + s) continue;
-        // 圖示在上、字在下
-        const ic = emojiOf(lang, c.lemma);
-        if (ic) { ctx.font = `${Math.min(26, s * 0.62)}px system-ui, "Apple Color Emoji", sans-serif`; ctx.fillText(ic, x, y - s * 0.22); }
-        let fs = Math.min(13, s * 0.34);
-        ctx.font = `700 ${fs}px Futura, "Avenir Next", system-ui, "PingFang TC", "Hiragino Sans", sans-serif`;
-        while (fs > 7 && ctx.measureText(c.lemma).width > s * 1.55) { fs -= 1; ctx.font = ctx.font.replace(/\d+(\.\d+)?px/, fs + 'px'); }
-        ctx.fillStyle = INK;
-        ctx.fillText(c.lemma, x, ic ? y + s * 0.42 : y);
-      }
+    // 4. 選取：頂面描一圈珊瑚色
+    for (const d of drawn) if (d.k === focus) { hexPath(d.x, d.y - d.h, s * 0.9); ctx.strokeStyle = CORAL; ctx.lineWidth = 3.5; ctx.stroke(); }
+    // 5. 圖示立在頂面上；放大時，下方加上圓角的字名標籤
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // 先畫全部的圖示，再畫全部的標籤，標籤才不會被後面格子的圖示蓋住
+    ctx.font = `${Math.min(30, s * 0.78)}px system-ui, "Apple Color Emoji", sans-serif`;
+    for (const d of drawn) { const ic = emojiOf(lang, t[d.k]); if (ic) ctx.fillText(ic, d.x, d.y - d.h - s * 0.18); }
+    if (s >= 26) for (const d of drawn) {
+      const lemma = t[d.k], cy = d.y - d.h;
+      const fs = Math.min(13, s * 0.3);
+      ctx.font = `700 ${fs}px "Avenir Next", system-ui, "PingFang TC", sans-serif`;
+      const w = ctx.measureText(lemma).width + fs * 1.2, ph = fs * 1.6, ly = cy + s * 0.42;
+      ctx.fillStyle = 'rgba(255,253,248,0.94)';
+      ctx.beginPath(); ctx.roundRect(d.x - w / 2, ly - ph / 2, w, ph, ph / 2); ctx.fill();
+      ctx.fillStyle = INK;
+      ctx.fillText(lemma, d.x, ly);
     }
   }
 
@@ -213,7 +206,7 @@ export function createLand(root, { getLang, onChange }) {
     const pts = ks.map(([q, r]) => hexToPx(q, r));
     const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
     const spanX = Math.max(...xs) - Math.min(...xs) + cam.s * 3, spanY = Math.max(...ys) - Math.min(...ys) + cam.s * 3;
-    const k = Math.min(1.3, Math.max(0.15, Math.min((W || 360) / spanX, ((H || 500) - 160) / spanY)));
+    const k = Math.min(1.7, Math.max(0.15, Math.min((W || 360) / spanX, ((H || 500) - 160) / spanY)));
     cam.s *= k;
     const p2 = ks.map(([q, r]) => hexToPx(q, r));
     cam.x = (Math.min(...p2.map(p => p[0])) + Math.max(...p2.map(p => p[0]))) / 2;
@@ -267,7 +260,7 @@ export function createLand(root, { getLang, onChange }) {
   $('#home').onclick = () => { fitAll(); redraw(); };
 
   function tap(sx, sy) {
-    const k = screenToHex(sx, sy), lg = L();
+    const lg = L(), k = (!selected && pickTile(sx, sy)) || screenToHex(sx, sy);
     highlight = new Set();
     if (selected) {
       if (T.place(selected, k)) {

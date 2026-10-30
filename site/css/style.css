@@ -1,9 +1,11 @@
-/* 包浩斯風格：米白底、黑線、紅藍黃三原色，平面幾何，沒有漸層與陰影 */
+/* 粉彩微縮島風格（2026-10-30，參考 HEART 政策島）：暖奶油底、柔和的線、珊瑚／湖水藍／暖黃，圓角
+   變數名稱沿用舊的（red = 主要動作、blue = 正確、yellow = 強調），只換顏色 */
 :root {
-  --paper: #F3EFE6; --white: #FFFFFF; --ink: #111111; --muted: #6B6B6B; --line: #111111; --soft: #E4DFD3;
-  --red: #D7262E; --blue: #1F4FA3; --yellow: #F2C12E;
+  --paper: #FBF5EC; --white: #FFFDF8; --ink: #2F2B26; --muted: #8A8076; --line: #E2D5C2; --soft: #F1E7D8;
+  --red: #E2734F; --blue: #4E9FA6; --yellow: #F2C46D;
   --gold: var(--yellow); --green: var(--blue);
-  --b: 2px solid var(--line);
+  --b: 1.5px solid var(--line);
+  --r: 14px;
   color-scheme: light;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -474,3 +476,17 @@ body.playing #simBar { display: none; }
 .res-row .sc { font-weight: 800; font-size: 20px; text-align: right; }
 .res-row .mk { color: var(--blue); font-weight: 800; font-size: 12px; }
 .res-row.ok { border-color: var(--blue); }
+
+/* ---- 粉彩風格：圓角與柔和的陰影 ---- */
+.btn, .panel, .src-card, .qcard, .icon-btn, .letter, .res-row, .bag-item, .filter, input, .choice, .ex-row, .chip, .badge, .pill { border-radius: var(--r); }
+.badge, .chip, .pill { border-radius: 999px; }
+.btn.big, .panel, .src-card, .qcard { box-shadow: 0 2px 10px rgba(80, 60, 30, 0.06); }
+.btn.gold, .btn.green { border-color: transparent; }
+.hud .prog { border-radius: 999px; overflow: hidden; }
+.hud .prog i { border-radius: 999px; }
+#nav { border-top: var(--b); }
+#nav button { border-right: 0; }
+#nav button.active { background: var(--soft); color: var(--ink); }
+.badge.lv { background: var(--ink); color: var(--white); border-color: transparent; }
+.bag { border-radius: 20px 20px 0 0; box-shadow: 0 -4px 18px rgba(80, 60, 30, 0.08); }
+.land-top .chip, .land-tools .icon-btn { box-shadow: 0 2px 8px rgba(80, 60, 30, 0.10); }
