@@ -100,6 +100,8 @@ const alive = new Set();
 // 替代聲音：使用者可以讓某些語言改用相近語言的聲音（設定 → 朗讀聲音），文字先轉成那個語言的字母
 export const voiceSubOf = id => (LANG_LIST.find(l => l.id === id)?.subs || []).includes(state.voiceSub?.[id]) ? state.voiceSub[id] : null;
 export async function speak(text, { rate = 0.9, variety = false, voice = null } = {}) {
+  // 只有一個大寫字母時（英文的 I），iPhone 的語音會唸成「Capital I」：改成小寫再唸，發音相同
+  if (text && [...text].length === 1 && text !== text.toLocaleLowerCase()) text = text.toLocaleLowerCase();
   let lang = LANG_LIST.find(l => l.id === langId()), code = voiceLang;
   const sub = voiceSubOf(lang?.id);
   if (sub) { text = convert(text, lang.id, sub); lang = voiceLangOf(sub); code = lang.bcp47; voice = null; }
