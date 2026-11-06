@@ -104,3 +104,38 @@ export function chartHtml(target, cands = []) {
 
   return '';
 }
+
+// ---- 怎麼改：比較目標音和你的音，只說不一樣的地方（所有語言通用，依 IPA 的位置推出來） ----
+const PLACE_TIP = {
+  bilabial: '上下嘴唇合起來', labiodental: '上排牙齒輕碰下嘴唇', dental: '舌尖放在上下牙齒之間',
+  alveolar: '舌尖碰上排牙齒後面的牙齦', postalveolar: '舌尖放在牙齦後面一點，嘴唇稍微往前嘟',
+  alveolopalatal: '舌面貼近上顎前面', retroflex: '舌尖往上捲', palatal: '舌面抬向上顎',
+  velar: '舌根抬向軟顎（上顎後面）', uvular: '舌根往後靠近小舌', pharyngeal: '喉嚨後面收緊', glottal: '在喉嚨發音，嘴巴放鬆',
+};
+const MANNER_TIP = {
+  plosive: '先完全擋住氣流，再一下子放開', nasal: '氣從鼻子出來', trill: '讓舌尖連續振動', tap: '舌尖很快地輕碰一下',
+  fricative: '不要完全擋住，留一條窄縫讓氣一直摩擦出來', affricate: '先擋住，再慢慢放開變成摩擦',
+  latfric: '舌尖碰住，氣從舌頭兩邊摩擦出來', approximant: '靠近但不碰到，不要有摩擦聲', latapprox: '舌尖碰住，氣從舌頭兩邊出來',
+};
+// 回傳一句「怎麼改」；說不出來時回傳 ''
+export function tip(target, heard) {
+  const a = position(target);
+  if (heard === '∅') {
+    if (a.kind === 'consonant') return `這個音漏掉了。${PLACE_TIP[a.place] || ''}，${MANNER_TIP[a.manner] || ''}`;
+    return '這個音漏掉了，記得把它唸出來';
+  }
+  const b = position(heard), out = [];
+  if (a.kind === 'consonant' && b.kind === 'consonant') {
+    if (a.place !== b.place) out.push(PLACE_TIP[a.place]);
+    if (a.manner !== b.manner) out.push(MANNER_TIP[a.manner]);
+    if (a.voiced !== b.voiced) out.push(a.voiced ? '喉嚨要振動（手摸喉嚨感覺得到）' : '喉嚨不要振動');
+  } else if (a.kind === 'vowel' && b.kind === 'vowel') {
+    const dh = H_KEYS.indexOf(b.height) - H_KEYS.indexOf(a.height);
+    const B = ['front', 'central', 'back'], db = B.indexOf(b.back) - B.indexOf(a.back);
+    if (dh) out.push(dh > 0 ? '舌頭再抬高一點（嘴巴張小一點）' : '舌頭放低一點（嘴巴張大一點）');
+    if (db) out.push(db > 0 ? '舌頭往前一點' : '舌頭往後一點');
+    if (a.round !== b.round) out.push(a.round ? '嘴唇圓起來' : '嘴唇放鬆，不要圓');
+    if (!out.length && target.includes('ː') !== heard.includes('ː')) out.push(target.includes('ː') ? '唸長一點' : '唸短一點');
+  }
+  return out.filter(Boolean).join('；');
+}

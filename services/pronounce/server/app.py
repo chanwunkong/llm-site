@@ -35,7 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import onnxruntime as ort
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 MODEL_NAME = "facebook/wav2vec2-xlsr-53-espeak-cv-ft (ONNX int8)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.environ.get("MODEL", "/model/model.int8.onnx")
@@ -253,6 +253,7 @@ def slot_ok(tok):
 
 def per_phone(lp, phones):
     """Every position scored (1.2.0): open each slot in turn, compared with the sounds heard in this recording.
+    top (1.3.1): the most likely sounds at this position, like the single-target result.
     Positions that cannot be a target (tone or pinyin spellings) are null."""
     cands = heard_tokens(lp)
     out = []
@@ -263,7 +264,9 @@ def per_phone(lp, phones):
         merged = slot_probs(lp, phones, i, list(dict.fromkeys(cands + [p])))
         heard = max(merged, key=merged.get)
         pe = merged.get(ipa(p), 0.0)
-        out.append({"ph": ipa(p), "heard": heard, "p": round(pe, 3), "level": level_of(pe)})
+        top = sorted(merged.items(), key=lambda kv: -kv[1])[:5]
+        out.append({"ph": ipa(p), "heard": heard, "p": round(pe, 3), "level": level_of(pe),
+                    "top": [{"ph": ph, "p": round(pr, 3)} for ph, pr in top if pr >= 0.02]})
     return out
 
 

@@ -515,27 +515,29 @@ svg.pc-vq.pc-zoom { border: 1px solid var(--line); }
 .pc-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: middle; }
 
 
-/* ---- 發音結果（ui/play-lv1.js）：像 ELSA，字母和音標依每個音上色 ---- */
-.badges .pr-mode { margin: 0 0 0 auto; }
+/* ---- 發音結果（ui/play-lv1.js）：像 ELSA，字母和音標依每個音上色；版面固定，細節在底部面板 ---- */
+.pr-top { flex-wrap: nowrap; }
+.pr-prev { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-mode { margin: 0; flex: none; }
 .pr-mode button { padding: 4px 12px; }
-.pr-card { width: 100%; text-align: left; border: var(--b); border-radius: var(--r); background: var(--paper); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
-.pr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: var(--b); }
-.pr-head b { font-size: 20px; display: block; }
-.pr-head small { color: var(--muted); font-size: 12px; }
-.pr-ring { --c: var(--ink); width: 56px; height: 56px; flex: none; border-radius: 50%; display: grid; place-items: center;
+.pr-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.pr-word { font-size: 44px; font-weight: 800; line-height: 1.15; }
+.pr-ipa { min-height: 1.4em; }
+.pr-status { height: 64px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; text-align: left; }
+.pr-status p { margin: 0; text-align: center; }
+.pr-sum b { display: block; font-size: 18px; }
+.pr-sum small { color: var(--muted); font-size: 12px; }
+.pr-ring { --c: var(--ink); width: 52px; height: 52px; flex: none; border-radius: 50%; display: grid; place-items: center;
   background: conic-gradient(var(--c) calc(var(--v) * 1%), var(--soft) 0); }
-.pr-ring b { width: 44px; height: 44px; border-radius: 50%; background: var(--paper); display: grid; place-items: center; font-size: 17px; color: var(--c); }
+.pr-ring b { width: 40px; height: 40px; border-radius: 50%; background: var(--white); display: grid; place-items: center; font-size: 16px; color: var(--c); }
 .pr-ring.pr-good { --c: var(--good); } .pr-ring.pr-close { --c: var(--close); } .pr-ring.pr-bad { --c: var(--bad); }
-.pr-word { font-size: 40px; font-weight: 800; line-height: 1.2; margin-top: 4px; }
-.pr-ipa { text-align: left; }
 .pr-good { color: var(--good); } .pr-close { color: var(--close); } .pr-bad { color: var(--bad); } .pr-off { color: #C2B8AA; }
 [data-tok] { cursor: pointer; }
-[data-tok].sel { border-bottom: 3px solid currentColor; }
-.pr-key { display: flex; gap: 12px; font-size: 11px; font-weight: 700; }
-.pr-hint { margin: 2px 0 0; }
-.pr-fb { border-top: var(--b); padding-top: 8px; }
-.pr-fb p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; }
-.pr-actions { display: flex; gap: 10px; }
-.pr-actions .btn { flex: 1; }
-.pr-actions .btn:last-child { flex: 2; }
+.pr-bar { display: flex; gap: 10px; }
+.pr-bar .btn { flex: 1; }
+.pr-bar .btn:disabled { opacity: .4; }
+.pr-fb p { margin: 0 0 10px; font-size: 15px; line-height: 1.6; }
+.pr-fb p b { margin-right: 4px; }
+.pr-chart { margin: 6px 0 12px; }
+.pr-fb + .pr-bar { margin-bottom: 10px; }
 .ipa.big u { text-decoration-thickness: 2px; text-underline-offset: 4px; }

@@ -10,7 +10,7 @@ import * as PR from '../engine/pronounce.js';
 import * as PL from '../engine/pronlog.js';
 import * as LT from '../engine/letters.js';
 import * as PC from './pron-chart.js';
-import { base } from '../engine/ipa-chart.js';
+import { base, position } from '../engine/ipa-chart.js';
 import { state, save } from '../engine/store.js';
 
 export function createPlay(root, { onEnd }) {
@@ -19,6 +19,7 @@ export function createPlay(root, { onEnd }) {
 
   function start(lang) {
     run = M.startRun(lang);
+    result = null; myPcm = null;
     document.body.classList.add('playing');
     root.hidden = false;
     root.innerHTML = `<div class="hud"><button class="icon-btn" id="quit" aria-label="結束">${G.close()}</button>
@@ -55,104 +56,147 @@ export function createPlay(root, { onEnd }) {
   };
   const LEVEL = { good: '正確', close: '有點問題', bad: '需要加強' };
 
-  function render(result = null) {
+  // 版面固定：字、音標、狀態列、下面兩排按鈕的位置在唸之前和唸之後都一樣；細節點了才在底部面板打開
+  let result = null, myPcm = null;
+  function render() {
     const p = M.prime(run, key), before = run.scores[key];
     const shown = result ? before.slice(0, -1) : before;
     const m = mode();
     $('#qcard').innerHTML = `
-      <div class="badges"><span class="badge lv">第 ${shown.length + 1} 次</span>${shown.length ? `<span class="badge">之前：${shown.join('、')}</span>` : ''}
+      <div class="badges pr-top"><span class="badge lv">第 ${shown.length + 1} 次</span><span class="pr-prev">${shown.length ? `之前：${shown.join('、')}` : ''}</span>
         <span class="seg-toggle pr-mode">${[['simple', '簡單'], ['full', '進階']].map(([k, z]) => `<button data-m="${k}" class="${m === k ? 'on' : ''}">${z}</button>`).join('')}</span></div>
-      <div class="qmain teach">
+      <div class="pr-stage">
         <button class="core-icon icon-tap" id="icon">${iconHtml(p.icon)}</button>
-        ${result ? resultHtml(result) : `<div class="teach-word" dir="auto">${esc(key)}</div>${plainIpa()}`}
-        <button class="btn sm" id="listen">${G.speaker()} 聽</button>
+        ${wordHtml()}
+        <div class="pr-status" id="status">${statusHtml()}</div>
       </div>
-      <div class="teach-answer">${result ? `<div class="pr-actions"><button class="btn ghost big" id="again">重試</button><button class="btn green big" id="cont">繼續 ›</button></div>` : `<button class="btn gold mic" id="mic">${G.mic()} 唸出來</button>`}</div>`;
+      <div class="pr-bar">
+        <button class="btn ghost" id="listen">${G.speaker()} 標準發音</button>
+        <button class="btn ghost" id="mine"${myPcm ? '' : ' disabled'}>▶ 我的錄音</button>
+      </div>
+      <div class="pr-bar">
+        <button class="btn gold big mic" id="mic">${G.mic()} ${result ? '再唸一次' : '唸出來'}</button>
+        <button class="btn green big" id="cont"${result ? '' : ' disabled'}>繼續 ›</button>
+      </div>`;
     $('#icon').onclick = say;
     $('#listen').onclick = say;
-    $('#mic')?.addEventListener('click', mic);
-    $('#cont')?.addEventListener('click', next);
-    // 重試：剛才那一次不算，同一個字再唸一次
-    $('#again')?.addEventListener('click', () => { M.undo(run, key); next(); });
+    $('#mine').onclick = playMine;
+    $('#mic').onclick = () => {
+      // 再唸一次：剛才那一次不算
+      if (result) { M.undo(run, key); result = null; }
+      mic();
+    };
+    $('#cont').onclick = () => { result = null; myPcm = null; next(); };
     root.querySelectorAll('.pr-mode button').forEach(b => (b.onclick = () => {
       state.pronMode = b.dataset.m;
       save();
       if (result) M.rescore(run, key, scoreOf(result));
-      render(result);
+      render();
     }));
-    root.querySelectorAll('[data-tok]').forEach(b => (b.onclick = () => { result.sel = +b.dataset.tok; render(result); }));
-  }
-  // 還沒唸：音標上把要評的難音畫底線（簡單模式）
-  function plainIpa() {
-    const ipa = P.wordSegs(run.lang.id, key);
-    if (!ipa) return '';
-    const hs = mode() === 'simple' ? hardSet() : new Set();
-    return `<span class="ipa big">/${ipa.map(s => (hs.has(base(s)) ? `<u>${esc(s)}</u>` : esc(s))).join('')}/</span>`;
+    root.querySelectorAll('[data-tok]').forEach(b => (b.onclick = () => detail(+b.dataset.tok)));
   }
 
-  function resultHtml(r) {
-    const js = new Set(judged(r)), sc = scoreOf(r);
+  // 字和音標：還沒唸時是黑色（簡單模式在音標上把難音畫底線）；唸完依每個音上色
+  function wordHtml() {
+    if (!result) {
+      const ipa = P.wordSegs(run.lang.id, key), hs = mode() === 'simple' ? hardSet() : new Set();
+      return `<div class="pr-word" dir="auto">${esc(key)}</div>
+        <div class="ipa big pr-ipa">${ipa ? `/${ipa.map(s => (hs.has(base(s)) ? `<u>${esc(s)}</u>` : esc(s))).join('')}/` : ''}</div>`;
+    }
+    const r = result, js = new Set(judged(r));
     const cls = i => (js.has(i) ? `pr-${r.per[i].level}` : 'pr-off');
-    // 字母：一組字母對到的音裡，最差的那個決定顏色
+    // 一組字母對到的音裡，最差的那個決定顏色
     const rank = { good: 0, close: 1, bad: 2 };
     const worst = toks => toks.filter(i => js.has(i)).sort((a, b) => rank[r.per[b].level] - rank[r.per[a].level] || r.per[a].p - r.per[b].p)[0];
     const word = r.chunks
-      ? r.chunks.map(c => { const w = worst(c.toks); return w === undefined ? `<span class="pr-off">${esc(c.text)}</span>` : `<span class="${cls(w)}${r.sel === w ? ' sel' : ''}" data-tok="${w}">${esc(c.text)}</span>`; }).join('')
+      ? r.chunks.map(c => { const w = worst(c.toks); return w === undefined ? `<span class="pr-off">${esc(c.text)}</span>` : `<span class="${cls(w)}" data-tok="${w}">${esc(c.text)}</span>`; }).join('')
       : esc(key);
-    const ipa = r.ipa.map((s, i) => (r.per[i] && js.has(i) ? `<span class="${cls(i)}${r.sel === i ? ' sel' : ''}" data-tok="${i}">${esc(s)}</span>` : `<span class="pr-off">${esc(s)}</span>`)).join('');
-    const lv = sc >= 80 ? 'good' : sc >= 50 ? 'close' : 'bad';
-    const head = { good: '很好', close: '幾乎正確', bad: '再試試看' }[lv];
-    return `<div class="pr-card">
-        <div class="pr-head"><div><b class="pr-${lv}">${head}</b><small>${mode() === 'simple' ? `重點音 ${js.size} 個` : `每個音都評分${r.extra ? `，多了 ${r.extra} 個音` : ''}`}</small></div>
-          <div class="pr-ring pr-${lv}" style="--v:${sc}"><b>${sc}</b></div></div>
-        <div class="pr-word" dir="auto">${word}</div>
-        <div class="ipa big pr-ipa">/${ipa}/</div>
-        <div class="pr-key"><span class="pr-good">● 正確</span><span class="pr-close">● 有點問題</span><span class="pr-bad">● 需要加強</span></div>
-        ${feedbackHtml(r)}
-      </div>`;
+    const ipa = r.ipa.map((s, i) => (r.per[i] && js.has(i) ? `<span class="${cls(i)}" data-tok="${i}">${esc(s)}</span>` : `<span class="pr-off">${esc(s)}</span>`)).join('');
+    return `<div class="pr-word" dir="auto">${word}</div><div class="ipa big pr-ipa">/${ipa}/</div>`;
   }
-  // 點一個音（字母或音標）看回饋
-  function feedbackHtml(r) {
-    if (r.sel === undefined || !r.per[r.sel]) return '<p class="muted pr-hint">點字母或音標看每個音的回饋</p>';
-    const x = r.per[r.sel];
-    const msg = x.level === 'good' ? `${PC.label(x.ph)}唸得很好` : x.heard === '∅' ? `${PC.label(x.ph)}好像沒有唸出來`
-      : x.heard === x.ph ? `${PC.label(x.ph)}有點不清楚` : `你的 /${esc(x.ph)}/ 聽起來像 ${PC.label(x.heard)}`;
-    // 聽到的就是目標音（只是不夠清楚）時，圖上只有一個點，不畫
-    const chart = x.heard === '∅' || x.heard === x.ph ? '' : PC.chartHtml(x.ph, [{ ph: x.heard }, { ph: x.ph, p: x.p }]);
-    return `<div class="pr-fb"><p><b class="pr-${x.level}">${LEVEL[x.level]}</b>・${esc(msg)}</p>${chart}</div>`;
+
+  // 狀態列（固定高度）：唸之前是提示，唸完是分數和一句總結
+  function statusHtml(msg = '') {
+    if (!result) return `<p class="muted">${esc(msg || '聽完標準發音，按「唸出來」')}</p>`;
+    const r = result, js = judged(r), sc = scoreOf(r);
+    const lv = sc >= 80 ? 'good' : sc >= 50 ? 'close' : 'bad';
+    const n = js.filter(i => r.per[i].level !== 'good').length;
+    return `<div class="pr-ring pr-${lv}" style="--v:${sc}"><b>${sc}</b></div>
+      <div class="pr-sum"><b class="pr-${lv}">${{ good: '很好', close: '幾乎正確', bad: '再試試看' }[lv]}</b>
+        <small>${n ? `${n} 個音要加強，點有顏色的音看怎麼改` : mode() === 'simple' ? '重點音都唸對了' : '每個音都唸對了'}</small></div>`;
+  }
+  const setStatus = msg => { $('#status').innerHTML = statusHtml(msg); };
+
+  // 你唸成了什麼：只取最像的 1 個，第 2 個很接近才一起列；子音的位置只比子音、母音只比母音（避免把雜訊說成「像 /a/」）
+  function yours(x) {
+    const kind = k => (k === 'diphthong' ? 'vowel' : k), tk = kind(position(x.ph).kind);
+    const ok = c => c.ph !== x.ph && (c.ph === '∅' || tk === 'other' || kind(position(c.ph).kind) === tk);
+    const cands = (x.top || [{ ph: x.heard, p: 1 }]).filter(ok);
+    if (!cands.length || cands[0].p < 0.3) return [];
+    return cands.slice(0, 2).filter((c, i) => i === 0 || c.p >= 0.6 * cands[0].p);
+  }
+
+  // 點一個音：在底部面板看「你唸成了什麼、怎麼改、對照圖」，版面不動
+  function detail(i) {
+    const x = result.per[i], ys = yours(x);
+    let body;
+    if (x.level === 'good') body = `<p>${esc(PC.label(x.ph))}唸得很好。</p>`;
+    else if (!ys.length) body = `<p>方向大致對了，但還不夠清楚。唸得清楚一點、用力一點再試一次。</p>`;
+    else {
+      const t = PC.tip(x.ph, ys[0].ph);
+      body = `<p><b>你唸成了</b>　${ys.map(c => (c.ph === '∅' ? '（沒有唸出來）' : esc(PC.label(c.ph)))).join('　或　')}</p>
+        ${t ? `<p><b>怎麼改</b>　${esc(t)}</p>` : ''}
+        ${ys[0].ph === '∅' ? '' : `<div class="pr-chart">${PC.chartHtml(x.ph, ys.map(c => ({ ph: c.ph })))}</div>`}`;
+    }
+    openSheet(`<h2><span class="pr-${x.level}">/${esc(x.ph)}/</span> ${LEVEL[x.level]}</h2><div class="pr-fb">${body}</div>
+      <div class="pr-bar"><button class="btn ghost" id="dListen">${G.speaker()} 標準發音</button><button class="btn ghost" id="dMine">▶ 我的錄音</button></div>
+      <button class="btn big" id="dClose">關閉</button>`, {}, b => {
+      b.querySelector('#dListen').onclick = say;
+      b.querySelector('#dMine').onclick = playMine;
+      b.querySelector('#dClose').onclick = closeSheet;
+    });
+  }
+
+  // 我的錄音：只放在記憶體裡，換下一個字就丟掉
+  function playMine() {
+    if (!myPcm) return;
+    stopSpeech();
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = ac.createBuffer(1, myPcm.length, 16000);
+    buf.getChannelData(0).set(myPcm);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    src.onended = () => ac.close();
+    src.start();
   }
 
   // 唸：錄音 → 服務每個音都評分；沒聽清楚時不算，直接再唸一次
   async function mic() {
     if (busy) return;
     busy = true;
+    render();
     const btn = $('#mic');
     btn.disabled = true;
-    const retry = msg => {
-      btn.disabled = false;
-      btn.innerHTML = `${G.mic()} 再唸一次`;
-      $('#qcard .retry')?.remove();
-      $('#qcard .qmain').insertAdjacentHTML('beforeend', `<p class="muted retry">${esc(msg)}</p>`);
-    };
     try {
       const ph = await PR.phonemize(key, run.lang.id);
       if (!ph.ok) throw new Error(ph.msg);
       const pcm = await PR.record(st => { btn.textContent = st === 'listening' ? '請說…' : st === 'heard' ? '聽到了…' : '評分中…'; });
+      myPcm = pcm;
+      $('#mine').disabled = false;
       const r = await PR.score(pcm, ph.phones, -1, run.lang.id);
-      if (!r.ok || r.total == null) return retry(`${r.msg || '沒有聽清楚'}（這次不算）`);
+      if (!r.ok || r.total == null) throw new Error(`${r.msg || '沒有聽清楚'}（這次不算）`);
       PL.add({ lang: run.lang.id, word: key, phones: ph.ipa, per: r.per_phone }).catch(() => {});
-      const res = { total: r.total, extra: r.extra || 0, ipa: ph.ipa, per: r.per_phone, chunks: await LT.align(run.lang.id, key, ph.ipa).catch(() => null) };
-      // 一開始先打開最需要加強的那個音
-      const bad = judged(res).filter(i => res.per[i].level !== 'good').sort((a, b) => res.per[a].p - res.per[b].p);
-      if (bad.length) res.sel = bad[0];
-      const sc = scoreOf(res);
+      result = { total: r.total, extra: r.extra || 0, ipa: ph.ipa, per: r.per_phone, chunks: await LT.align(run.lang.id, key, ph.ipa).catch(() => null) };
+      const sc = scoreOf(result);
       M.record(run, key, sc);
       sfx(sc >= M.PASS ? 'good' : 'bad');
-      render(res);
-    } catch (e) {
-      retry(`發音評分無法使用（${e.message || '連線失敗'}）`);
-    } finally {
       busy = false;
+      render();
+    } catch (e) {
+      busy = false;
+      render();
+      setStatus(e.message?.includes('這次不算') ? e.message : `發音評分無法使用（${e.message || '連線失敗'}）`);
     }
   }
 
