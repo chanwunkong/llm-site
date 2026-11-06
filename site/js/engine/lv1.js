@@ -32,6 +32,23 @@ export function record(run, key, total) {
   save();
 }
 
+// 重試：剛才那一次不算，回到同一題
+export function undo(run, key) {
+  run.scores[key].pop();
+  rec(key).tries.pop();
+  run.pos--;
+  save();
+}
+
+// 看完結果才切換簡單／進階：用新的模式改掉剛才那一次的分數
+export function rescore(run, key, total) {
+  const sc = run.scores[key], tries = rec(key).tries;
+  if (!sc.length) return;
+  sc[sc.length - 1] = total;
+  if (tries.length) tries[tries.length - 1] = { ...tries[tries.length - 1], total };
+  save();
+}
+
 // 結算：每個字取最高的兩次平均，70 分以上通過；通過的字放進箱子（「我」直接放在中心，成為第一格）
 export function finish(run) {
   const lg = L(), result = [];

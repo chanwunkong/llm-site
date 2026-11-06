@@ -3,6 +3,8 @@
 :root {
   --paper: #FBF5EC; --white: #FFFDF8; --ink: #2F2B26; --muted: #8A8076; --line: #E2D5C2; --soft: #F1E7D8;
   --red: #E2734F; --blue: #4E9FA6; --yellow: #F2C46D;
+  /* 發音的三個等級（像 ELSA）：綠＝正確、橙＝有點問題、紅＝需要加強 */
+  --good: #3E9A57; --close: #E8902F; --bad: #D8443A;
   --gold: var(--yellow); --green: var(--blue);
   --b: 1.5px solid var(--line);
   --r: 14px;
@@ -391,9 +393,9 @@ body.playing #simBar { display: none; }
 .pron { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 8px; font-weight: 600; }
 .pron .ipa { font-size: 20px; font-family: "Doulos SIL", "Charis SIL", "Noto Sans", sans-serif; }
 .pron small { color: var(--muted); font-weight: 500; }
-.pron-good { color: var(--blue); }
-.pron-close { color: var(--ink); text-decoration: underline dashed; }
-.pron-bad { color: var(--red); }
+.pron-good { color: var(--good); }
+.pron-close { color: var(--close); }
+.pron-bad { color: var(--bad); }
 .pron b { text-decoration: underline; cursor: pointer; }
 
 /* ---- 跟著做（Lv1）：看字、聽音，照著唸或拼 ---- */
@@ -417,9 +419,9 @@ body.playing #simBar { display: none; }
 .rec-row { flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; box-sizing: border-box; }
 .rec-last { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 6px; }
 .rec-last i { width: 9px; height: 9px; border: 1.5px solid var(--ink); }
-.rec-last i.pron-good { background: var(--blue); }
-.rec-last i.pron-close { background: var(--yellow); }
-.rec-last i.pron-bad { background: var(--red); }
+.rec-last i.pron-good { background: var(--good); }
+.rec-last i.pron-close { background: var(--close); }
+.rec-last i.pron-bad { background: var(--bad); }
 
 /* ---- 最小可行系統：內層 ---- */
 .hud .clock { font-weight: 800; font-size: 20px; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
@@ -490,3 +492,50 @@ body.playing #simBar { display: none; }
 .badge.lv { background: var(--ink); color: var(--white); border-color: transparent; }
 .bag { border-radius: 20px 20px 0 0; box-shadow: 0 -4px 18px rgba(80, 60, 30, 0.08); }
 .land-top .chip, .land-tools .icon-btn { box-shadow: 0 2px 8px rgba(80, 60, 30, 0.10); }
+
+/* ---- 發音回饋圖表（ui/pron-chart.js） ---- */
+.pc-title { font-size: 14px; margin: 0 0 8px; text-align: left; }
+.pc-ipa-wrap { overflow-x: auto; }
+table.pc-ipa { border-collapse: collapse; font-size: 12px; margin: 0 auto; background: var(--white); }
+table.pc-ipa th { font-weight: 800; padding: 4px 6px; border: 1px solid var(--line); background: var(--soft); white-space: nowrap; }
+table.pc-ipa td { border: 1px solid var(--line); min-width: 44px; height: 52px; text-align: center; vertical-align: middle; }
+table.pc-ipa td.pc-r { border-left: 1px dotted var(--muted); }
+.pc-cellsym { display: inline-block; margin: 2px; }
+.pc-sym { display: inline-block; min-width: 30px; border: 2px solid var(--ink); padding: 1px 5px; font-size: 20px; font-weight: 600; font-family: "Charis SIL", "Doulos SIL", serif; background: var(--white); }
+.pc-sym.pc-t { border-color: var(--good); color: var(--good); }
+.pc-sym.pc-s { border-color: var(--bad); color: var(--bad); }
+.pc-sym.pc-o { border-color: var(--muted); color: var(--muted); }
+.pc-sym.pc-t.pc-you { background: var(--good); color: var(--white); }
+.pc-sym.pc-s.pc-you { background: var(--bad); color: var(--white); }
+.pc-tag { display: block; font-size: 10px; font-weight: 700; margin-top: 2px; }
+svg.pc-vq { width: 100%; max-width: 280px; max-height: 210px; display: block; margin: 0 auto; overflow: hidden; }
+svg.pc-vq.pc-zoom { border: 1px solid var(--line); }
+.pc-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.pc-legend { display: flex; justify-content: center; gap: 14px; font-size: 12px; margin-top: 8px; color: var(--muted); }
+.pc-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: middle; }
+
+
+/* ---- 發音結果（ui/play-lv1.js）：像 ELSA，字母和音標依每個音上色 ---- */
+.badges .pr-mode { margin: 0 0 0 auto; }
+.pr-mode button { padding: 4px 12px; }
+.pr-card { width: 100%; text-align: left; border: var(--b); border-radius: var(--r); background: var(--paper); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.pr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: var(--b); }
+.pr-head b { font-size: 20px; display: block; }
+.pr-head small { color: var(--muted); font-size: 12px; }
+.pr-ring { --c: var(--ink); width: 56px; height: 56px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--c) calc(var(--v) * 1%), var(--soft) 0); }
+.pr-ring b { width: 44px; height: 44px; border-radius: 50%; background: var(--paper); display: grid; place-items: center; font-size: 17px; color: var(--c); }
+.pr-ring.pr-good { --c: var(--good); } .pr-ring.pr-close { --c: var(--close); } .pr-ring.pr-bad { --c: var(--bad); }
+.pr-word { font-size: 40px; font-weight: 800; line-height: 1.2; margin-top: 4px; }
+.pr-ipa { text-align: left; }
+.pr-good { color: var(--good); } .pr-close { color: var(--close); } .pr-bad { color: var(--bad); } .pr-off { color: #C2B8AA; }
+[data-tok] { cursor: pointer; }
+[data-tok].sel { border-bottom: 3px solid currentColor; }
+.pr-key { display: flex; gap: 12px; font-size: 11px; font-weight: 700; }
+.pr-hint { margin: 2px 0 0; }
+.pr-fb { border-top: var(--b); padding-top: 8px; }
+.pr-fb p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; }
+.pr-actions { display: flex; gap: 10px; }
+.pr-actions .btn { flex: 1; }
+.pr-actions .btn:last-child { flex: 2; }
+.ipa.big u { text-decoration-thickness: 2px; text-underline-offset: 4px; }
