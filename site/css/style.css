@@ -541,3 +541,4 @@ svg.pc-vq.pc-zoom { border: 1px solid var(--line); }
 .pr-chart { margin: 6px 0 12px; }
 .pr-fb + .pr-bar { margin-bottom: 10px; }
 .ipa.big u { text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.install-steps { padding-left: 20px; line-height: 1.9; font-size: 15px; color: var(--ink); }

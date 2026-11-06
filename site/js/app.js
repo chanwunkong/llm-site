@@ -112,12 +112,27 @@ $('#langBtn').onclick = () => openSheet(`<h2>學習語言</h2>
     setTab(tab);
   })));
 
+// 安裝到主畫面（PWA）：Android／電腦的 Chrome 可以直接跳出安裝；iPhone 的 Safari 只能自己從「分享」加入
+let installPrompt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
+const installed = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+async function installSheet() {
+  if (installPrompt) { installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; closeSheet(); return; }
+  openSheet(`<h2>安裝到主畫面</h2><ol class="muted install-steps">
+      <li>用 Safari 打開這個網站</li><li>按畫面下方的「分享」按鈕（方框加向上箭頭）</li>
+      <li>往下滑，選「加入主畫面」</li><li>按右上角的「新增」</li></ol>
+    <p class="muted">之後從主畫面的「單字領土」圖示打開，就會全螢幕顯示；沒有網路也能打開（發音評分仍然需要網路）。</p>
+    <button class="btn big" id="ok">知道了</button>`, {}, b => (b.querySelector('#ok').onclick = closeSheet));
+}
+
 $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
+    ${installed() ? '' : '<button class="btn gold big" id="install">安裝到主畫面</button>'}
     <button class="btn ghost big" id="snd">${state.sound ? '聲音：開' : '聲音：關'}</button>
     ${DATA[state.lang].subs ? `<button class="btn ghost big" id="voice">朗讀聲音：${esc(voiceName(state.lang))}</button>` : ''}
     <button class="btn ghost big" id="pron">發音評分服務${PR.configured() ? '：已設定' : ''}</button>
     <button class="btn ghost big" id="rst">${SIM ? '重置模擬進度' : '重置所有進度'}</button>
   </div>`, {}, body => {
+  body.querySelector('#install')?.addEventListener('click', installSheet);
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
   body.querySelector('#voice')?.addEventListener('click', voiceSheet);
   body.querySelector('#pron').onclick = pronSheet;
