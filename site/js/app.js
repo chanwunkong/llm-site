@@ -212,7 +212,7 @@ function pronSheet() {
     <p class="muted" id="pMsg">網址和密碼只存在這台裝置上。錄音只送到這個服務，遊戲本身不保存錄音。</p>
     <div class="row"><button class="btn ghost big" id="pClear">清除</button><button class="btn gold big" id="pTest">測試並儲存</button></div>`, {}, body => {
     const $b = s => body.querySelector(s);
-    $b('#pClear').onclick = () => { PR.setConfig(null); closeSheet(); toast('已清除發音評分服務'); };
+    $b('#pClear').onclick = () => { PR.setConfig(null); views[tab].show(); closeSheet(); toast('已清除發音評分服務'); };
     $b('#pTest').onclick = async () => {
       const cfg = { url: $b('#pUrl').value.trim(), token: $b('#pTok').value.trim() };
       if (!/^https?:\/\//.test(cfg.url)) return ($b('#pMsg').textContent = '請輸入以 https:// 開頭的網址');
@@ -221,6 +221,7 @@ function pronSheet() {
       if (!h.ok) return ($b('#pMsg').textContent = h.msg || '連不上服務');
       if (!h.authorized) return ($b('#pMsg').textContent = '連上了，但存取密碼不正確');
       PR.setConfig(cfg);
+      views[tab].show();   // 首頁的「開始」要馬上能按
       const L = LANG_BY_ID[state.lang], level = h.languages?.[state.lang];
       $b('#pMsg').textContent = `已儲存（服務版本 ${h.version}）。${L.zh}：${level === 'good' ? '可以評分' : level === 'no-tone' ? '只評子音' : '目前不支援評分'}`;
     };
