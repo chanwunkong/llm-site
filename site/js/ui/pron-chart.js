@@ -1,5 +1,5 @@
 // 發音回饋圖表：在 IPA 子音表或母音四邊形上標出目標音與學習者唸出的音
-import { PLACES, MANNERS, HEIGHTS, position } from '../engine/ipa-chart.js';
+import { PLACES, MANNERS, HEIGHTS, position, base } from '../engine/ipa-chart.js';
 import { ZH } from '../data/known-zh.js';
 
 const PL = Object.fromEntries(PLACES), MN = Object.fromEntries(MANNERS), HT = Object.fromEntries(HEIGHTS);
@@ -125,6 +125,15 @@ export function tip(target, heard) {
     return '這個音漏掉了，記得把它唸出來';
   }
   const b = position(heard), out = [];
+  // 雙母音：要從第一個母音滑到最後一個
+  if (a.kind === 'diphthong') {
+    const p0 = a.parts[0].c, p1 = a.parts[a.parts.length - 1].c, h = base(heard);
+    if (b.kind !== 'vowel') return '';
+    if (h === p0) return `從 /${p0}/ 開始，要滑到 /${p1}/，不要停在 /${p0}/`;
+    if (h === p1) return `要從 /${p0}/ 開始，再滑到 /${p1}/`;
+    return `從 /${p0}/ 滑到 /${p1}/，嘴巴和舌頭要跟著移動`;
+  }
+  if (b.kind === 'diphthong' && a.kind === 'vowel') return '只唸一個母音，嘴巴和舌頭不要滑動';
   if (a.kind === 'consonant' && b.kind === 'consonant') {
     if (a.place !== b.place) out.push(PLACE_TIP[a.place]);
     if (a.manner !== b.manner) out.push(MANNER_TIP[a.manner]);

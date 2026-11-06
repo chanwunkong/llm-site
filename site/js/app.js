@@ -136,7 +136,7 @@ $('#setBtn').onclick = () => openSheet(`<h2>設定</h2><div class="stack">
   body.querySelector('#snd').onclick = () => { state.sound = !state.sound; save(); closeSheet(); if (state.sound) speak(' '); };
   body.querySelector('#voice')?.addEventListener('click', voiceSheet);
   body.querySelector('#pron').onclick = pronSheet;
-  body.querySelector('#rst').onclick = () => openSheet(`<h2>確定重置？</h2><p class="muted">所有語言的單字、領土、金幣都會清除。</p>
+  body.querySelector('#rst').onclick = () => openSheet(`<h2>確定重置？</h2><p class="muted">所有語言的單字和領土都會清除。</p>
     <div class="row"><button class="btn ghost big" id="no">取消</button><button class="btn gold big" id="yes">重置</button></div>`, {}, b2 => {
     b2.querySelector('#no').onclick = closeSheet;
     b2.querySelector('#yes').onclick = () => { resetAll(); closeSheet(); views[tab].hide(); setTab('home'); };

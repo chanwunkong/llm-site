@@ -55,6 +55,8 @@ export function createPlay(root, { onEnd }) {
     return Math.round((100 * js.reduce((a, i) => a + r.per[i].p, 0)) / js.length);
   };
   const LEVEL = { good: '正確', close: '有點問題', bad: '需要加強' };
+  // 每個音和整個字用同一套門檻（單音節的字，音的分數就是總分，顏色也要一樣）
+  const levelOf = pct => (pct >= 80 ? 'good' : pct >= 50 ? 'close' : 'bad');
 
   // 版面固定：字、音標、狀態列、下面兩排按鈕的位置在唸之前和唸之後都一樣；細節點了才在底部面板打開
   let result = null, myPcm = null;
@@ -119,11 +121,12 @@ export function createPlay(root, { onEnd }) {
   function statusHtml(msg = '') {
     if (!result) return `<p class="muted">${esc(msg || '聽完標準發音，按「唸出來」')}</p>`;
     const r = result, js = judged(r), sc = scoreOf(r);
-    const lv = sc >= 80 ? 'good' : sc >= 50 ? 'close' : 'bad';
+    const lv = levelOf(sc);
     const n = js.filter(i => r.per[i].level !== 'good').length;
+    const extra = mode() !== 'simple' && r.extra ? `多了 ${r.extra} 個音，所以總分比較低；` : '';
     return `<div class="pr-ring pr-${lv}" style="--v:${sc}"><b>${sc}</b></div>
       <div class="pr-sum"><b class="pr-${lv}">${{ good: '很好', close: '幾乎正確', bad: '再試試看' }[lv]}</b>
-        <small>${n ? `${n} 個音要加強，點有顏色的音看怎麼改` : mode() === 'simple' ? '重點音都唸對了' : '每個音都唸對了'}</small></div>`;
+        <small>${extra}${n ? `${n} 個音要加強，點它看怎麼改` : '點字母或音標看每個音的細節'}</small></div>`;
   }
   const setStatus = msg => { $('#status').innerHTML = statusHtml(msg); };
 
@@ -132,19 +135,21 @@ export function createPlay(root, { onEnd }) {
     const kind = k => (k === 'diphthong' ? 'vowel' : k), tk = kind(position(x.ph).kind);
     const ok = c => c.ph !== x.ph && (c.ph === '∅' || tk === 'other' || kind(position(c.ph).kind) === tk);
     const cands = (x.top || [{ ph: x.heard, p: 1 }]).filter(ok);
-    if (!cands.length || cands[0].p < 0.3) return [];
+    if (!cands.length || cands[0].p < 0.15) return [];
     return cands.slice(0, 2).filter((c, i) => i === 0 || c.p >= 0.6 * cands[0].p);
   }
 
-  // 點一個音：在底部面板看「你唸成了什麼、怎麼改、對照圖」，版面不動
+  // 點一個音：在底部面板看「聽起來像什麼、怎麼改、對照圖」，版面不動
   function detail(i) {
-    const x = result.per[i], ys = yours(x);
+    const x = result.per[i], ys = yours(x), pct = n => `${Math.round(n * 100)}%`;
+    const name = c => (c.ph === '∅' ? '（沒有唸出來）' : `/${esc(c.ph)}/`);
+    // 聽起來：目標音和最像的 1～2 個音，各自的百分比
+    const heard = `<p><b>聽起來</b>　${[{ ph: x.ph, p: x.p }, ...ys].sort((a, b) => (b.p ?? 0) - (a.p ?? 0)).map(c => `${name(c)}${c.p !== undefined ? ` ${pct(c.p)}` : ''}`).join('、')}</p>`;
     let body;
-    if (x.level === 'good') body = `<p>${esc(PC.label(x.ph))}唸得很好。</p>`;
-    else if (!ys.length) body = `<p>方向大致對了，但還不夠清楚。唸得清楚一點、用力一點再試一次。</p>`;
+    if (!ys.length) body = `${heard}<p>${x.level === 'good' ? '唸得很好。' : '方向對了，但還不夠清楚。唸得清楚一點、用力一點再試一次。'}</p>`;
     else {
-      const t = PC.tip(x.ph, ys[0].ph);
-      body = `<p><b>你唸成了</b>　${ys.map(c => (c.ph === '∅' ? '（沒有唸出來）' : esc(PC.label(c.ph)))).join('　或　')}</p>
+      const t = PC.tip(x.ph, ys[0].ph), most = (ys[0].p ?? 1) > x.p;
+      body = `${heard}<p><b>${most ? '你唸成了' : '有一點像'}</b>　${ys.map(c => (c.ph === '∅' ? '（沒有唸出來）' : esc(PC.label(c.ph)))).join('　或　')}</p>
         ${t ? `<p><b>怎麼改</b>　${esc(t)}</p>` : ''}
         ${ys[0].ph === '∅' ? '' : `<div class="pr-chart">${PC.chartHtml(x.ph, ys.map(c => ({ ph: c.ph })))}</div>`}`;
     }
@@ -186,6 +191,7 @@ export function createPlay(root, { onEnd }) {
       $('#mine').disabled = false;
       const r = await PR.score(pcm, ph.phones, -1, run.lang.id);
       if (!r.ok || r.total == null) throw new Error(`${r.msg || '沒有聽清楚'}（這次不算）`);
+      r.per_phone.forEach(x => x && (x.level = levelOf(x.p * 100)));
       PL.add({ lang: run.lang.id, word: key, phones: ph.ipa, per: r.per_phone }).catch(() => {});
       result = { total: r.total, extra: r.extra || 0, ipa: ph.ipa, per: r.per_phone, chunks: await LT.align(run.lang.id, key, ph.ipa).catch(() => null) };
       const sc = scoreOf(result);
