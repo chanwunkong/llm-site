@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 48 48">
+<defs><clipPath id="canvas"><rect x="0" y="0" width="48" height="48"/></clipPath></defs>
+<rect width="48" height="48" fill="#FBF5EC"/>
+<g clip-path="url(#canvas)">
+<path d="M9 21 L9 13 L16 9 L23 13 L23 21 L16 25 L9 21 Z M25 21 L25 13 L32 9 L39 13 L39 21 L32 25 L25 21 Z" fill="#4E9FA6" fill-rule="nonzero"/>
+<path d="M17 35 L17 27 L24 23 L31 27 L31 35 L24 39 L17 35 Z" fill="#F2C46D" fill-rule="nonzero"/>
+</g></svg>

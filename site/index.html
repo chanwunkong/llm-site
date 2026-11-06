@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#F3EFE6">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="單字領土">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <title>單字領土</title>
 <link rel="stylesheet" href="css/style.css">
 <!-- Piper 語音套件要用的執行程式，固定版本（套件本身沒有指定，CDN 會給最新版而對不上） -->
@@ -41,5 +47,6 @@
   <div id="loading"><i class="shape square red spin"></i>載入中…</div>
 </div>
 <script type="module" src="js/app.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>
