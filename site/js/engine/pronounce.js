@@ -52,7 +52,8 @@ export async function score(pcm, phones, target, lang, choices = []) {
 
 // ---- 錄音：唸完自動停止 ----
 // 關掉瀏覽器的降噪、回音消除與自動音量：它們會抹掉分辨 θ、f、s 的高頻細節。
-// 前 0.3 秒量背景噪音；講話後安靜 0.7 秒就停。沒講話 4 秒、總長 5 秒也會停。
+// 前 0.3 秒量背景噪音；講話後安靜 0.5 秒就停。沒講話 4 秒、總長 5 秒也會停。
+// 送出前只留說話的那一段（前後各留 0.3 秒）：錄音越短，評分越快，上傳也越小。
 export async function record(onState = () => {}) {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   const rec = new MediaRecorder(stream), chunks = [];
@@ -72,7 +73,7 @@ export async function record(onState = () => {}) {
       const rms = Math.sqrt(buf.reduce((s, x) => s + x * x, 0) / buf.length), now = performance.now() - t0;
       if (now < 300) { noise = Math.max(noise, rms); return; }
       if (rms > Math.max(noise * 3, 0.015)) { if (!spoke) onState('heard'); spoke = true; last = now; }
-      if ((spoke && now - last > 700) || (!spoke && now > 4000) || now > 5000) { clearInterval(timer); stop(); }
+      if ((spoke && now - last > 500) || (!spoke && now > 4000) || now > 5000) { clearInterval(timer); stop(); }
     }, 30);
   });
   ac.close();
@@ -80,7 +81,23 @@ export async function record(onState = () => {}) {
   await done;
   stream.getTracks().forEach(t => t.stop());
   onState('processing');
-  return toPcm16k(new Blob(chunks, { type: rec.mimeType }));
+  return speechOnly(await toPcm16k(new Blob(chunks, { type: rec.mimeType })));
+}
+// 只留說話的那一段：以 20 毫秒為一格算音量，比背景（最安靜的兩成）大很多的格子算說話。
+// θ、f、s 這類小聲的音容易被切掉，所以前後各多留 0.3 秒；找不到說話時原樣送出，讓服務判斷
+function speechOnly(pcm, sr = 16000) {
+  const f = sr / 50, n = Math.floor(pcm.length / f), rms = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let e = 0;
+    for (let j = i * f; j < (i + 1) * f; j++) e += pcm[j] * pcm[j];
+    rms[i] = Math.sqrt(e / f);
+  }
+  const noise = [...rms].sort((a, b) => a - b)[Math.floor(n * 0.2)] || 0;
+  const th = Math.max(noise * 4, Math.max(...rms) * 0.05, 0.003);
+  const on = [...rms.keys()].filter(i => rms[i] > th);
+  if (!on.length) return pcm;
+  const pad = Math.round(0.3 * sr);
+  return pcm.slice(Math.max(0, on[0] * f - pad), Math.min(pcm.length, (on[on.length - 1] + 1) * f + pad));
 }
 async function toPcm16k(blob) {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();

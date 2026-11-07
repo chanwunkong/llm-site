@@ -35,7 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import onnxruntime as ort
 
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 MODEL_NAME = "facebook/wav2vec2-xlsr-53-espeak-cv-ft (ONNX int8)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.environ.get("MODEL", "/model/model.int8.onnx")
@@ -191,6 +191,31 @@ def ctc_loglik(lp, labels):
     return np.logaddexp(alpha[-1], alpha[-2]) if S > 1 else alpha[-1]
 
 
+def ctc_loglik_batch(lp, seqs):
+    """ctc_loglik for many label sequences at once (1.3.2): sequences of the same length share one pass over the frames."""
+    out = np.empty(len(seqs))
+    groups = {}
+    for i, sq in enumerate(seqs):
+        groups.setdefault(len(sq), []).append(i)
+    for n, idx in groups.items():
+        if n == 0:
+            out[idx] = [ctc_loglik(lp, [])] * len(idx)
+            continue
+        ext = np.full((len(idx), 2 * n + 1), BLANK)
+        ext[:, 1::2] = [seqs[i] for i in idx]
+        skip_ok = np.zeros(ext.shape, bool)
+        skip_ok[:, 2:] = (ext[:, 2:] != BLANK) & (ext[:, 2:] != ext[:, :-2])
+        alpha = np.full(ext.shape, -np.inf)
+        alpha[:, :2] = lp[0, ext[:, :2]]
+        ninf = np.full((len(idx), 2), -np.inf)
+        for t in range(1, lp.shape[0]):
+            prev1 = np.concatenate((ninf[:, :1], alpha[:, :-1]), axis=1)
+            prev2 = np.where(skip_ok, np.concatenate((ninf, alpha[:, :-2]), axis=1), -np.inf)
+            alpha = np.logaddexp(np.logaddexp(alpha, prev1), prev2) + lp[t, ext]
+        out[idx] = np.logaddexp(alpha[:, -1], alpha[:, -2])
+    return out
+
+
 def greedy(lp):
     ids = lp.argmax(axis=1)
     out, last = [], None
@@ -224,13 +249,13 @@ def slot_probs(lp, phones, k, names):
     """Open slot k: keep every other phone fixed, try each name (or dropped) there. Returns {display IPA: probability},
     with length variants and eSpeak ASCII names merged into one sound."""
     expected = [VOCAB[p] for p in phones]
-    tried, lls = [], []
+    tried, seqs = [], []
     for ph in names + [DROPPED]:
         seq = expected[:k] + ([] if ph == DROPPED else [VOCAB[ph]]) + expected[k + 1:]
         if seq:
             tried.append(ph)
-            lls.append(ctc_loglik(lp, seq))
-    lls = np.array(lls) / TEMP
+            seqs.append(seq)
+    lls = ctc_loglik_batch(lp, seqs) / TEMP
     probs = np.exp(lls - lls.max())
     probs /= probs.sum()
     target = ipa(phones[k])
@@ -334,7 +359,7 @@ def score(phones, k, audio, tag="", choices=None):
         mismatch = edit_distance(heard, phones) / len(phones)
         ms = int((time.time() - t0) * 1000)
         if LOG_ATTEMPTS:
-            print(json.dumps({"tag": tag, "expected": "".join(phones), "heard": "".join(heard), "mismatch": round(mismatch, 2), "ms": ms}, ensure_ascii=False), flush=True)
+            print(json.dumps({"tag": tag, "expected": "".join(phones), "heard": "".join(heard), "mismatch": round(mismatch, 2), "sec": round(len(audio) / SR, 2), "ms": ms}, ensure_ascii=False), flush=True)
         if mismatch > 1.0:
             return {"ok": False, "code": "not_the_word", "msg": "聽不太出是這個字，請再唸一次", "ms": ms}
         pp = per_phone(lp, phones)
@@ -342,13 +367,13 @@ def score(phones, k, audio, tag="", choices=None):
         return {"ok": True, "chosen": 0, "level": None, "match": round(max(0.0, 1 - mismatch), 3),
                 "per_phone": pp, "total": total, "extra": extra, "ms": int((time.time() - t0) * 1000)}
     # open only the target slot; every other phone stays fixed
-    names, lls = [], []
+    names, seqs = [], []
     for ph in CANDIDATES + [DROPPED]:
         seq = expected[:k] + ([] if ph == DROPPED else [VOCAB[ph]]) + expected[k + 1:]
         if seq:
             names.append(ph)
-            lls.append(ctc_loglik(lp, seq))
-    lls = np.array(lls) / TEMP
+            seqs.append(seq)
+    lls = ctc_loglik_batch(lp, seqs) / TEMP
     probs = np.exp(lls - lls.max())
     probs /= probs.sum()
     target = ipa(phones[k])
