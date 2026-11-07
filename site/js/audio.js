@@ -32,7 +32,15 @@ function voices() {
   });
   return voicesReady;
 }
-const hasVoice = async code => (await voices()).some(v => sameLang(v, code));
+// iPhone 只允許「點畫面的當下」開始朗讀：等語音清單載入（最多 1 秒）會錯過，所以一開啟就先載入，查過的語言記下結果，之後不用再等
+const voiceKnown = new Map();
+voices();
+if (canSpeak) addEventListener('pointerdown', () => {
+  // 第一次點畫面時唸一段無聲的內容，把朗讀功能解鎖（每一局的第一個字才有聲音）
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+}, { once: true });
 const langId = () => voiceLang.slice(0, 2).toLowerCase();
 
 // 播放錄音檔共用一個 <audio>：iPhone 只允許「使用者點過之後」播放，第一次點畫面時先用一段無聲音檔解鎖
@@ -106,7 +114,13 @@ export async function speak(text, { rate = 0.9, variety = false, voice = null } 
   const sub = voiceSubOf(lang?.id);
   if (sub) { text = convert(text, lang.id, sub); lang = voiceLangOf(sub); code = lang.bcp47; voice = null; }
   // 手機沒有這個語言的語音：先用 Piper；Piper 沒有這個語言或失敗時，用 eSpeak NG
-  if (state.sound && text && !(await hasVoice(code))) {
+  let hv = voiceKnown.get(code);
+  if (hv === undefined) {
+    const vs = await voices();
+    hv = vs.some(v => sameLang(v, code));
+    if (vs.length) voiceKnown.set(code, hv);   // 清單還沒載入時不記，下次再查
+  }
+  if (state.sound && text && !hv) {
     if (lang?.piper) return piperSpeak(text, rate, lang).catch(() => { piperSessions.delete(lang.piper); return localSpeak(text, rate, lang); }).catch(() => {});
     return localSpeak(text, rate, lang).catch(() => {});
   }
